@@ -41,7 +41,6 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
     search?: string;
-    selectedUsers?: string[];
     onlyUser?: boolean;
     onlyGroupMembers?: boolean;
   }): Promise<TransactionWithSplits[]>;
@@ -157,7 +156,6 @@ export class DatabaseStorage implements IStorage {
       startDate?: Date;
       endDate?: Date;
       search?: string;
-      selectedUsers?: string[];
       onlyUser?: boolean;
       onlyGroupMembers?: boolean;
     } = {}
@@ -197,10 +195,7 @@ export class DatabaseStorage implements IStorage {
       );
     }
 
-    // New filtering logic for user selection
-    if (filters.selectedUsers && filters.selectedUsers.length > 0) {
-      conditions.push(inArray(transactions.paidBy, filters.selectedUsers));
-    }
+    // Note: onlyUser and onlyGroupMembers filtering handled at route level
 
     const query = conditions.length > 0 
       ? db.select().from(transactions).where(and(...conditions))

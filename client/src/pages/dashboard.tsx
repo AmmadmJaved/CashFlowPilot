@@ -51,7 +51,6 @@ export default function Dashboard() {
     paidBy: "all", // filter by person name
     startDate: "",
     endDate: "",
-    selectedUsers: [] as string[], // array of selected user names
     onlyUser: false, // checkbox for "Only User"
     onlyGroupMembers: false, // checkbox for "Only Group Members"
   });
@@ -97,14 +96,7 @@ export default function Dashboard() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const handleUserSelection = (userName: string, checked: boolean) => {
-    setFilters(prev => ({
-      ...prev,
-      selectedUsers: checked
-        ? [...prev.selectedUsers, userName]
-        : prev.selectedUsers.filter(u => u !== userName)
-    }));
-  };
+
 
   const clearAllFilters = () => {
     setFilters({
@@ -115,7 +107,6 @@ export default function Dashboard() {
       paidBy: "all",
       startDate: "",
       endDate: "",
-      selectedUsers: [],
       onlyUser: false,
       onlyGroupMembers: false,
     });
@@ -151,9 +142,7 @@ export default function Dashboard() {
     if (filters.onlyGroupMembers && !groupMembers.includes(transaction.paidBy)) {
       return false;
     }
-    if (filters.selectedUsers.length > 0 && !filters.selectedUsers.includes(transaction.paidBy)) {
-      return false;
-    }
+
     return true;
   });
 
@@ -358,8 +347,7 @@ export default function Dashboard() {
                   {showAdvancedFilters ? "Hide" : "Show"} Filters
                 </Button>
                 {(filters.search || filters.type !== 'all' || filters.category !== 'all' || 
-                  filters.paidBy !== 'all' || filters.selectedUsers.length > 0 || 
-                  filters.onlyUser || filters.onlyGroupMembers) && (
+                  filters.paidBy !== 'all' || filters.onlyUser || filters.onlyGroupMembers) && (
                   <Button
                     variant="ghost"
                     size="sm"
@@ -449,7 +437,7 @@ export default function Dashboard() {
 
                 {/* User Selection Section */}
                 <div className="border-t pt-4 mt-4">
-                  <Label className="text-base font-semibold mb-3 block">Filter by Users & Group Members</Label>
+                  <Label className="text-base font-semibold mb-3 block">Filter by Transaction Source</Label>
                   
                   {/* Quick Filter Checkboxes */}
                   <div className="flex flex-wrap gap-4 mb-4">
@@ -478,42 +466,13 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  {/* Individual User Selection */}
-                  <div>
-                    <Label className="text-sm font-medium mb-2 block">Select Specific Users:</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-32 overflow-y-auto border rounded-lg p-3 bg-gray-50">
-                      {allUsers.map(user => (
-                        <div key={user} className="flex items-center space-x-2">
-                          <Checkbox
-                            id={`user-${user}`}
-                            checked={filters.selectedUsers.includes(user)}
-                            onCheckedChange={(checked) => handleUserSelection(user, checked as boolean)}
-                            data-testid={`checkbox-user-${user}`}
-                          />
-                          <Label htmlFor={`user-${user}`} className="text-sm truncate">
-                            {user === profile?.publicName ? `👤 ${user} (You)` : 
-                             groupMembers.includes(user) ? `👥 ${user}` : `👤 ${user}`}
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                    {filters.selectedUsers.length > 0 && (
-                      <div className="mt-2 flex flex-wrap gap-1">
-                        {filters.selectedUsers.map(user => (
-                          <Badge key={user} variant="secondary" className="text-xs">
-                            {user}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="ml-1 h-auto p-0 text-gray-500 hover:text-red-500"
-                              onClick={() => handleUserSelection(user, false)}
-                            >
-                              <X className="w-3 h-3" />
-                            </Button>
-                          </Badge>
-                        ))}
-                      </div>
-                    )}
+                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
+                    <p className="mb-2 font-medium">📊 Filter by Transaction Source:</p>
+                    <ul className="text-xs space-y-1">
+                      <li>• <strong>Only My Transactions:</strong> Show transactions you paid for or received</li>
+                      <li>• <strong>Only Group Members:</strong> Show transactions from people in your shared groups</li>
+                      <li>• Use both filters together to see specific combinations</li>
+                    </ul>
                   </div>
                 </div>
               </>

@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get('/api/transactions', async (req, res) => {
     try {
-      const { groupId, type, category, paidBy, startDate, endDate, search, selectedUsers, onlyUser, onlyGroupMembers } = req.query;
+      const { groupId, type, category, paidBy, startDate, endDate, search, onlyUser, onlyGroupMembers } = req.query;
       
       const filters: any = {};
       if (groupId) filters.groupId = groupId;
@@ -40,7 +40,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
       if (search) filters.search = search;
-      if (selectedUsers) filters.selectedUsers = (selectedUsers as string).split(',');
+
       if (onlyUser === 'true') filters.onlyUser = true;
       if (onlyGroupMembers === 'true') filters.onlyGroupMembers = true;
 
