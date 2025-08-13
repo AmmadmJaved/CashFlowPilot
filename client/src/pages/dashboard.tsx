@@ -21,6 +21,9 @@ import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { useProfile } from "@/hooks/useProfile";
+import AnimatedTransactionItem from "@/components/AnimatedTransactionItem";
+import { TransactionSkeleton, StatsSkeleton } from "@/components/AnimatedSkeleton";
+import AnimatedButton from "@/components/AnimatedButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -163,17 +166,17 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <header className="bg-white shadow-sm border-b border-gray-200">
+      <header className="bg-white shadow-sm border-b border-gray-200 animate-slide-in">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Left side - Logo and status */}
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-custom hover:scale-110 transition-transform duration-300">
                   <Share2 className="text-white w-5 h-5" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">ExpenseShare</h1>
+                  <h1 className="text-xl font-bold text-gray-900 tracking-tight animate-fade-in">ExpenseShare</h1>
                   <div className="flex items-center space-x-1">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-red-500'}`}></div>
                     <span className="text-xs text-gray-500 font-medium">
@@ -185,26 +188,28 @@ export default function Dashboard() {
             </div>
 
             {/* Center - Quick Action Buttons */}
-            <div className="hidden md:flex items-center space-x-3">
-              <div className="flex bg-gray-50 rounded-2xl p-1 shadow-inner">
-                <Button
+            <div className="hidden md:flex items-center space-x-3 animate-fade-in" style={{ animationDelay: '200ms' } as React.CSSProperties}>
+              <div className="flex bg-gray-50 rounded-2xl p-1 shadow-inner card-hover">
+                <AnimatedButton
                   onClick={() => setIsIncomeModalOpen(true)}
                   className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2"
                   size="sm"
+                  pulseOnHover={true}
                   data-testid="button-add-income"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Income
-                </Button>
-                <Button
+                </AnimatedButton>
+                <AnimatedButton
                   onClick={() => setIsExpenseModalOpen(true)}
                   className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2 ml-2"
                   size="sm"
+                  pulseOnHover={true}
                   data-testid="button-add-expense"
                 >
                   <Minus className="w-4 h-4 mr-2" />
                   Expense
-                </Button>
+                </AnimatedButton>
               </div>
             </div>
 
@@ -275,48 +280,52 @@ export default function Dashboard() {
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" style={{ animationDelay: '300ms' } as React.CSSProperties}>
         {/* Stats Cards */}
+        {statsLoading ? (
+          <StatsSkeleton />
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card>
+          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '400ms' } as React.CSSProperties}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <TrendingUp className="h-4 w-4 text-green-500 animate-pulse-custom" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600" data-testid="text-total-income">
-                {statsLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(monthlyStats?.totalIncome || 0)}
+              <div className="text-2xl font-bold text-green-600 transition-all duration-300 hover:scale-105" data-testid="text-total-income">
+                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.totalIncome || 0)}
               </div>
               <p className="text-xs text-muted-foreground">This month</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '500ms' } as React.CSSProperties}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <DollarSign className="h-4 w-4 text-red-500" />
+              <DollarSign className="h-4 w-4 text-red-500 animate-pulse-custom" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600" data-testid="text-total-expenses">
-                {statsLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(monthlyStats?.totalExpenses || 0)}
+              <div className="text-2xl font-bold text-red-600 transition-all duration-300 hover:scale-105" data-testid="text-total-expenses">
+                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.totalExpenses || 0)}
               </div>
               <p className="text-xs text-muted-foreground">This month</p>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '600ms' } as React.CSSProperties}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-              <Calendar className="h-4 w-4 text-blue-500" />
+              <Calendar className="h-4 w-4 text-blue-500 animate-pulse-custom" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${parseFloat(monthlyStats?.netBalance || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-net-balance">
-                {statsLoading ? <Skeleton className="h-8 w-24" /> : formatCurrency(monthlyStats?.netBalance || 0)}
+              <div className={`text-2xl font-bold transition-all duration-300 hover:scale-105 ${parseFloat(monthlyStats?.netBalance || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-net-balance">
+                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.netBalance || 0)}
               </div>
               <p className="text-xs text-muted-foreground">This month</p>
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Export Navigation - Eye-catching position */}
         <ExportButtons filters={filters} />
@@ -325,7 +334,7 @@ export default function Dashboard() {
         <RealTimeNotifications isConnected={isConnected} />
 
         {/* Advanced Filters & Financial Reports */}
-        <Card className="mb-6">
+        <Card className="mb-6 card-hover animate-slide-in" style={{ animationDelay: '800ms' } as React.CSSProperties}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -526,7 +535,7 @@ export default function Dashboard() {
             )}
 
         {/* Main Content */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 animate-slide-in" style={{ animationDelay: '700ms' } as React.CSSProperties}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal" data-testid="tab-personal">Personal Expenses</TabsTrigger>
             <TabsTrigger value="groups" data-testid="tab-groups">Shared Groups</TabsTrigger>
