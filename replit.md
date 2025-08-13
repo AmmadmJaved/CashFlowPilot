@@ -2,20 +2,20 @@
 
 ## Overview
 
-ExpenseShare is a full-stack web application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. The application allows users to track personal expenses, create expense groups for sharing costs with others, and export financial data. It features a modern UI built with shadcn/ui components and Tailwind CSS, with authentication handled through Replit's OpenID Connect system.
+ExpenseShare is a user-friendly full-stack web application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. The application allows anyone to immediately start tracking personal expenses, create expense groups for sharing costs with others, and export financial data without requiring signup or login. It features a modern UI built with shadcn/ui components and Tailwind CSS.
 
-**Status**: Fully functional with all core features implemented including offline sync capabilities, multi-user group management, advanced filtering, custom date ranges, and comprehensive data export in PDF/Excel formats.
+**Status**: Fully functional with simplified no-authentication architecture, multi-user group management, advanced filtering, custom date ranges, and comprehensive data export in text report and Excel formats. Ready for immediate use without user accounts.
 
-## Recent Changes (January 2025)
+## Recent Changes (August 2025)
 
-- ✅ Complete database schema implementation with all tables and relations
-- ✅ Full Replit authentication integration with secure session management
-- ✅ Responsive dashboard with personal and shared expense tracking
-- ✅ Advanced filtering system with date ranges, categories, and search
-- ✅ PDF and Excel export functionality with customizable filters
-- ✅ Real-time monthly statistics and group balance calculations
-- ✅ Modern UI components with proper TypeScript integration
-- ✅ Offline-ready architecture with sync capabilities
+- ✅ **Major Refactoring: Removed Authentication System** - Converted from authenticated to non-authenticated app for better user accessibility
+- ✅ **Simplified Database Schema** - Updated to use name-based identification instead of user accounts
+- ✅ **Updated Backend Routes** - Removed authentication middleware and simplified API endpoints
+- ✅ **Enhanced Forms** - Added "Paid By" and "Received By" fields for expense and income tracking
+- ✅ **Fixed Export Functionality** - Text-based reports (PDF) and Excel exports now working perfectly
+- ✅ **Responsive Dashboard** - Clean interface showing personal expenses, group sharing, and monthly statistics
+- ✅ **Advanced Filtering** - Date ranges, categories, and search functionality
+- ✅ **Real-time Statistics** - Monthly income, expenses, and net balance calculations
 
 ## User Preferences
 

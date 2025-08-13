@@ -39,7 +39,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       const a = document.createElement('a');
       a.style.display = 'none';
       a.href = url;
-      a.download = `expense-report.${format === 'pdf' ? 'pdf' : 'xlsx'}`;
+      a.download = `expense-report.${format === 'pdf' ? 'txt' : 'xlsx'}`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -47,7 +47,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
 
       toast({
         title: "Success",
-        description: `${format.toUpperCase()} exported successfully`,
+        description: `${format === 'pdf' ? 'Text Report' : 'Excel file'} exported successfully`,
       });
     } catch (error) {
       console.error('Export error:', error);
@@ -70,8 +70,8 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
         disabled={isExporting === 'pdf'}
         data-testid="button-export-pdf"
       >
-        <FileText className="mr-2 h-4 w-4 text-red-500" />
-        {isExporting === 'pdf' ? 'Exporting...' : 'Export PDF'}
+        <FileText className="mr-2 h-4 w-4 text-blue-500" />
+        {isExporting === 'pdf' ? 'Exporting...' : 'Export Report'}
       </Button>
       
       <Button

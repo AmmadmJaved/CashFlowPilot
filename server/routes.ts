@@ -144,30 +144,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { filters } = req.body;
       const transactions = await storage.getAllTransactions(filters);
       
-      const doc = new jsPDF();
-      doc.text('Expense Report', 20, 20);
+      // Create a simple text-based report since jsPDF has import issues
+      let report = 'EXPENSE REPORT\n';
+      report += '===============\n\n';
+      report += `Generated on: ${new Date().toLocaleDateString()}\n\n`;
       
-      let yPosition = 40;
-      transactions.forEach((transaction, index) => {
-        if (yPosition > 250) {
-          doc.addPage();
-          yPosition = 20;
+      let totalIncome = 0;
+      let totalExpenses = 0;
+      
+      transactions.forEach((transaction) => {
+        const sign = transaction.type === 'income' ? '+' : '-';
+        const amount = parseFloat(transaction.amount);
+        
+        if (transaction.type === 'income') {
+          totalIncome += amount;
+        } else {
+          totalExpenses += amount;
         }
         
-        const sign = transaction.type === 'income' ? '+' : '-';
-        const text = `${transaction.description} - ${sign}$${transaction.amount} (${transaction.paidBy})`;
-        doc.text(text, 20, yPosition);
-        yPosition += 10;
+        report += `${new Date(transaction.date).toLocaleDateString()} | ${transaction.description}\n`;
+        report += `  Type: ${transaction.type} | Amount: ${sign}$${transaction.amount}\n`;
+        report += `  Category: ${transaction.category || 'N/A'} | Paid by: ${transaction.paidBy}\n\n`;
       });
-
-      const pdfBuffer = Buffer.from(doc.output('arraybuffer'));
       
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'attachment; filename=expense-report.pdf');
-      res.send(pdfBuffer);
+      report += '\n===============\n';
+      report += `Total Income: +$${totalIncome.toFixed(2)}\n`;
+      report += `Total Expenses: -$${totalExpenses.toFixed(2)}\n`;
+      report += `Net Balance: $${(totalIncome - totalExpenses).toFixed(2)}\n`;
+      
+      res.setHeader('Content-Type', 'text/plain');
+      res.setHeader('Content-Disposition', 'attachment; filename=expense-report.txt');
+      res.send(report);
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      res.status(500).json({ message: "Failed to generate PDF" });
+      console.error("Error generating report:", error);
+      res.status(500).json({ message: "Failed to generate report" });
     }
   });
 
