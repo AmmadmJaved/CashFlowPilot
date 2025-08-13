@@ -1,10 +1,28 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
+import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema } from "@shared/schema";
 import { z } from "zod";
 import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
+
+// Store connected WebSocket clients
+const connectedClients = new Set<WebSocket>();
+
+// Broadcast function to send updates to all connected clients
+function broadcastUpdate(event: string, data: any) {
+  const message = JSON.stringify({ event, data, timestamp: new Date().toISOString() });
+  
+  connectedClients.forEach(client => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    } else {
+      // Remove closed connections
+      connectedClients.delete(client);
+    }
+  });
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
@@ -36,6 +54,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const transaction = await storage.createTransaction(data);
+
+      // Broadcast the new transaction to all connected clients
+      broadcastUpdate('transaction_created', transaction);
 
       // If it's a shared expense, create splits
       if (data.isShared && data.groupId) {
@@ -102,6 +123,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const data = insertGroupSchema.parse(req.body);
       const group = await storage.createGroup(data);
+      
+      // Broadcast the new group to all connected clients
+      broadcastUpdate('group_created', group);
+      
       res.json(group);
     } catch (error) {
       console.error("Error creating group:", error);
@@ -118,6 +143,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       const member = await storage.addGroupMember(memberData);
+      
+      // Broadcast the new group member to all connected clients
+      broadcastUpdate('group_member_added', { groupId: id, member });
+      
       res.json(member);
     } catch (error) {
       console.error("Error adding group member:", error);
@@ -221,5 +250,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   const httpServer = createServer(app);
+  
+  // Setup WebSocket server
+  const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  wss.on('connection', (ws) => {
+    console.log('New WebSocket client connected');
+    connectedClients.add(ws);
+    
+    // Send welcome message
+    ws.send(JSON.stringify({ 
+      event: 'connected', 
+      data: { message: 'Connected to real-time updates' },
+      timestamp: new Date().toISOString()
+    }));
+    
+    ws.on('close', () => {
+      console.log('WebSocket client disconnected');
+      connectedClients.delete(ws);
+    });
+    
+    ws.on('error', (error) => {
+      console.error('WebSocket error:', error);
+      connectedClients.delete(ws);
+    });
+  });
+  
   return httpServer;
 }

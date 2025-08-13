@@ -4,7 +4,7 @@
 
 ExpenseShare is a user-friendly full-stack web application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. The application allows anyone to immediately start tracking personal expenses, create expense groups for sharing costs with others, and export financial data without requiring signup or login. It features a modern UI built with shadcn/ui components and Tailwind CSS.
 
-**Status**: Fully functional with simplified no-authentication architecture, multi-user group management, advanced filtering, custom date ranges, and comprehensive data export in text report and Excel formats. Ready for immediate use without user accounts.
+**Status**: Fully functional with simplified no-authentication architecture, multi-user group management, advanced filtering, custom date ranges, comprehensive data export, and real-time collaborative editing. Ready for immediate use without user accounts.
 
 ## Recent Changes (August 2025)
 
@@ -16,6 +16,7 @@ ExpenseShare is a user-friendly full-stack web application for expense tracking 
 - ✅ **Responsive Dashboard** - Clean interface showing personal expenses, group sharing, and monthly statistics
 - ✅ **Advanced Filtering** - Date ranges, categories, and search functionality
 - ✅ **Real-time Statistics** - Monthly income, expenses, and net balance calculations
+- ✅ **Real-time Collaborative Editing** - WebSocket-based live updates with notification system
 
 ## User Preferences
 
@@ -59,6 +60,13 @@ Preferred communication style: Simple, everyday language.
 - **PDF Generation**: jsPDF library for formatted expense reports
 - **Excel Export**: ExcelJS for spreadsheet generation with filtering support
 - **Export Filters**: Date ranges, categories, transaction types, and search terms
+
+### Real-time Collaborative Features
+- **WebSocket Integration**: Live updates using WebSocket Server (ws) with automatic reconnection
+- **Instant Notifications**: Toast notifications and activity feed for real-time events
+- **Multi-user Sync**: Automatic cache invalidation and data refresh across all connected clients
+- **Connection Status**: Visual indicators showing live/offline connection status
+- **Activity Tracking**: Comprehensive real-time activity log with timestamps and event types
 
 ## External Dependencies
 

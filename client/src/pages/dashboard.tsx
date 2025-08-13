@@ -14,10 +14,15 @@ import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
 import ExportButtons from "@/components/ExportButtons";
+import RealTimeNotifications from "@/components/RealTimeNotifications";
+import { useWebSocket } from "@/hooks/useWebSocket";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 
 export default function Dashboard() {
   const { toast } = useToast();
+  
+  // Initialize WebSocket connection for real-time updates
+  const { isConnected } = useWebSocket();
   
   const [activeTab, setActiveTab] = useState("personal");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -98,7 +103,15 @@ export default function Dashboard() {
               <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
                 <Share2 className="text-white text-lg" />
               </div>
-              <h1 className="text-xl font-semibold text-gray-900">ExpenseShare</h1>
+              <div className="flex items-center space-x-3">
+                <h1 className="text-xl font-semibold text-gray-900">ExpenseShare</h1>
+                <div className="flex items-center space-x-1">
+                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                  <span className="text-xs text-gray-500 font-medium">
+                    {isConnected ? 'Live' : 'Offline'}
+                  </span>
+                </div>
+              </div>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -165,6 +178,9 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Real-time Notifications */}
+        <RealTimeNotifications isConnected={isConnected} />
 
         {/* Filters */}
         <Card className="mb-6">
