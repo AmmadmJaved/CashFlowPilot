@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
+import AddGroupModal from "@/components/AddGroupModal";
 import ExportButtons from "@/components/ExportButtons";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 
@@ -21,6 +22,7 @@ export default function Dashboard() {
   const [activeTab, setActiveTab] = useState("personal");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     dateRange: "month",
@@ -31,7 +33,18 @@ export default function Dashboard() {
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery<TransactionWithSplits[]>({
-    queryKey: ["/api/transactions", filters],
+    queryKey: ["/api/transactions", filters.search, filters.dateRange, filters.category, filters.startDate, filters.endDate],
+    queryFn: async () => {
+      const params = new URLSearchParams();
+      if (filters.search) params.append('search', filters.search);
+      if (filters.category && filters.category !== 'all') params.append('category', filters.category);
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      
+      const response = await fetch(`/api/transactions?${params.toString()}`);
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
+    },
     retry: false,
   });
 
@@ -276,14 +289,14 @@ export default function Dashboard() {
                           </div>
                           <div>
                             <h3 className="font-medium">{transaction.description}</h3>
-                            <p className="text-sm text-gray-500">
-                              {new Date(transaction.date).toLocaleDateString()} • Paid by {transaction.paidBy}
+                            <div className="text-sm text-gray-500 flex items-center">
+                              <span>{new Date(transaction.date).toLocaleDateString()} • Paid by {transaction.paidBy}</span>
                               {transaction.category && (
                                 <Badge variant="secondary" className="ml-2">
                                   {transaction.category}
                                 </Badge>
                               )}
-                            </p>
+                            </div>
                           </div>
                         </div>
                         <div className={`text-lg font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
@@ -300,9 +313,20 @@ export default function Dashboard() {
           <TabsContent value="groups" className="space-y-4">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center">
-                  <Users className="w-5 h-5 mr-2" />
-                  Expense Groups
+                <CardTitle className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <Users className="w-5 h-5 mr-2" />
+                    Expense Groups
+                  </div>
+                  <Button
+                    onClick={() => setIsGroupModalOpen(true)}
+                    size="sm"
+                    className="bg-blue-500 hover:bg-blue-600"
+                    data-testid="button-create-group"
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create Group
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -353,6 +377,10 @@ export default function Dashboard() {
       <AddIncomeModal 
         isOpen={isIncomeModalOpen} 
         onClose={() => setIsIncomeModalOpen(false)} 
+      />
+      <AddGroupModal 
+        isOpen={isGroupModalOpen} 
+        onClose={() => setIsGroupModalOpen(false)} 
       />
     </div>
   );

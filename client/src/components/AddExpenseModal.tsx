@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -31,6 +32,7 @@ import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { GroupWithMembers } from "@shared/schema";
+import { Users } from "lucide-react";
 
 const expenseSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -56,6 +58,7 @@ interface AddExpenseModalProps {
 export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
@@ -234,30 +237,82 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
             />
 
             {form.watch("isShared") && (
-              <FormField
-                control={form.control}
-                name="groupId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Select Group</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
-                      <FormControl>
-                        <SelectTrigger data-testid="select-expense-group">
-                          <SelectValue placeholder="Choose a group" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {groups.map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            {group.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
+              <>
+                <FormField
+                  control={form.control}
+                  name="groupId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Select Group</FormLabel>
+                      <Select 
+                        onValueChange={(value) => {
+                          field.onChange(value);
+                          setSelectedMembers([]); // Reset selected members when group changes
+                        }} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger data-testid="select-expense-group">
+                            <SelectValue placeholder="Choose a group" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {groups.map((group) => (
+                            <SelectItem key={group.id} value={group.id}>
+                              {group.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch("groupId") && (
+                  <div className="space-y-3">
+                    <Label className="flex items-center">
+                      <Users className="w-4 h-4 mr-2" />
+                      Select Members to Split With
+                    </Label>
+                    <div className="border rounded-lg p-3 space-y-2 max-h-32 overflow-y-auto">
+                      {(() => {
+                        const selectedGroup = groups.find(g => g.id === form.watch("groupId"));
+                        return selectedGroup?.members?.map((member) => (
+                          <div key={member.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`member-${member.id}`}
+                              checked={selectedMembers.includes(member.name)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedMembers([...selectedMembers, member.name]);
+                                } else {
+                                  setSelectedMembers(selectedMembers.filter(m => m !== member.name));
+                                }
+                              }}
+                              data-testid={`checkbox-member-${member.id}`}
+                            />
+                            <Label 
+                              htmlFor={`member-${member.id}`} 
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {member.name}
+                              {member.email && (
+                                <span className="text-gray-500 ml-1">({member.email})</span>
+                              )}
+                            </Label>
+                          </div>
+                        )) || <p className="text-sm text-gray-500">No members in this group</p>;
+                      })()}
+                    </div>
+                    {selectedMembers.length > 0 && (
+                      <p className="text-sm text-blue-600">
+                        Splitting with {selectedMembers.length} member{selectedMembers.length !== 1 ? 's' : ''}: {selectedMembers.join(', ')}
+                      </p>
+                    )}
+                  </div>
                 )}
-              />
+              </>
             )}
             
             <div className="flex space-x-3 pt-4">
