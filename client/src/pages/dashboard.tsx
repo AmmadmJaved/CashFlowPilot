@@ -15,7 +15,7 @@ import { Share2, Bell, Plus, Minus, UserPlus, FileText, FileSpreadsheet, Users }
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import ExportButtons from "@/components/ExportButtons";
-import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
+import type { TransactionWithSplits, GroupWithMembers, User } from "@shared/schema";
 
 export default function Dashboard() {
   const { user, isLoading: authLoading } = useAuth();
@@ -49,21 +49,25 @@ export default function Dashboard() {
   }, [user, authLoading, toast]);
 
   // Fetch transactions
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery({
+  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<TransactionWithSplits[]>({
     queryKey: ["/api/transactions", filters],
     enabled: !!user,
     retry: false,
   });
 
   // Fetch groups
-  const { data: groups = [], isLoading: groupsLoading } = useQuery({
+  const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
     queryKey: ["/api/groups"],
     enabled: !!user,
     retry: false,
   });
 
   // Fetch monthly stats
-  const { data: monthlyStats, isLoading: statsLoading } = useQuery({
+  const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
+    totalIncome: string;
+    totalExpenses: string;
+    netBalance: string;
+  }>({
     queryKey: ["/api/stats/monthly"],
     enabled: !!user,
     retry: false,
