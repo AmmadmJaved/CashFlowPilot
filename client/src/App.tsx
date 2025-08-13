@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import InvitePage from "@/pages/invite";
+import RealTimeNotifications from "@/components/RealTimeNotifications";
+import { ProfileInitializer } from "@/components/ProfileInitializer";
 
 function Router() {
   return (
@@ -21,8 +23,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <ProfileInitializer>
+          <Toaster />
+          <Router />
+        </ProfileInitializer>
       </TooltipProvider>
     </QueryClientProvider>
   );

@@ -70,6 +70,23 @@ export const groupInvites = pgTable("group_invites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// User profiles and settings
+export const userProfiles = pgTable("user_profiles", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  publicName: varchar("public_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }),
+  currency: varchar("currency", { length: 10 }).default("PKR"),
+  language: varchar("language", { length: 10 }).default("en"),
+  timezone: varchar("timezone", { length: 50 }).default("Asia/Karachi"),
+  dateFormat: varchar("date_format", { length: 20 }).default("DD/MM/YYYY"),
+  numberFormat: varchar("number_format", { length: 20 }).default("en-PK"),
+  theme: varchar("theme", { length: 20 }).default("light"),
+  notifications: boolean("notifications").default(true),
+  emailNotifications: boolean("email_notifications").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Relations
 export const groupsRelations = relations(groups, ({ many }) => ({
   members: many(groupMembers),
@@ -106,6 +123,10 @@ export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
   }),
 }));
 
+export const userProfilesRelations = relations(userProfiles, ({ many }) => ({
+  // Future: link to groups created or joined by this profile
+}));
+
 // Insert schemas
 export const insertGroupSchema = createInsertSchema(groups).omit({
   id: true,
@@ -134,6 +155,12 @@ export const insertGroupInviteSchema = createInsertSchema(groupInvites).omit({
   createdAt: true,
 });
 
+export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type Group = typeof groups.$inferSelect;
@@ -145,6 +172,8 @@ export type InsertTransactionSplit = z.infer<typeof insertTransactionSplitSchema
 export type TransactionSplit = typeof transactionSplits.$inferSelect;
 export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;
 export type GroupInvite = typeof groupInvites.$inferSelect;
+export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
+export type UserProfile = typeof userProfiles.$inferSelect;
 
 // Extended types for API responses
 export type TransactionWithSplits = Transaction & {

@@ -9,11 +9,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download } from "lucide-react";
+import { useCurrencyFormatter } from "@/hooks/useProfile";
+import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
 import { InviteModal } from "@/components/InviteModal";
+import { SettingsModal } from "@/components/SettingsModal";
 import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
@@ -21,6 +23,7 @@ import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 
 export default function Dashboard() {
   const { toast } = useToast();
+  const { formatCurrency } = useCurrencyFormatter();
   
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
@@ -74,13 +77,7 @@ export default function Dashboard() {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-    }).format(num);
-  };
+  // Currency formatting is now handled by the useProfile hook
 
   const getTransactionIcon = (category: string, type: string) => {
     if (type === 'income') return '💰';
@@ -116,6 +113,12 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
+              <SettingsModal>
+                <Button variant="outline" size="sm" data-testid="button-settings">
+                  <Settings className="w-4 h-4 mr-2" />
+                  Settings
+                </Button>
+              </SettingsModal>
               <Button
                 onClick={() => setIsIncomeModalOpen(true)}
                 className="bg-green-500 hover:bg-green-600"

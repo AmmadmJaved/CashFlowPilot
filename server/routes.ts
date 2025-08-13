@@ -2,7 +2,9 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, type GroupInvite } from "@shared/schema";
+import { db } from "./db";
+import { userProfiles } from "@shared/schema";
+import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, insertUserProfileSchema, type GroupInvite, type UserProfile } from "@shared/schema";
 import { z } from "zod";
 import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
@@ -352,6 +354,86 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deactivating invite:", error);
       res.status(500).json({ message: "Failed to deactivate invite" });
+    }
+  });
+
+  // User profile routes
+  app.post('/api/profile', async (req, res) => {
+    try {
+      const profileData = insertUserProfileSchema.parse(req.body);
+      
+      // Check if public name already exists
+      const existingProfile = await storage.getUserProfileByName(profileData.publicName);
+      if (existingProfile) {
+        return res.status(400).json({ message: "Public name already taken" });
+      }
+      
+      const profile = await storage.createUserProfile(profileData);
+      
+      // Broadcast profile creation
+      broadcastUpdate('profile-created', { profile });
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error creating profile:", error);
+      res.status(500).json({ message: "Failed to create profile" });
+    }
+  });
+
+  app.get('/api/profile', async (req, res) => {
+    try {
+      // For now, return the first profile (since we're not using authentication)
+      // In a real app, this would use the authenticated user's ID
+      const profiles = await db.select().from(userProfiles).limit(1);
+      if (profiles.length > 0) {
+        res.json(profiles[0]);
+      } else {
+        res.status(404).json({ message: "No profile found" });
+      }
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.get('/api/profile/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const profile = await storage.getUserProfile(id);
+      
+      if (!profile) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+      
+      res.json(profile);
+    } catch (error) {
+      console.error("Error fetching profile:", error);
+      res.status(500).json({ message: "Failed to fetch profile" });
+    }
+  });
+
+  app.patch('/api/profile/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      // Check if updating public name and it's already taken by another profile
+      if (updates.publicName) {
+        const existingProfile = await storage.getUserProfileByName(updates.publicName);
+        if (existingProfile && existingProfile.id !== id) {
+          return res.status(400).json({ message: "Public name already taken" });
+        }
+      }
+      
+      const updatedProfile = await storage.updateUserProfile(id, updates);
+      
+      // Broadcast profile update
+      broadcastUpdate('profile-updated', { profile: updatedProfile });
+      
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
     }
   });
 

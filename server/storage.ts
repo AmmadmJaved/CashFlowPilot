@@ -4,6 +4,7 @@ import {
   transactions,
   transactionSplits,
   groupInvites,
+  userProfiles,
   type Group,
   type InsertGroup,
   type Transaction,
@@ -14,6 +15,8 @@ import {
   type InsertTransactionSplit,
   type GroupInvite,
   type InsertGroupInvite,
+  type UserProfile,
+  type InsertUserProfile,
   type TransactionWithSplits,
   type GroupWithMembers,
 } from "@shared/schema";
@@ -63,6 +66,13 @@ export interface IStorage {
   useGroupInvite(inviteCode: string, memberName: string, memberEmail?: string): Promise<{ group: GroupWithMembers; member: GroupMember } | null>;
   getGroupInvites(groupId: string): Promise<GroupInvite[]>;
   deactivateGroupInvite(inviteId: string): Promise<void>;
+
+  // User profile operations
+  createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
+  getUserProfile(id: string): Promise<UserProfile | undefined>;
+  getUserProfileByName(publicName: string): Promise<UserProfile | undefined>;
+  updateUserProfile(id: string, updates: Partial<InsertUserProfile>): Promise<UserProfile>;
+  deleteUserProfile(id: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -385,6 +395,44 @@ export class DatabaseStorage implements IStorage {
       .update(groupInvites)
       .set({ isActive: false })
       .where(eq(groupInvites.id, inviteId));
+  }
+
+  // User profile operations
+  async createUserProfile(profileData: InsertUserProfile): Promise<UserProfile> {
+    const [profile] = await db.insert(userProfiles).values(profileData).returning();
+    return profile;
+  }
+
+  async getUserProfile(id: string): Promise<UserProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.id, id));
+    return profile;
+  }
+
+  async getUserProfileByName(publicName: string): Promise<UserProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.publicName, publicName));
+    return profile;
+  }
+
+  async updateUserProfile(id: string, updates: Partial<InsertUserProfile>): Promise<UserProfile> {
+    const [updated] = await db
+      .update(userProfiles)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(userProfiles.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUserProfile(id: string): Promise<void> {
+    await db.delete(userProfiles).where(eq(userProfiles.id, id));
   }
 }
 
