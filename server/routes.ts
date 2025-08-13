@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
-import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema } from "@shared/schema";
+import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, type GroupInvite } from "@shared/schema";
 import { z } from "zod";
 import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
@@ -246,6 +246,112 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error generating Excel:", error);
       res.status(500).json({ message: "Failed to generate Excel file" });
+    }
+  });
+
+  // Group invite routes
+  app.post('/api/groups/:groupId/invites', async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const { invitedBy, expiresAt, maxUses } = req.body;
+      
+      // Generate unique invite code
+      const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const inviteData = {
+        groupId,
+        inviteCode,
+        invitedBy,
+        expiresAt: expiresAt ? new Date(expiresAt) : null,
+        maxUses: maxUses || null,
+      };
+      
+      const invite = await storage.createGroupInvite(inviteData);
+      
+      // Broadcast the invite creation
+      broadcastUpdate('invite-created', { invite });
+      
+      res.json(invite);
+    } catch (error) {
+      console.error("Error creating group invite:", error);
+      res.status(500).json({ message: "Failed to create group invite" });
+    }
+  });
+
+  app.get('/api/groups/:groupId/invites', async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const invites = await storage.getGroupInvites(groupId);
+      res.json(invites);
+    } catch (error) {
+      console.error("Error fetching group invites:", error);
+      res.status(500).json({ message: "Failed to fetch group invites" });
+    }
+  });
+
+  app.post('/api/invites/:inviteCode/join', async (req, res) => {
+    try {
+      const { inviteCode } = req.params;
+      const { memberName, memberEmail } = req.body;
+      
+      if (!memberName) {
+        return res.status(400).json({ message: "Member name is required" });
+      }
+      
+      const result = await storage.useGroupInvite(inviteCode, memberName, memberEmail);
+      
+      if (!result) {
+        return res.status(400).json({ message: "Invalid or expired invite" });
+      }
+      
+      // Broadcast the member join
+      broadcastUpdate('member-joined', { 
+        group: result.group, 
+        member: result.member,
+        joinedViaInvite: true
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error joining group via invite:", error);
+      res.status(500).json({ message: "Failed to join group" });
+    }
+  });
+
+  app.get('/api/invites/:inviteCode', async (req, res) => {
+    try {
+      const { inviteCode } = req.params;
+      const invite = await storage.getGroupInvite(inviteCode);
+      
+      if (!invite) {
+        return res.status(404).json({ message: "Invite not found" });
+      }
+      
+      // Get group info for the invite
+      const group = await storage.getGroupById(invite.groupId);
+      
+      res.json({
+        invite,
+        group: group ? { id: group.id, name: group.name, description: group.description } : null,
+      });
+    } catch (error) {
+      console.error("Error fetching invite info:", error);
+      res.status(500).json({ message: "Failed to fetch invite info" });
+    }
+  });
+
+  app.patch('/api/invites/:inviteId/deactivate', async (req, res) => {
+    try {
+      const { inviteId } = req.params;
+      await storage.deactivateGroupInvite(inviteId);
+      
+      // Broadcast the invite deactivation
+      broadcastUpdate('invite-deactivated', { inviteId });
+      
+      res.json({ message: "Invite deactivated successfully" });
+    } catch (error) {
+      console.error("Error deactivating invite:", error);
+      res.status(500).json({ message: "Failed to deactivate invite" });
     }
   });
 

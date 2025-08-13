@@ -3,6 +3,7 @@ import {
   groupMembers,
   transactions,
   transactionSplits,
+  groupInvites,
   type Group,
   type InsertGroup,
   type Transaction,
@@ -11,6 +12,8 @@ import {
   type InsertGroupMember,
   type TransactionSplit,
   type InsertTransactionSplit,
+  type GroupInvite,
+  type InsertGroupInvite,
   type TransactionWithSplits,
   type GroupWithMembers,
 } from "@shared/schema";
@@ -53,6 +56,13 @@ export interface IStorage {
     totalShared: string;
     balances: { [memberName: string]: string };
   }>;
+
+  // Group invite operations
+  createGroupInvite(invite: InsertGroupInvite): Promise<GroupInvite>;
+  getGroupInvite(inviteCode: string): Promise<GroupInvite | undefined>;
+  useGroupInvite(inviteCode: string, memberName: string, memberEmail?: string): Promise<{ group: GroupWithMembers; member: GroupMember } | null>;
+  getGroupInvites(groupId: string): Promise<GroupInvite[]>;
+  deactivateGroupInvite(inviteId: string): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -307,6 +317,74 @@ export class DatabaseStorage implements IStorage {
       totalShared,
       balances,
     };
+  }
+
+  // Group invite operations
+  async createGroupInvite(inviteData: InsertGroupInvite): Promise<GroupInvite> {
+    const [invite] = await db.insert(groupInvites).values(inviteData).returning();
+    return invite;
+  }
+
+  async getGroupInvite(inviteCode: string): Promise<GroupInvite | undefined> {
+    const [invite] = await db
+      .select()
+      .from(groupInvites)
+      .where(and(
+        eq(groupInvites.inviteCode, inviteCode),
+        eq(groupInvites.isActive, true)
+      ));
+    return invite;
+  }
+
+  async useGroupInvite(inviteCode: string, memberName: string, memberEmail?: string): Promise<{ group: GroupWithMembers; member: GroupMember } | null> {
+    const invite = await this.getGroupInvite(inviteCode);
+    
+    if (!invite) {
+      return null;
+    }
+
+    // Check if invite has expired
+    if (invite.expiresAt && new Date() > invite.expiresAt) {
+      return null;
+    }
+
+    // Check if invite has reached max uses
+    if (invite.maxUses && invite.currentUses >= invite.maxUses) {
+      return null;
+    }
+
+    // Add member to group
+    const member = await this.addGroupMember({
+      groupId: invite.groupId,
+      name: memberName,
+      email: memberEmail || null,
+    });
+
+    // Increment current uses
+    await db
+      .update(groupInvites)
+      .set({ currentUses: invite.currentUses + 1 })
+      .where(eq(groupInvites.id, invite.id));
+
+    // Get group with members
+    const group = await this.getGroupById(invite.groupId);
+    
+    return group ? { group, member } : null;
+  }
+
+  async getGroupInvites(groupId: string): Promise<GroupInvite[]> {
+    return await db
+      .select()
+      .from(groupInvites)
+      .where(eq(groupInvites.groupId, groupId))
+      .orderBy(desc(groupInvites.createdAt));
+  }
+
+  async deactivateGroupInvite(inviteId: string): Promise<void> {
+    await db
+      .update(groupInvites)
+      .set({ isActive: false })
+      .where(eq(groupInvites.id, inviteId));
   }
 }
 
