@@ -365,7 +365,7 @@ export class DatabaseStorage implements IStorage {
     }
 
     // Check if invite has reached max uses
-    if (invite.maxUses && invite.currentUses >= invite.maxUses) {
+    if (invite.maxUses && (invite.currentUses || 0) >= invite.maxUses) {
       return null;
     }
 
@@ -379,7 +379,7 @@ export class DatabaseStorage implements IStorage {
     // Increment current uses
     await db
       .update(groupInvites)
-      .set({ currentUses: invite.currentUses + 1 })
+      .set({ currentUses: (invite.currentUses || 0) + 1 })
       .where(eq(groupInvites.id, invite.id));
 
     // Get group with members

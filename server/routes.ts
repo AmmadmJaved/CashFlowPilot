@@ -111,6 +111,99 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Export routes
+  app.post('/api/export/excel', async (req, res) => {
+    try {
+      const { transactions, filters, summary } = req.body;
+      const ExcelJS = require('exceljs');
+      
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet('Financial Report');
+      
+      // Set up the header with styling
+      worksheet.mergeCells('A1:F1');
+      worksheet.getCell('A1').value = 'ExpenseShare - Financial Report';
+      worksheet.getCell('A1').font = { size: 16, bold: true, color: { argb: '3B82F6' } };
+      worksheet.getCell('A1').alignment = { horizontal: 'center' };
+      
+      // Add generation date
+      worksheet.getCell('A2').value = `Generated: ${new Date().toLocaleDateString()}`;
+      worksheet.getCell('A2').font = { italic: true };
+      
+      // Add summary information
+      worksheet.getCell('A4').value = 'Summary:';
+      worksheet.getCell('A4').font = { bold: true };
+      worksheet.getCell('A5').value = `Total Income: PKR ${summary.totalIncome.toLocaleString()}`;
+      worksheet.getCell('A6').value = `Total Expenses: PKR ${summary.totalExpenses.toLocaleString()}`;
+      worksheet.getCell('A7').value = `Net Balance: PKR ${(summary.totalIncome - summary.totalExpenses).toLocaleString()}`;
+      
+      // Add filter information
+      let filterRow = 9;
+      worksheet.getCell(`A${filterRow}`).value = 'Applied Filters:';
+      worksheet.getCell(`A${filterRow}`).font = { bold: true };
+      filterRow++;
+      
+      if (filters.type !== 'all') {
+        worksheet.getCell(`A${filterRow}`).value = `Type: ${filters.type}`;
+        filterRow++;
+      }
+      if (filters.category !== 'all') {
+        worksheet.getCell(`A${filterRow}`).value = `Category: ${filters.category}`;
+        filterRow++;
+      }
+      if (filters.paidBy !== 'all') {
+        worksheet.getCell(`A${filterRow}`).value = `Person: ${filters.paidBy}`;
+        filterRow++;
+      }
+      
+      filterRow += 2;
+      
+      // Add table headers
+      const headers = ['Date', 'Type', 'Description', 'Category', 'Paid By', 'Amount'];
+      headers.forEach((header: string, index: number) => {
+        const cell = worksheet.getCell(filterRow, index + 1);
+        cell.value = header;
+        cell.font = { bold: true };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '3B82F6' } };
+        cell.font = { bold: true, color: { argb: 'FFFFFF' } };
+      });
+      
+      // Add transaction data
+      transactions.forEach((transaction: any, index: number) => {
+        const rowIndex = filterRow + index + 1;
+        worksheet.getCell(rowIndex, 1).value = new Date(transaction.date).toLocaleDateString();
+        worksheet.getCell(rowIndex, 2).value = transaction.type;
+        worksheet.getCell(rowIndex, 3).value = transaction.description;
+        worksheet.getCell(rowIndex, 4).value = transaction.category;
+        worksheet.getCell(rowIndex, 5).value = transaction.paidBy;
+        worksheet.getCell(rowIndex, 6).value = parseFloat(transaction.amount);
+        
+        // Color coding for amounts
+        const amountCell = worksheet.getCell(rowIndex, 6);
+        amountCell.font = { 
+          color: { argb: transaction.type === 'income' ? '22C55E' : 'EF4444' }
+        };
+      });
+      
+      // Auto-fit columns
+      worksheet.columns.forEach((column: any) => {
+        column.width = 15;
+      });
+      
+      // Set response headers for Excel download
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename=expense-report-${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      // Write to response
+      await workbook.xlsx.write(res);
+      res.end();
+      
+    } catch (error) {
+      console.error("Error exporting to Excel:", error);
+      res.status(500).json({ message: "Failed to export to Excel" });
+    }
+  });
+
   // Group routes
   app.get('/api/groups', async (req, res) => {
     try {

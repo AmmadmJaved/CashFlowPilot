@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useProfile } from "@/hooks/useProfile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { DollarSign, Calendar, User, Tag } from "lucide-react";
 
 const incomeSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -74,7 +75,6 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
         category: data.category,
         isShared: false,
         groupId: null,
-        paidBy: data.paidBy,
       });
     },
     onSuccess: () => {
@@ -84,13 +84,20 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       });
       queryClient.invalidateQueries({ queryKey: ["/api/transactions"] });
       queryClient.invalidateQueries({ queryKey: ["/api/stats/monthly"] });
-      form.reset();
+      form.reset({
+        amount: "",
+        description: "",
+        date: new Date().toISOString().split('T')[0],
+        paidBy: profile?.publicName || "",
+        category: "",
+      });
       onClose();
     },
-    onError: (error: Error) => {
+    onError: (error) => {
+      console.error('Income creation error:', error);
       toast({
         title: "Error",
-        description: "Failed to add income. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to add income",
         variant: "destructive",
       });
     },
@@ -100,13 +107,30 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
     createIncomeMutation.mutate(data);
   };
 
+  const incomeCategories = [
+    { value: "salary", label: "💼 Salary/Wages", description: "Regular employment income" },
+    { value: "freelance", label: "💻 Freelance", description: "Project-based work" },
+    { value: "business", label: "🏢 Business", description: "Business revenue" },
+    { value: "investment", label: "📈 Investment", description: "Stocks, dividends, interest" },
+    { value: "rental", label: "🏠 Rental", description: "Property rental income" },
+    { value: "bonus", label: "🎁 Bonus", description: "Performance bonuses" },
+    { value: "gift", label: "🎉 Gift", description: "Money received as gift" },
+    { value: "refund", label: "🔄 Refund", description: "Money returned" },
+    { value: "other", label: "📋 Other", description: "Other income sources" },
+  ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md" data-testid="modal-add-income">
+      <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Add New Income</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <div className="p-2 bg-green-100 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-600" />
+            </div>
+            Add Income
+          </DialogTitle>
         </DialogHeader>
-        
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
@@ -114,50 +138,18 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
               name="amount"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Amount</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-green-600" />
+                    Amount (PKR)
+                  </FormLabel>
                   <FormControl>
                     <Input
+                      {...field}
                       type="number"
                       step="0.01"
-                      placeholder="0.00"
-                      {...field}
+                      placeholder="Enter amount..."
+                      className="text-lg font-semibold"
                       data-testid="input-income-amount"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Source</FormLabel>
-                  <FormControl>
-                    <Input
-                      placeholder="Where did this income come from?"
-                      {...field}
-                      data-testid="input-income-source"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="date"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Date</FormLabel>
-                  <FormControl>
-                    <Input
-                      type="date"
-                      {...field}
-                      data-testid="input-income-date"
                     />
                   </FormControl>
                   <FormMessage />
@@ -170,24 +162,66 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
               name="category"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Category</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormLabel className="flex items-center gap-2">
+                    <Tag className="h-4 w-4 text-blue-600" />
+                    Category
+                  </FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-income-category">
                         <SelectValue placeholder="Select income category" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="salary">Salary/Wages</SelectItem>
-                      <SelectItem value="freelance">Freelance</SelectItem>
-                      <SelectItem value="business">Business Revenue</SelectItem>
-                      <SelectItem value="investment">Investment Returns</SelectItem>
-                      <SelectItem value="rental">Rental Income</SelectItem>
-                      <SelectItem value="bonus">Bonus/Commission</SelectItem>
-                      <SelectItem value="gift">Gift/Prize</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      {incomeCategories.map((category) => (
+                        <SelectItem key={category.value} value={category.value}>
+                          <div>
+                            <div className="font-medium">{category.label}</div>
+                            <div className="text-sm text-gray-500">{category.description}</div>
+                          </div>
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="description"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description/Source</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="e.g., Monthly salary, freelance project..."
+                      data-testid="input-income-description"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-gray-600" />
+                    Date
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="date"
+                      data-testid="input-income-date"
+                    />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
@@ -198,11 +232,14 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
               name="paidBy"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Received By</FormLabel>
+                  <FormLabel className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-purple-600" />
+                    Received By
+                  </FormLabel>
                   <FormControl>
                     <Input
-                      placeholder="Who received this income?"
                       {...field}
+                      placeholder="Enter name..."
                       data-testid="input-income-received-by"
                     />
                   </FormControl>
@@ -210,22 +247,22 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                 </FormItem>
               )}
             />
-            
-            <div className="flex space-x-3 pt-4">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="flex-1" 
+
+            <div className="flex gap-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
                 onClick={onClose}
+                className="flex-1"
                 data-testid="button-cancel-income"
               >
                 Cancel
               </Button>
-              <Button 
-                type="submit" 
-                className="flex-1 bg-income hover:bg-green-600 text-white"
+              <Button
+                type="submit"
                 disabled={createIncomeMutation.isPending}
-                data-testid="button-submit-income"
+                className="flex-1 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
+                data-testid="button-add-income"
               >
                 {createIncomeMutation.isPending ? "Adding..." : "Add Income"}
               </Button>
