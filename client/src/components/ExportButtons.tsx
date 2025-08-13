@@ -14,6 +14,9 @@ interface ExportButtonsProps {
     paidBy: string;
     startDate: string;
     endDate: string;
+    selectedUsers: string[];
+    onlyUser: boolean;
+    onlyGroupMembers: boolean;
   };
 }
 
@@ -42,6 +45,9 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     if (filters.paidBy && filters.paidBy !== 'all') params.append('paidBy', filters.paidBy);
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
+    if (filters.selectedUsers.length > 0) params.append('selectedUsers', filters.selectedUsers.join(','));
+    if (filters.onlyUser) params.append('onlyUser', 'true');
+    if (filters.onlyGroupMembers) params.append('onlyGroupMembers', 'true');
     
     const response = await fetch(`/api/transactions?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch transactions');
@@ -224,7 +230,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       doc.text(`ExpenseShare Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`, 105, 285, { align: 'center' });
     }
     
-    return doc.output('bloburl');
+    return doc.output('bloburl') as string;
   };
 
   const generateExcel = async (transactions: Transaction[]) => {

@@ -8,9 +8,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown } from "lucide-react";
+import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
@@ -50,7 +51,12 @@ export default function Dashboard() {
     paidBy: "all", // filter by person name
     startDate: "",
     endDate: "",
+    selectedUsers: [] as string[], // array of selected user names
+    onlyUser: false, // checkbox for "Only User"
+    onlyGroupMembers: false, // checkbox for "Only Group Members"
   });
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [filteredTransactionCount, setFilteredTransactionCount] = useState(0);
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery<TransactionWithSplits[]>({
@@ -87,9 +93,69 @@ export default function Dashboard() {
     retry: false,
   });
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: string, value: string | boolean | string[]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
+
+  const handleUserSelection = (userName: string, checked: boolean) => {
+    setFilters(prev => ({
+      ...prev,
+      selectedUsers: checked
+        ? [...prev.selectedUsers, userName]
+        : prev.selectedUsers.filter(u => u !== userName)
+    }));
+  };
+
+  const clearAllFilters = () => {
+    setFilters({
+      search: "",
+      dateRange: "month", 
+      category: "all",
+      type: "all",
+      paidBy: "all",
+      startDate: "",
+      endDate: "",
+      selectedUsers: [],
+      onlyUser: false,
+      onlyGroupMembers: false,
+    });
+  };
+
+  // Get all unique users from transactions and group members
+  const allUsers = Array.from(new Set([
+    ...(transactions || []).map(t => t.paidBy),
+    ...(groups || []).flatMap(g => g.members?.map(m => m.name) || [])
+  ])).filter(Boolean);
+
+  const groupMembers = Array.from(new Set(
+    (groups || []).flatMap(g => g.members?.map(m => m.name) || [])
+  )).filter(Boolean);
+
+  // Count filtered transactions for reporting
+  const filteredTransactions = (transactions || []).filter(transaction => {
+    if (filters.search && !transaction.description.toLowerCase().includes(filters.search.toLowerCase())) {
+      return false;
+    }
+    if (filters.type !== 'all' && transaction.type !== filters.type) {
+      return false;
+    }
+    if (filters.category !== 'all' && transaction.category !== filters.category) {
+      return false;
+    }
+    if (filters.paidBy !== 'all' && transaction.paidBy !== filters.paidBy) {
+      return false;
+    }
+    if (filters.onlyUser && transaction.paidBy !== profile?.publicName) {
+      return false;
+    }
+    if (filters.onlyGroupMembers && !groupMembers.includes(transaction.paidBy)) {
+      return false;
+    }
+    if (filters.selectedUsers.length > 0 && !filters.selectedUsers.includes(transaction.paidBy)) {
+      return false;
+    }
+    return true;
+  });
 
   // Currency formatting is now handled by the useProfile hook
 
@@ -269,13 +335,48 @@ export default function Dashboard() {
         {/* Real-time Notifications */}
         <RealTimeNotifications isConnected={isConnected} />
 
-        {/* Filters */}
+        {/* Advanced Filters & Financial Reports */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Advanced Filters</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Filter className="w-5 h-5 text-blue-600" />
+                Advanced Filters & Financial Reports
+              </div>
+              <div className="flex items-center gap-2">
+                {filteredTransactions.length > 0 && (
+                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
+                    {filteredTransactions.length} transactions found
+                  </Badge>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="text-sm"
+                >
+                  {showAdvancedFilters ? "Hide" : "Show"} Filters
+                </Button>
+                {(filters.search || filters.type !== 'all' || filters.category !== 'all' || 
+                  filters.paidBy !== 'all' || filters.selectedUsers.length > 0 || 
+                  filters.onlyUser || filters.onlyGroupMembers) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearAllFilters}
+                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
+                  >
+                    <X className="w-4 h-4 mr-1" />
+                    Clear All
+                  </Button>
+                )}
+              </div>
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
+            {showAdvancedFilters && (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
               <div>
                 <Label htmlFor="search">Search</Label>
                 <Input
@@ -344,32 +445,104 @@ export default function Dashboard() {
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="paidBy">Paid/Received By</Label>
-                <Select value={filters.paidBy} onValueChange={(value) => handleFilterChange("paidBy", value)}>
-                  <SelectTrigger data-testid="select-paid-by">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All People</SelectItem>
-                    <SelectItem value={profile?.publicName || "me"}>
-                      👤 {profile?.publicName || "Me"} (Default)
-                    </SelectItem>
-                    {/* Dynamic list of unique payers from transactions */}
-                    {Array.from(new Set(transactions.map(t => t.paidBy).filter(p => p !== profile?.publicName))).map(person => (
-                      <SelectItem key={person} value={person}>
-                        👥 {person}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                </div>
+
+                {/* User Selection Section */}
+                <div className="border-t pt-4 mt-4">
+                  <Label className="text-base font-semibold mb-3 block">Filter by Users & Group Members</Label>
+                  
+                  {/* Quick Filter Checkboxes */}
+                  <div className="flex flex-wrap gap-4 mb-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="only-user"
+                        checked={filters.onlyUser}
+                        onCheckedChange={(checked) => handleFilterChange("onlyUser", checked)}
+                        data-testid="checkbox-only-user"
+                      />
+                      <Label htmlFor="only-user" className="text-sm font-medium">
+                        👤 Only My Transactions ({profile?.publicName || 'User'})
+                      </Label>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="only-group-members"
+                        checked={filters.onlyGroupMembers}
+                        onCheckedChange={(checked) => handleFilterChange("onlyGroupMembers", checked)}
+                        data-testid="checkbox-only-group-members"
+                      />
+                      <Label htmlFor="only-group-members" className="text-sm font-medium">
+                        👥 Only Group Members ({groupMembers.length} members)
+                      </Label>
+                    </div>
+                  </div>
+
+                  {/* Individual User Selection */}
+                  <div>
+                    <Label className="text-sm font-medium mb-2 block">Select Specific Users:</Label>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-32 overflow-y-auto border rounded-lg p-3 bg-gray-50">
+                      {allUsers.map(user => (
+                        <div key={user} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`user-${user}`}
+                            checked={filters.selectedUsers.includes(user)}
+                            onCheckedChange={(checked) => handleUserSelection(user, checked as boolean)}
+                            data-testid={`checkbox-user-${user}`}
+                          />
+                          <Label htmlFor={`user-${user}`} className="text-sm truncate">
+                            {user === profile?.publicName ? `👤 ${user} (You)` : 
+                             groupMembers.includes(user) ? `👥 ${user}` : `👤 ${user}`}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                    {filters.selectedUsers.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {filters.selectedUsers.map(user => (
+                          <Badge key={user} variant="secondary" className="text-xs">
+                            {user}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="ml-1 h-auto p-0 text-gray-500 hover:text-red-500"
+                              onClick={() => handleUserSelection(user, false)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Financial Report Summary */}
+            {filteredTransactions.length > 0 && (
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mt-4 border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="font-semibold text-blue-900 mb-1">Financial Report Ready</h4>
+                    <p className="text-sm text-blue-700">
+                      {filteredTransactions.length} transactions • 
+                      Income: {formatCurrency(filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0))} • 
+                      Expenses: {formatCurrency(filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0))}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-blue-600" />
+                    <span className="text-sm font-medium text-blue-800">Use export buttons above to generate reports</span>
+                  </div>
+                </div>
               </div>
+            )}
+          </CardContent>
+        </Card>
 
-
-            </div>
-
-            {filters.dateRange === "custom" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {showAdvancedFilters && filters.dateRange === "custom" && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t pt-4">
                 <div>
                   <Label htmlFor="startDate">Start Date</Label>
                   <Input
@@ -392,8 +565,6 @@ export default function Dashboard() {
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">

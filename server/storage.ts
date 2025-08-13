@@ -21,7 +21,7 @@ import {
   type GroupWithMembers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, like, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql } from "drizzle-orm";
 
 export interface IStorage {
   // Group operations
@@ -41,6 +41,9 @@ export interface IStorage {
     startDate?: Date;
     endDate?: Date;
     search?: string;
+    selectedUsers?: string[];
+    onlyUser?: boolean;
+    onlyGroupMembers?: boolean;
   }): Promise<TransactionWithSplits[]>;
   updateTransaction(id: string, updates: Partial<InsertTransaction>): Promise<Transaction>;
   deleteTransaction(id: string): Promise<void>;
@@ -154,6 +157,9 @@ export class DatabaseStorage implements IStorage {
       startDate?: Date;
       endDate?: Date;
       search?: string;
+      selectedUsers?: string[];
+      onlyUser?: boolean;
+      onlyGroupMembers?: boolean;
     } = {}
   ): Promise<TransactionWithSplits[]> {
     const conditions = [];
@@ -184,8 +190,16 @@ export class DatabaseStorage implements IStorage {
 
     if (filters.search) {
       conditions.push(
-        like(transactions.description, `%${filters.search}%`)
+        or(
+          ilike(transactions.description, `%${filters.search}%`),
+          ilike(transactions.paidBy, `%${filters.search}%`)
+        )!
       );
+    }
+
+    // New filtering logic for user selection
+    if (filters.selectedUsers && filters.selectedUsers.length > 0) {
+      conditions.push(inArray(transactions.paidBy, filters.selectedUsers));
     }
 
     const query = conditions.length > 0 

@@ -30,7 +30,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get('/api/transactions', async (req, res) => {
     try {
-      const { groupId, type, category, paidBy, startDate, endDate, search } = req.query;
+      const { groupId, type, category, paidBy, startDate, endDate, search, selectedUsers, onlyUser, onlyGroupMembers } = req.query;
       
       const filters: any = {};
       if (groupId) filters.groupId = groupId;
@@ -40,8 +40,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
       if (search) filters.search = search;
+      if (selectedUsers) filters.selectedUsers = (selectedUsers as string).split(',');
+      if (onlyUser === 'true') filters.onlyUser = true;
+      if (onlyGroupMembers === 'true') filters.onlyGroupMembers = true;
 
-      const transactions = await storage.getAllTransactions(filters);
+      let transactions = await storage.getAllTransactions(filters);
+      
+      // Apply client-side filtering for onlyUser and onlyGroupMembers
+      // since these require profile/group context not available in storage
+      if (filters.onlyUser || filters.onlyGroupMembers) {
+        const profile = await storage.getUserProfile('default-profile'); // Simplified - in real app would get from session
+        const allGroups = await storage.getAllGroups();
+        const groupMembers = new Set(allGroups.flatMap(g => g.members?.map(m => m.name) || []));
+        
+        transactions = transactions.filter(transaction => {
+          if (filters.onlyUser && transaction.paidBy !== profile?.publicName) {
+            return false;
+          }
+          if (filters.onlyGroupMembers && !groupMembers.has(transaction.paidBy)) {
+            return false;
+          }
+          return true;
+        });
+      }
+
       res.json(transactions);
     } catch (error) {
       console.error("Error fetching transactions:", error);
