@@ -29,7 +29,7 @@ const PAKISTAN_DEFAULTS = {
 };
 
 const CURRENCIES = [
-  { value: "PKR", label: "Pakistani Rupee (₨)", symbol: "₨" },
+  { value: "PKR", label: "₨ Pakistani Rupee", symbol: "₨" },
   { value: "USD", label: "US Dollar ($)", symbol: "$" },
   { value: "EUR", label: "Euro (€)", symbol: "€" },
   { value: "SAR", label: "Saudi Riyal (﷼)", symbol: "﷼" },

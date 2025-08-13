@@ -26,7 +26,7 @@ interface SettingsModalProps {
 
 // Pakistan-friendly currency options
 const CURRENCIES = [
-  { value: "PKR", label: "Pakistani Rupee (PKR)", symbol: "₨" },
+  { value: "PKR", label: "Pakistani Rupee (₨)", symbol: "₨" },
   { value: "USD", label: "US Dollar (USD)", symbol: "$" },
   { value: "EUR", label: "Euro (EUR)", symbol: "€" },
   { value: "GBP", label: "British Pound (GBP)", symbol: "£" },
@@ -92,8 +92,8 @@ export function SettingsModal({ children }: SettingsModalProps) {
   // Save profile mutation
   const saveProfileMutation = useMutation({
     mutationFn: async (data: Partial<InsertUserProfile>) => {
-      if (currentProfile?.id) {
-        return await apiRequest(`/api/profile/${currentProfile.id}`, 'PATCH', data);
+      if ((currentProfile as any)?.id) {
+        return await apiRequest(`/api/profile/${(currentProfile as any).id}`, 'PATCH', data);
       } else {
         return await apiRequest('/api/profile', 'POST', data);
       }

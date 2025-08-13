@@ -20,6 +20,7 @@ ExpenseShare is a user-friendly full-stack web application for expense tracking 
 - ✅ **Complete Invite System** - Full implementation with WhatsApp, email sharing, and real-time join notifications
 - ✅ **User Profile & Settings System** - Multi-currency support with Pakistan-friendly defaults (PKR, Urdu, Karachi timezone)
 - ✅ **Profile Initialization** - Automatic setup with localized defaults for Pakistani users
+- ✅ **PKR Default Currency** - Set Pakistani Rupee (₨) as default across all functions and features
 
 ## User Preferences
 

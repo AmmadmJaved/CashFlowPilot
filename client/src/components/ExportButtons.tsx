@@ -211,14 +211,14 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     
     doc.setFontSize(10);
     doc.setTextColor(5, 150, 105);
-    doc.text(`Total Income: PKR ${totalIncome.toLocaleString()}`, 25, yPos + 16);
+    doc.text(`Total Income: ₨ ${totalIncome.toLocaleString()}`, 25, yPos + 16);
     
     doc.setTextColor(220, 38, 38);
-    doc.text(`Total Expenses: PKR ${totalExpenses.toLocaleString()}`, 25, yPos + 21);
+    doc.text(`Total Expenses: ₨ ${totalExpenses.toLocaleString()}`, 25, yPos + 21);
     
     doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
     doc.setFontSize(12);
-    doc.text(`Net Balance: PKR ${finalBalance.toLocaleString()}`, 120, yPos + 18);
+    doc.text(`Net Balance: ₨ ${finalBalance.toLocaleString()}`, 120, yPos + 18);
     
     // Footer
     const pageCount = doc.getNumberOfPages();
@@ -230,7 +230,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     }
     
     const blobUrl = doc.output('bloburl');
-    return typeof blobUrl === 'string' ? blobUrl : URL.createObjectURL(blobUrl);
+    return typeof blobUrl === 'string' ? blobUrl : URL.createObjectURL(new Blob([doc.output('blob')], { type: 'application/pdf' }));
   };
 
   const generateExcel = async (transactions: Transaction[]) => {

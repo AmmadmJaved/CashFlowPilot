@@ -164,7 +164,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <CreditCard className="h-4 w-4 text-red-600" />
-                    Amount (PKR)
+                    Amount (₨)
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -339,7 +339,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
                 </p>
                 {form.getValues().amount && selectedGroup && (
                   <p className="text-sm font-medium text-blue-800 mt-1">
-                    Each member owes: PKR {(parseFloat(form.getValues().amount || "0") / (selectedGroup.memberCount || 1)).toFixed(2)}
+                    Each member owes: ₨ {(parseFloat(form.getValues().amount || "0") / (selectedGroup.memberCount || 1)).toFixed(2)}
                   </p>
                 )}
               </div>

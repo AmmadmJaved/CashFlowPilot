@@ -140,7 +140,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                 <FormItem>
                   <FormLabel className="flex items-center gap-2">
                     <DollarSign className="h-4 w-4 text-green-600" />
-                    Amount (PKR)
+                    Amount (₨)
                   </FormLabel>
                   <FormControl>
                     <Input
