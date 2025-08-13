@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet, Download, Eye } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Eye, TrendingUp } from "lucide-react";
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 
@@ -48,146 +48,180 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     return response.json();
   };
 
-  const generatePDF = async (transactions: Transaction[]): Promise<string> => {
+  const generateLedgerPDF = async (transactions: Transaction[]): Promise<string> => {
     const doc = new jsPDF();
     
-    // Add company header with creative styling
-    doc.setFillColor(59, 130, 246); // Blue header
-    doc.rect(0, 0, 210, 30, 'F');
+    // Sort transactions by date for ledger format
+    const sortedTransactions = transactions.sort((a, b) => 
+      new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
     
-    // Title
+    // Professional header with gradient effect
+    doc.setFillColor(37, 99, 235); // Blue gradient start
+    doc.rect(0, 0, 210, 35, 'F');
+    
+    // Title with white text
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
+    doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
-    doc.text('ExpenseShare - Financial Report', 105, 20, { align: 'center' });
+    doc.text('Financial Ledger Report', 105, 20, { align: 'center' });
     
-    // Report details
-    doc.setTextColor(0, 0, 0);
+    // Subtitle
     doc.setFontSize(12);
     doc.setFont('helvetica', 'normal');
+    doc.text('Income & Expense Tracking', 105, 28, { align: 'center' });
     
-    let yPos = 45;
-    doc.text(`Generated: ${format(new Date(), 'PPP')}`, 20, yPos);
-    yPos += 8;
-    doc.text(`Total Transactions: ${transactions.length}`, 20, yPos);
-    yPos += 8;
-    
-    // Filter summary
-    if (filters.type !== 'all') {
-      doc.text(`Filter - Type: ${filters.type.toUpperCase()}`, 20, yPos);
-      yPos += 6;
-    }
-    if (filters.category !== 'all') {
-      doc.text(`Filter - Category: ${filters.category.toUpperCase()}`, 20, yPos);
-      yPos += 6;
-    }
-    if (filters.paidBy !== 'all') {
-      doc.text(`Filter - Person: ${filters.paidBy}`, 20, yPos);
-      yPos += 6;
-    }
-    
-    yPos += 10;
-    
-    // Calculate totals
-    const totalIncome = transactions
-      .filter(t => t.type === 'income')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    const totalExpenses = transactions
-      .filter(t => t.type === 'expense')
-      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    const netBalance = totalIncome - totalExpenses;
-    
-    // Summary box
-    doc.setFillColor(248, 250, 252); // Light gray background
-    doc.rect(20, yPos, 170, 30, 'F');
-    doc.setDrawColor(200, 200, 200);
-    doc.rect(20, yPos, 170, 30, 'S');
-    
-    doc.setFont('helvetica', 'bold');
-    doc.text('Financial Summary', 25, yPos + 10);
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total Income: PKR ${totalIncome.toLocaleString()}`, 25, yPos + 18);
-    doc.text(`Total Expenses: PKR ${totalExpenses.toLocaleString()}`, 25, yPos + 24);
-    
-    doc.setFont('helvetica', 'bold');
-    if (netBalance >= 0) {
-      doc.setTextColor(34, 197, 94); // Green
-    } else {
-      doc.setTextColor(239, 68, 68); // Red
-    }
-    doc.text(`Net Balance: PKR ${netBalance.toLocaleString()}`, 105, yPos + 18);
-    
-    yPos += 45;
+    // Reset text color and add report details
     doc.setTextColor(0, 0, 0);
+    let yPos = 50;
     
-    // Transaction details header
-    doc.setFont('helvetica', 'bold');
-    doc.text('Transaction Details', 20, yPos);
-    yPos += 10;
+    doc.setFontSize(11);
+    doc.text(`Generated: ${format(new Date(), 'PPP')}`, 20, yPos);
+    yPos += 6;
     
-    // Table headers
-    doc.setFillColor(59, 130, 246);
-    doc.rect(20, yPos, 170, 8, 'F');
+    if (filters.startDate || filters.endDate) {
+      doc.text(`Period: ${filters.startDate || 'Beginning'} to ${filters.endDate || 'Current'}`, 20, yPos);
+      yPos += 6;
+    }
+    
+    doc.text(`Total Records: ${sortedTransactions.length}`, 20, yPos);
+    yPos += 15;
+    
+    // Ledger table headers
+    doc.setFillColor(30, 64, 175); // Dark blue header
+    doc.rect(20, yPos, 170, 12, 'F');
+    
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(10);
-    doc.text('Date', 22, yPos + 6);
-    doc.text('Type', 45, yPos + 6);
-    doc.text('Description', 65, yPos + 6);
-    doc.text('Category', 115, yPos + 6);
-    doc.text('Paid By', 145, yPos + 6);
-    doc.text('Amount', 170, yPos + 6);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Date', 25, yPos + 8);
+    doc.text('Description', 50, yPos + 8);
+    doc.text('Person', 100, yPos + 8);
+    doc.text('Income', 125, yPos + 8);
+    doc.text('Expense', 145, yPos + 8);
+    doc.text('Balance', 170, yPos + 8);
     
-    yPos += 12;
+    yPos += 15;
     doc.setTextColor(0, 0, 0);
     doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
     
-    // Transaction rows
-    transactions.slice(0, 25).forEach((transaction, index) => { // Limit to 25 transactions per page
+    // Calculate running balance and create ledger entries
+    let runningBalance = 0;
+    let rowCount = 0;
+    
+    sortedTransactions.forEach((transaction) => {
       if (yPos > 270) { // Add new page if needed
         doc.addPage();
         yPos = 20;
+        
+        // Repeat header on new page
+        doc.setFillColor(30, 64, 175);
+        doc.rect(20, yPos, 170, 12, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.text('Date', 25, yPos + 8);
+        doc.text('Description', 50, yPos + 8);
+        doc.text('Person', 100, yPos + 8);
+        doc.text('Income', 125, yPos + 8);
+        doc.text('Expense', 145, yPos + 8);
+        doc.text('Balance', 170, yPos + 8);
+        yPos += 15;
+        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(9);
       }
       
-      // Alternating row colors
-      if (index % 2 === 0) {
-        doc.setFillColor(249, 250, 251);
-        doc.rect(20, yPos - 2, 170, 8, 'F');
-      }
-      
-      const date = format(new Date(transaction.date), 'MMM dd');
       const amount = parseFloat(transaction.amount);
       
-      doc.text(date, 22, yPos + 4);
-      doc.text(transaction.type === 'income' ? '💰' : '💳', 45, yPos + 4);
-      doc.text(transaction.description.substring(0, 25), 65, yPos + 4);
-      doc.text(transaction.category, 115, yPos + 4);
-      doc.text(transaction.paidBy.substring(0, 12), 145, yPos + 4);
-      
-      // Amount with color coding
       if (transaction.type === 'income') {
-        doc.setTextColor(34, 197, 94); // Green
+        runningBalance += amount;
       } else {
-        doc.setTextColor(239, 68, 68); // Red
+        runningBalance -= amount;
       }
-      doc.text(`${transaction.type === 'income' ? '+' : '-'}${amount.toLocaleString()}`, 170, yPos + 4);
+      
+      // Alternating row background
+      if (rowCount % 2 === 0) {
+        doc.setFillColor(248, 250, 252);
+        doc.rect(20, yPos - 2, 170, 10, 'F');
+      }
+      
+      // Date
+      doc.text(format(new Date(transaction.date), 'MMM dd'), 25, yPos + 5);
+      
+      // Description (truncated)
+      doc.text(transaction.description.substring(0, 20), 50, yPos + 5);
+      
+      // Person (truncated)
+      doc.text(transaction.paidBy.substring(0, 10), 100, yPos + 5);
+      
+      // Income amount (green)
+      if (transaction.type === 'income') {
+        doc.setTextColor(5, 150, 105);
+        doc.text(amount.toLocaleString(), 125, yPos + 5);
+        doc.setTextColor(0, 0, 0);
+      }
+      
+      // Expense amount (red)
+      if (transaction.type === 'expense') {
+        doc.setTextColor(220, 38, 38);
+        doc.text(amount.toLocaleString(), 145, yPos + 5);
+        doc.setTextColor(0, 0, 0);
+      }
+      
+      // Running balance (green if positive, red if negative)
+      if (runningBalance >= 0) {
+        doc.setTextColor(5, 150, 105);
+      } else {
+        doc.setTextColor(220, 38, 38);
+      }
+      doc.setFont('helvetica', 'bold');
+      doc.text(runningBalance.toLocaleString(), 170, yPos + 5);
+      doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
       
       yPos += 10;
+      rowCount++;
     });
     
-    if (transactions.length > 25) {
-      yPos += 10;
-      doc.setFont('helvetica', 'italic');
-      doc.text(`... and ${transactions.length - 25} more transactions`, 20, yPos);
-    }
+    // Final totals section
+    yPos += 10;
+    doc.setFillColor(243, 244, 246);
+    doc.rect(20, yPos, 170, 25, 'F');
+    doc.setDrawColor(107, 114, 128);
+    doc.rect(20, yPos, 170, 25, 'S');
+    
+    const totalIncome = sortedTransactions
+      .filter(t => t.type === 'income')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const totalExpenses = sortedTransactions
+      .filter(t => t.type === 'expense')
+      .reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const finalBalance = totalIncome - totalExpenses;
+    
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(11);
+    doc.text('FINAL SUMMARY', 25, yPos + 8);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(5, 150, 105);
+    doc.text(`Total Income: PKR ${totalIncome.toLocaleString()}`, 25, yPos + 16);
+    
+    doc.setTextColor(220, 38, 38);
+    doc.text(`Total Expenses: PKR ${totalExpenses.toLocaleString()}`, 25, yPos + 21);
+    
+    doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
+    doc.setFontSize(12);
+    doc.text(`Net Balance: PKR ${finalBalance.toLocaleString()}`, 120, yPos + 18);
     
     // Footer
     const pageCount = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
       doc.setFontSize(8);
-      doc.setTextColor(128, 128, 128);
-      doc.text(`Generated by ExpenseShare | Page ${i} of ${pageCount}`, 105, 290, { align: 'center' });
+      doc.setTextColor(107, 114, 128);
+      doc.text(`ExpenseShare Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`, 105, 285, { align: 'center' });
     }
     
     return doc.output('bloburl');
@@ -218,7 +252,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     const a = document.createElement('a');
     a.style.display = 'none';
     a.href = url;
-    a.download = `expense-report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+    a.download = `ledger-report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
     document.body.appendChild(a);
     a.click();
     window.URL.revokeObjectURL(url);
@@ -241,19 +275,19 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       }
 
       if (format === 'pdf') {
-        const pdfUrl = await generatePDF(transactions);
+        const pdfUrl = await generateLedgerPDF(transactions);
         setPdfUrl(pdfUrl);
         
         toast({
-          title: "PDF Ready",
-          description: "Your financial report is ready to download or preview",
+          title: "Ledger PDF Ready",
+          description: "Your financial ledger is ready to download or preview",
         });
       } else {
         await generateExcel(transactions);
         
         toast({
           title: "Excel Downloaded",
-          description: "Your Excel report has been downloaded successfully",
+          description: "Your Excel ledger has been downloaded successfully",
         });
       }
     } catch (error) {
@@ -272,7 +306,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     if (pdfUrl) {
       const a = document.createElement('a');
       a.href = pdfUrl;
-      a.download = `expense-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+      a.download = `ledger-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
       a.click();
     }
   };
@@ -284,53 +318,71 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
   };
 
   return (
-    <div className="space-y-3">
-      <Button
-        variant="outline"
-        className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-blue-200 hover:border-blue-300 transition-all duration-200"
-        onClick={() => handleExport('pdf')}
-        disabled={isExporting === 'pdf'}
-        data-testid="button-export-pdf"
-      >
-        <FileText className="mr-2 h-4 w-4 text-blue-600" />
-        {isExporting === 'pdf' ? 'Generating PDF...' : 'Export PDF Report'}
-      </Button>
+    <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 rounded-2xl shadow-2xl mb-6">
+      <div className="flex flex-col lg:flex-row items-center justify-between">
+        {/* Left side - Title and description */}
+        <div className="text-white mb-4 lg:mb-0">
+          <div className="flex items-center gap-3 mb-2">
+            <div className="p-2 bg-white/20 rounded-full">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+            <h2 className="text-2xl font-bold">Financial Reports</h2>
+          </div>
+          <p className="text-indigo-100 text-sm">
+            Export your financial data in professional ledger format
+          </p>
+        </div>
 
-      {pdfUrl && (
-        <div className="flex space-x-2">
+        {/* Right side - Export buttons */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-green-50 hover:bg-green-100 border-green-200 hover:border-green-300"
-            onClick={downloadPDF}
-            data-testid="button-download-pdf"
+            variant="secondary"
+            className="bg-white/90 hover:bg-white text-indigo-700 font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            onClick={() => handleExport('pdf')}
+            disabled={isExporting === 'pdf'}
+            data-testid="button-export-pdf"
           >
-            <Download className="mr-2 h-4 w-4 text-green-600" />
-            Download
+            <FileText className="mr-2 h-5 w-5" />
+            {isExporting === 'pdf' ? 'Generating PDF...' : 'Ledger PDF'}
           </Button>
+
+          {pdfUrl && (
+            <div className="flex gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-emerald-500 hover:bg-emerald-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                onClick={downloadPDF}
+                data-testid="button-download-pdf"
+              >
+                <Download className="mr-1 h-4 w-4" />
+                Download
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="bg-amber-500 hover:bg-amber-600 text-white font-medium px-4 py-2 rounded-lg shadow-md hover:shadow-lg transition-all duration-200"
+                onClick={previewPDF}
+                data-testid="button-preview-pdf"
+              >
+                <Eye className="mr-1 h-4 w-4" />
+                Preview
+              </Button>
+            </div>
+          )}
+          
           <Button
-            variant="outline"
-            size="sm"
-            className="flex-1 bg-amber-50 hover:bg-amber-100 border-amber-200 hover:border-amber-300"
-            onClick={previewPDF}
-            data-testid="button-preview-pdf"
+            variant="secondary"
+            className="bg-white/90 hover:bg-white text-green-700 font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+            onClick={() => handleExport('excel')}
+            disabled={isExporting === 'excel'}
+            data-testid="button-export-excel"
           >
-            <Eye className="mr-2 h-4 w-4 text-amber-600" />
-            Preview
+            <FileSpreadsheet className="mr-2 h-5 w-5" />
+            {isExporting === 'excel' ? 'Generating Excel...' : 'Ledger Excel'}
           </Button>
         </div>
-      )}
-      
-      <Button
-        variant="outline"
-        className="w-full bg-gradient-to-r from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-green-200 hover:border-green-300 transition-all duration-200"
-        onClick={() => handleExport('excel')}
-        disabled={isExporting === 'excel'}
-        data-testid="button-export-excel"
-      >
-        <FileSpreadsheet className="mr-2 h-4 w-4 text-green-600" />
-        {isExporting === 'excel' ? 'Generating Excel...' : 'Export Excel'}
-      </Button>
+      </div>
     </div>
   );
 }

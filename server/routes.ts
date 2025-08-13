@@ -115,75 +115,146 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/export/excel', async (req, res) => {
     try {
       const { transactions, filters, summary } = req.body;
-      const ExcelJS = require('exceljs');
+      const ExcelJS = await import('exceljs');
       
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Financial Report');
+      const workbook = new ExcelJS.default.Workbook();
+      const worksheet = workbook.addWorksheet('Ledger Report');
+      
+      // Sort transactions by date for ledger format
+      const sortedTransactions = transactions.sort((a: any, b: any) => 
+        new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
       
       // Set up the header with styling
       worksheet.mergeCells('A1:F1');
-      worksheet.getCell('A1').value = 'ExpenseShare - Financial Report';
-      worksheet.getCell('A1').font = { size: 16, bold: true, color: { argb: '3B82F6' } };
+      worksheet.getCell('A1').value = 'ExpenseShare - Ledger Report';
+      worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: '2563EB' } };
       worksheet.getCell('A1').alignment = { horizontal: 'center' };
       
       // Add generation date
       worksheet.getCell('A2').value = `Generated: ${new Date().toLocaleDateString()}`;
       worksheet.getCell('A2').font = { italic: true };
+      worksheet.getCell('A2').alignment = { horizontal: 'center' };
       
-      // Add summary information
-      worksheet.getCell('A4').value = 'Summary:';
-      worksheet.getCell('A4').font = { bold: true };
-      worksheet.getCell('A5').value = `Total Income: PKR ${summary.totalIncome.toLocaleString()}`;
-      worksheet.getCell('A6').value = `Total Expenses: PKR ${summary.totalExpenses.toLocaleString()}`;
-      worksheet.getCell('A7').value = `Net Balance: PKR ${(summary.totalIncome - summary.totalExpenses).toLocaleString()}`;
-      
-      // Add filter information
-      let filterRow = 9;
-      worksheet.getCell(`A${filterRow}`).value = 'Applied Filters:';
-      worksheet.getCell(`A${filterRow}`).font = { bold: true };
-      filterRow++;
-      
-      if (filters.type !== 'all') {
-        worksheet.getCell(`A${filterRow}`).value = `Type: ${filters.type}`;
-        filterRow++;
-      }
-      if (filters.category !== 'all') {
-        worksheet.getCell(`A${filterRow}`).value = `Category: ${filters.category}`;
-        filterRow++;
-      }
-      if (filters.paidBy !== 'all') {
-        worksheet.getCell(`A${filterRow}`).value = `Person: ${filters.paidBy}`;
-        filterRow++;
+      // Add period information if date filters applied
+      let currentRow = 4;
+      if (filters.startDate || filters.endDate) {
+        worksheet.getCell(`A${currentRow}`).value = `Period: ${filters.startDate || 'Beginning'} to ${filters.endDate || 'Current'}`;
+        worksheet.getCell(`A${currentRow}`).font = { bold: true };
+        currentRow++;
       }
       
-      filterRow += 2;
+      currentRow += 2;
       
-      // Add table headers
-      const headers = ['Date', 'Type', 'Description', 'Category', 'Paid By', 'Amount'];
+      // Create ledger headers
+      const headers = ['Date', 'Description', 'Paid By', 'Income', 'Expense', 'Balance'];
       headers.forEach((header: string, index: number) => {
-        const cell = worksheet.getCell(filterRow, index + 1);
+        const cell = worksheet.getCell(currentRow, index + 1);
         cell.value = header;
-        cell.font = { bold: true };
-        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '3B82F6' } };
+        cell.font = { bold: true, size: 12 };
+        cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: '1E40AF' } };
         cell.font = { bold: true, color: { argb: 'FFFFFF' } };
-      });
-      
-      // Add transaction data
-      transactions.forEach((transaction: any, index: number) => {
-        const rowIndex = filterRow + index + 1;
-        worksheet.getCell(rowIndex, 1).value = new Date(transaction.date).toLocaleDateString();
-        worksheet.getCell(rowIndex, 2).value = transaction.type;
-        worksheet.getCell(rowIndex, 3).value = transaction.description;
-        worksheet.getCell(rowIndex, 4).value = transaction.category;
-        worksheet.getCell(rowIndex, 5).value = transaction.paidBy;
-        worksheet.getCell(rowIndex, 6).value = parseFloat(transaction.amount);
-        
-        // Color coding for amounts
-        const amountCell = worksheet.getCell(rowIndex, 6);
-        amountCell.font = { 
-          color: { argb: transaction.type === 'income' ? '22C55E' : 'EF4444' }
+        cell.border = {
+          top: {style: 'thin'},
+          left: {style: 'thin'},
+          bottom: {style: 'thin'},
+          right: {style: 'thin'}
         };
       });
+      
+      currentRow++;
+      
+      // Calculate running balance and add ledger entries
+      let runningBalance = 0;
+      
+      sortedTransactions.forEach((transaction: any) => {
+        const amount = parseFloat(transaction.amount);
+        
+        if (transaction.type === 'income') {
+          runningBalance += amount;
+        } else {
+          runningBalance -= amount;
+        }
+        
+        // Date
+        worksheet.getCell(currentRow, 1).value = new Date(transaction.date).toLocaleDateString();
+        
+        // Description
+        worksheet.getCell(currentRow, 2).value = transaction.description;
+        
+        // Paid By
+        worksheet.getCell(currentRow, 3).value = transaction.paidBy;
+        
+        // Income (only if income transaction)
+        if (transaction.type === 'income') {
+          const incomeCell = worksheet.getCell(currentRow, 4);
+          incomeCell.value = amount;
+          incomeCell.font = { color: { argb: '059669' }, bold: true }; // Green
+          incomeCell.numFmt = '#,##0.00';
+        }
+        
+        // Expense (only if expense transaction)
+        if (transaction.type === 'expense') {
+          const expenseCell = worksheet.getCell(currentRow, 5);
+          expenseCell.value = amount;
+          expenseCell.font = { color: { argb: 'DC2626' }, bold: true }; // Red
+          expenseCell.numFmt = '#,##0.00';
+        }
+        
+        // Running Balance
+        const balanceCell = worksheet.getCell(currentRow, 6);
+        balanceCell.value = runningBalance;
+        balanceCell.font = { 
+          color: { argb: runningBalance >= 0 ? '059669' : 'DC2626' },
+          bold: true
+        };
+        balanceCell.numFmt = '#,##0.00';
+        
+        // Add borders to all cells in this row
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(currentRow, col);
+          cell.border = {
+            top: {style: 'thin'},
+            left: {style: 'thin'},
+            bottom: {style: 'thin'},
+            right: {style: 'thin'}
+          };
+        }
+        
+        currentRow++;
+      });
+      
+      // Add totals row
+      currentRow += 1;
+      worksheet.getCell(currentRow, 2).value = 'TOTALS:';
+      worksheet.getCell(currentRow, 2).font = { bold: true, size: 12 };
+      
+      worksheet.getCell(currentRow, 4).value = summary.totalIncome;
+      worksheet.getCell(currentRow, 4).font = { color: { argb: '059669' }, bold: true };
+      worksheet.getCell(currentRow, 4).numFmt = '#,##0.00';
+      
+      worksheet.getCell(currentRow, 5).value = summary.totalExpenses;
+      worksheet.getCell(currentRow, 5).font = { color: { argb: 'DC2626' }, bold: true };
+      worksheet.getCell(currentRow, 5).numFmt = '#,##0.00';
+      
+      worksheet.getCell(currentRow, 6).value = summary.totalIncome - summary.totalExpenses;
+      worksheet.getCell(currentRow, 6).font = { 
+        color: { argb: (summary.totalIncome - summary.totalExpenses) >= 0 ? '059669' : 'DC2626' },
+        bold: true,
+        size: 12
+      };
+      worksheet.getCell(currentRow, 6).numFmt = '#,##0.00';
+      
+      // Add borders to totals row
+      for (let col = 2; col <= 6; col++) {
+        const cell = worksheet.getCell(currentRow, col);
+        cell.border = {
+          top: {style: 'double'},
+          left: {style: 'thin'},
+          bottom: {style: 'double'},
+          right: {style: 'thin'}
+        };
+      }
       
       // Auto-fit columns
       worksheet.columns.forEach((column: any) => {

@@ -263,16 +263,19 @@ export default function Dashboard() {
           </Card>
         </div>
 
+        {/* Export Navigation - Eye-catching position */}
+        <ExportButtons filters={filters} />
+
         {/* Real-time Notifications */}
         <RealTimeNotifications isConnected={isConnected} />
 
         {/* Filters */}
         <Card className="mb-6">
           <CardHeader>
-            <CardTitle>Filters & Export</CardTitle>
+            <CardTitle>Advanced Filters</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-4">
               <div>
                 <Label htmlFor="search">Search</Label>
                 <Input
@@ -362,9 +365,7 @@ export default function Dashboard() {
                 </Select>
               </div>
 
-              <div className="flex items-end">
-                <ExportButtons filters={filters} />
-              </div>
+
             </div>
 
             {filters.dateRange === "custom" && (
