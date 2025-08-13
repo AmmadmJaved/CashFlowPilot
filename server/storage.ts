@@ -1,11 +1,8 @@
 import {
-  users,
   groups,
   groupMembers,
   transactions,
   transactionSplits,
-  type User,
-  type UpsertUser,
   type Group,
   type InsertGroup,
   type Transaction,
@@ -21,20 +18,16 @@ import { db } from "./db";
 import { eq, and, desc, gte, lte, like, sql } from "drizzle-orm";
 
 export interface IStorage {
-  // User operations (required for Replit Auth)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
-  
   // Group operations
   createGroup(group: InsertGroup): Promise<Group>;
-  getGroupsByUserId(userId: string): Promise<GroupWithMembers[]>;
+  getAllGroups(): Promise<GroupWithMembers[]>;
   getGroupById(id: string): Promise<GroupWithMembers | undefined>;
   addGroupMember(member: InsertGroupMember): Promise<GroupMember>;
-  removeGroupMember(groupId: string, userId: string): Promise<void>;
+  removeGroupMember(groupId: string, memberName: string): Promise<void>;
   
   // Transaction operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
-  getTransactionsByUserId(userId: string, filters?: {
+  getAllTransactions(filters?: {
     groupId?: string;
     type?: 'expense' | 'income';
     category?: string;
@@ -50,78 +43,52 @@ export interface IStorage {
   updateTransactionSplit(id: string, updates: Partial<InsertTransactionSplit>): Promise<TransactionSplit>;
   
   // Statistics
-  getUserMonthlyStats(userId: string, year: number, month: number): Promise<{
+  getMonthlyStats(year: number, month: number): Promise<{
     totalIncome: string;
     totalExpenses: string;
     netBalance: string;
   }>;
   
-  getGroupBalances(groupId: string, userId: string): Promise<{
+  getGroupBalances(groupId: string): Promise<{
     totalShared: string;
-    youOwe: string;
-    othersOwe: string;
+    balances: { [memberName: string]: string };
   }>;
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations
-  async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user;
-  }
-
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
-  }
-
   // Group operations
   async createGroup(group: InsertGroup): Promise<Group> {
     const [newGroup] = await db.insert(groups).values(group).returning();
-    
-    // Add creator as member
-    await this.addGroupMember({
-      groupId: newGroup.id,
-      userId: group.createdBy,
-    });
-    
     return newGroup;
   }
 
-  async getGroupsByUserId(userId: string): Promise<GroupWithMembers[]> {
+  async getAllGroups(): Promise<GroupWithMembers[]> {
     const result = await db
       .select({
         group: groups,
-        memberCount: sql<number>`count(distinct ${groupMembers.userId})`,
+        memberCount: sql<number>`count(distinct ${groupMembers.id})`,
       })
       .from(groups)
-      .innerJoin(groupMembers, eq(groups.id, groupMembers.groupId))
-      .where(eq(groupMembers.userId, userId))
+      .leftJoin(groupMembers, eq(groups.id, groupMembers.groupId))
       .groupBy(groups.id)
       .orderBy(desc(groups.createdAt));
 
-    const groupsWithStats = await Promise.all(
+    const groupsWithMembers = await Promise.all(
       result.map(async ({ group, memberCount }) => {
-        const balances = await this.getGroupBalances(group.id, userId);
+        const members = await db
+          .select()
+          .from(groupMembers)
+          .where(eq(groupMembers.groupId, group.id));
+
         return {
           ...group,
-          memberCount,
-          ...balances,
+          members,
+          memberCount: Number(memberCount) || 0,
         };
       })
     );
 
-    return groupsWithStats;
+    return groupsWithMembers;
   }
 
   async getGroupById(id: string): Promise<GroupWithMembers | undefined> {
@@ -129,20 +96,13 @@ export class DatabaseStorage implements IStorage {
     if (!group) return undefined;
 
     const members = await db
-      .select({
-        groupMember: groupMembers,
-        user: users,
-      })
+      .select()
       .from(groupMembers)
-      .innerJoin(users, eq(groupMembers.userId, users.id))
       .where(eq(groupMembers.groupId, id));
 
     return {
       ...group,
-      members: members.map(({ groupMember, user }) => ({
-        ...groupMember,
-        user,
-      })),
+      members,
       memberCount: members.length,
     };
   }
@@ -152,10 +112,10 @@ export class DatabaseStorage implements IStorage {
     return newMember;
   }
 
-  async removeGroupMember(groupId: string, userId: string): Promise<void> {
+  async removeGroupMember(groupId: string, memberName: string): Promise<void> {
     await db
       .delete(groupMembers)
-      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, userId)));
+      .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.name, memberName)));
   }
 
   // Transaction operations
@@ -164,8 +124,7 @@ export class DatabaseStorage implements IStorage {
     return newTransaction;
   }
 
-  async getTransactionsByUserId(
-    userId: string,
+  async getAllTransactions(
     filters: {
       groupId?: string;
       type?: 'expense' | 'income';
@@ -175,12 +134,7 @@ export class DatabaseStorage implements IStorage {
       search?: string;
     } = {}
   ): Promise<TransactionWithSplits[]> {
-    let query = db
-      .select()
-      .from(transactions)
-      .where(eq(transactions.userId, userId));
-
-    const conditions = [eq(transactions.userId, userId)];
+    const conditions = [];
 
     if (filters.groupId) {
       conditions.push(eq(transactions.groupId, filters.groupId));
@@ -203,26 +157,29 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters.search) {
-      conditions.push(like(transactions.description, `%${filters.search}%`));
+      conditions.push(
+        like(transactions.description, `%${filters.search}%`)
+      );
     }
 
-    const result = await db
-      .select()
-      .from(transactions)
-      .where(and(...conditions))
-      .orderBy(desc(transactions.date));
+    const query = conditions.length > 0 
+      ? db.select().from(transactions).where(and(...conditions))
+      : db.select().from(transactions);
+
+    const result = await query.orderBy(desc(transactions.date));
 
     // Get splits for each transaction
     const transactionsWithSplits = await Promise.all(
       result.map(async (transaction) => {
-        if (transaction.isShared) {
-          const splits = await db
-            .select()
-            .from(transactionSplits)
-            .where(eq(transactionSplits.transactionId, transaction.id));
-          return { ...transaction, splits };
-        }
-        return { ...transaction, splits: [] };
+        const splits = await db
+          .select()
+          .from(transactionSplits)
+          .where(eq(transactionSplits.transactionId, transaction.id));
+
+        return {
+          ...transaction,
+          splits,
+        };
       })
     );
 
@@ -232,7 +189,10 @@ export class DatabaseStorage implements IStorage {
   async updateTransaction(id: string, updates: Partial<InsertTransaction>): Promise<Transaction> {
     const [updated] = await db
       .update(transactions)
-      .set({ ...updates, updatedAt: new Date() })
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
       .where(eq(transactions.id, id))
       .returning();
     return updated;
@@ -244,8 +204,8 @@ export class DatabaseStorage implements IStorage {
 
   // Transaction split operations
   async createTransactionSplits(splits: InsertTransactionSplit[]): Promise<TransactionSplit[]> {
-    const newSplits = await db.insert(transactionSplits).values(splits).returning();
-    return newSplits;
+    const result = await db.insert(transactionSplits).values(splits).returning();
+    return result;
   }
 
   async updateTransactionSplit(id: string, updates: Partial<InsertTransactionSplit>): Promise<TransactionSplit> {
@@ -258,7 +218,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Statistics
-  async getUserMonthlyStats(userId: string, year: number, month: number): Promise<{
+  async getMonthlyStats(year: number, month: number): Promise<{
     totalIncome: string;
     totalExpenses: string;
     netBalance: string;
@@ -273,7 +233,6 @@ export class DatabaseStorage implements IStorage {
       .from(transactions)
       .where(
         and(
-          eq(transactions.userId, userId),
           eq(transactions.type, 'income'),
           gte(transactions.date, startDate),
           lte(transactions.date, endDate)
@@ -287,16 +246,15 @@ export class DatabaseStorage implements IStorage {
       .from(transactions)
       .where(
         and(
-          eq(transactions.userId, userId),
           eq(transactions.type, 'expense'),
           gte(transactions.date, startDate),
           lte(transactions.date, endDate)
         )
       );
 
-    const totalIncome = incomeResult.total || '0';
-    const totalExpenses = expenseResult.total || '0';
-    const netBalance = (parseFloat(totalIncome) - parseFloat(totalExpenses)).toString();
+    const totalIncome = incomeResult?.total || '0';
+    const totalExpenses = expenseResult?.total || '0';
+    const netBalance = (parseFloat(totalIncome) - parseFloat(totalExpenses)).toFixed(2);
 
     return {
       totalIncome,
@@ -305,13 +263,11 @@ export class DatabaseStorage implements IStorage {
     };
   }
 
-  async getGroupBalances(groupId: string, userId: string): Promise<{
+  async getGroupBalances(groupId: string): Promise<{
     totalShared: string;
-    youOwe: string;
-    othersOwe: string;
+    balances: { [memberName: string]: string };
   }> {
-    // Get total shared expenses in group
-    const [totalSharedResult] = await db
+    const [sharedResult] = await db
       .select({
         total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
       })
@@ -319,45 +275,37 @@ export class DatabaseStorage implements IStorage {
       .where(
         and(
           eq(transactions.groupId, groupId),
-          eq(transactions.type, 'expense'),
-          eq(transactions.isShared, true)
+          eq(transactions.isShared, true),
+          eq(transactions.type, 'expense')
         )
       );
 
-    // Get amount user owes (splits where user is debtor but not paid)
-    const [youOweResult] = await db
+    const totalShared = sharedResult?.total || '0';
+
+    // Get member balances from splits
+    const splitResults = await db
       .select({
-        total: sql<string>`COALESCE(SUM(${transactionSplits.amount}), 0)`,
+        memberName: transactionSplits.memberName,
+        totalOwed: sql<string>`COALESCE(SUM(${transactionSplits.amount}), 0)`,
       })
       .from(transactionSplits)
       .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
       .where(
         and(
           eq(transactions.groupId, groupId),
-          eq(transactionSplits.userId, userId),
           eq(transactionSplits.isPaid, false)
         )
-      );
+      )
+      .groupBy(transactionSplits.memberName);
 
-    // Get amount others owe user (splits where user paid but others haven't)
-    const [othersOweResult] = await db
-      .select({
-        total: sql<string>`COALESCE(SUM(${transactionSplits.amount}), 0)`,
-      })
-      .from(transactionSplits)
-      .innerJoin(transactions, eq(transactionSplits.transactionId, transactions.id))
-      .where(
-        and(
-          eq(transactions.groupId, groupId),
-          eq(transactions.userId, userId),
-          eq(transactionSplits.isPaid, false)
-        )
-      );
+    const balances: { [memberName: string]: string } = {};
+    splitResults.forEach(({ memberName, totalOwed }) => {
+      balances[memberName] = totalOwed;
+    });
 
     return {
-      totalShared: totalSharedResult.total || '0',
-      youOwe: youOweResult.total || '0',
-      othersOwe: othersOweResult.total || '0',
+      totalShared,
+      balances,
     };
   }
 }

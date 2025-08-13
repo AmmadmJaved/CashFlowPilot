@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 
 const incomeSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -29,6 +28,7 @@ const incomeSchema = z.object({
   ),
   description: z.string().min(1, "Source is required"),
   date: z.string().min(1, "Date is required"),
+  paidBy: z.string().min(1, "Received by is required"),
 });
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
@@ -48,6 +48,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       amount: "",
       description: "",
       date: new Date().toISOString().split('T')[0],
+      paidBy: "",
     },
   });
 
@@ -60,6 +61,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
         category: "income",
         isShared: false,
         groupId: null,
+        paidBy: data.paidBy,
       });
     },
     onSuccess: () => {
@@ -73,17 +75,6 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       onClose();
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
       toast({
         title: "Error",
         description: "Failed to add income. Please try again.",
@@ -154,6 +145,24 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                       type="date"
                       {...field}
                       data-testid="input-income-date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paidBy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Received By</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Who received this income?"
+                      {...field}
+                      data-testid="input-income-received-by"
                     />
                   </FormControl>
                   <FormMessage />

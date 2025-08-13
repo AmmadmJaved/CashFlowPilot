@@ -30,7 +30,6 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { isUnauthorizedError } from "@/lib/authUtils";
 import type { GroupWithMembers } from "@shared/schema";
 
 const expenseSchema = z.object({
@@ -41,6 +40,7 @@ const expenseSchema = z.object({
   description: z.string().min(1, "Description is required"),
   category: z.string().min(1, "Category is required"),
   date: z.string().min(1, "Date is required"),
+  paidBy: z.string().min(1, "Paid by is required"),
   groupId: z.string().optional(),
   isShared: z.boolean().default(false),
 });
@@ -64,6 +64,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
       description: "",
       category: "other",
       date: new Date().toISOString().split('T')[0],
+      paidBy: "",
       groupId: "",
       isShared: false,
     },
@@ -90,17 +91,6 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
       onClose();
     },
     onError: (error: Error) => {
-      if (isUnauthorizedError(error)) {
-        toast({
-          title: "Unauthorized",
-          description: "You are logged out. Logging in again...",
-          variant: "destructive",
-        });
-        setTimeout(() => {
-          window.location.href = "/api/login";
-        }, 500);
-        return;
-      }
       toast({
         title: "Error",
         description: "Failed to add expense. Please try again.",
@@ -196,6 +186,24 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
                       type="date"
                       {...field}
                       data-testid="input-expense-date"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="paidBy"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Paid By</FormLabel>
+                  <FormControl>
+                    <Input
+                      placeholder="Who paid for this expense?"
+                      {...field}
+                      data-testid="input-expense-paid-by"
                     />
                   </FormControl>
                   <FormMessage />
