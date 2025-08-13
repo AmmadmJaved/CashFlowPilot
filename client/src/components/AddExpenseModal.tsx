@@ -41,7 +41,7 @@ const expenseSchema = z.object({
     "Amount must be a positive number"
   ),
   description: z.string().min(1, "Description is required"),
-  category: z.string().min(1, "Category is required"),
+  category: z.string().default("other"),
   date: z.string().min(1, "Date is required"),
   paidBy: z.string().min(1, "Paid by is required"),
   groupId: z.string().optional(),
@@ -67,7 +67,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
     defaultValues: {
       amount: "",
       description: "",
-      category: "",
+      category: "other",
       date: new Date().toISOString().split('T')[0],
       paidBy: profile?.publicName || "",
       groupId: "",
@@ -102,7 +102,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
       form.reset({
         amount: "",
         description: "",
-        category: "",
+        category: "other",
         date: new Date().toISOString().split('T')[0],
         paidBy: profile?.publicName || "",
         groupId: "",
@@ -126,6 +126,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
   };
 
   const expenseCategories = [
+    { value: "other", label: "📋 Other", description: "Miscellaneous expenses (default)" },
     { value: "food", label: "🍽️ Food & Dining", description: "Restaurants, groceries, takeout" },
     { value: "utilities", label: "⚡ Utilities", description: "Electricity, gas, water, internet" },
     { value: "entertainment", label: "🎬 Entertainment", description: "Movies, games, events" },
@@ -136,7 +137,6 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
     { value: "rent", label: "🏠 Rent/Housing", description: "Monthly rent, maintenance" },
     { value: "travel", label: "✈️ Travel", description: "Vacation, business trips" },
     { value: "subscription", label: "📱 Subscriptions", description: "Netflix, Spotify, software" },
-    { value: "other", label: "📋 Other", description: "Miscellaneous expenses" },
   ];
 
   const isShared = form.watch("isShared");
@@ -193,7 +193,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-expense-category">
-                        <SelectValue placeholder="Select expense category" />
+                        <SelectValue placeholder="Other (default category)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>

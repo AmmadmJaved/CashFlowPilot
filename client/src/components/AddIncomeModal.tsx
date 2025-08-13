@@ -33,7 +33,7 @@ const incomeSchema = z.object({
   description: z.string().min(1, "Source is required"),
   date: z.string().min(1, "Date is required"),
   paidBy: z.string().min(1, "Received by is required"),
-  category: z.string().min(1, "Category is required"),
+  category: z.string().default("other"),
 });
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
@@ -55,7 +55,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       description: "",
       date: new Date().toISOString().split('T')[0],
       paidBy: profile?.publicName || "",
-      category: "",
+      category: "other",
     },
   });
 
@@ -89,7 +89,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
         description: "",
         date: new Date().toISOString().split('T')[0],
         paidBy: profile?.publicName || "",
-        category: "",
+        category: "other",
       });
       onClose();
     },
@@ -108,6 +108,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
   };
 
   const incomeCategories = [
+    { value: "other", label: "📋 Other", description: "Other income sources (default)" },
     { value: "salary", label: "💼 Salary/Wages", description: "Regular employment income" },
     { value: "freelance", label: "💻 Freelance", description: "Project-based work" },
     { value: "business", label: "🏢 Business", description: "Business revenue" },
@@ -116,7 +117,6 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
     { value: "bonus", label: "🎁 Bonus", description: "Performance bonuses" },
     { value: "gift", label: "🎉 Gift", description: "Money received as gift" },
     { value: "refund", label: "🔄 Refund", description: "Money returned" },
-    { value: "other", label: "📋 Other", description: "Other income sources" },
   ];
 
   return (
@@ -169,7 +169,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                   <Select onValueChange={field.onChange} value={field.value}>
                     <FormControl>
                       <SelectTrigger data-testid="select-income-category">
-                        <SelectValue placeholder="Select income category" />
+                        <SelectValue placeholder="Other (default category)" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
