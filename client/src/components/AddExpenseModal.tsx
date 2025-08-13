@@ -1,8 +1,9 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useProfile } from "@/hooks/useProfile";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +59,7 @@ interface AddExpenseModalProps {
 export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { profile } = useProfile();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
 
   const form = useForm<ExpenseFormData>({
@@ -67,11 +69,18 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
       description: "",
       category: "other",
       date: new Date().toISOString().split('T')[0],
-      paidBy: "",
+      paidBy: profile?.publicName || "",
       groupId: "",
       isShared: false,
     },
   });
+
+  // Update default values when profile loads
+  React.useEffect(() => {
+    if (profile?.publicName && !form.getValues().paidBy) {
+      form.setValue("paidBy", profile.publicName);
+    }
+  }, [profile, form]);
 
   const createExpenseMutation = useMutation({
     mutationFn: async (data: ExpenseFormData) => {

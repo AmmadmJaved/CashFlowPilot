@@ -1,3 +1,4 @@
+import React from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -20,6 +21,8 @@ import {
 } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
+import { useProfile } from "@/hooks/useProfile";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 const incomeSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -29,6 +32,7 @@ const incomeSchema = z.object({
   description: z.string().min(1, "Source is required"),
   date: z.string().min(1, "Date is required"),
   paidBy: z.string().min(1, "Received by is required"),
+  category: z.string().min(1, "Category is required"),
 });
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
@@ -41,6 +45,7 @@ interface AddIncomeModalProps {
 export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { profile } = useProfile();
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
@@ -48,9 +53,17 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       amount: "",
       description: "",
       date: new Date().toISOString().split('T')[0],
-      paidBy: "",
+      paidBy: profile?.publicName || "",
+      category: "",
     },
   });
+
+  // Update default values when profile loads
+  React.useEffect(() => {
+    if (profile?.publicName && !form.getValues().paidBy) {
+      form.setValue("paidBy", profile.publicName);
+    }
+  }, [profile, form]);
 
   const createIncomeMutation = useMutation({
     mutationFn: async (data: IncomeFormData) => {
@@ -58,7 +71,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
         ...data,
         type: "income",
         amount: data.amount,
-        category: "income",
+        category: data.category,
         isShared: false,
         groupId: null,
         paidBy: data.paidBy,
@@ -147,6 +160,34 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                       data-testid="input-income-date"
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Category</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger data-testid="select-income-category">
+                        <SelectValue placeholder="Select income category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="salary">Salary/Wages</SelectItem>
+                      <SelectItem value="freelance">Freelance</SelectItem>
+                      <SelectItem value="business">Business Revenue</SelectItem>
+                      <SelectItem value="investment">Investment Returns</SelectItem>
+                      <SelectItem value="rental">Rental Income</SelectItem>
+                      <SelectItem value="bonus">Bonus/Commission</SelectItem>
+                      <SelectItem value="gift">Gift/Prize</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}

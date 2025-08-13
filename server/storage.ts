@@ -37,6 +37,7 @@ export interface IStorage {
     groupId?: string;
     type?: 'expense' | 'income';
     category?: string;
+    paidBy?: string;
     startDate?: Date;
     endDate?: Date;
     search?: string;
@@ -149,6 +150,7 @@ export class DatabaseStorage implements IStorage {
       groupId?: string;
       type?: 'expense' | 'income';
       category?: string;
+      paidBy?: string;
       startDate?: Date;
       endDate?: Date;
       search?: string;
@@ -166,6 +168,10 @@ export class DatabaseStorage implements IStorage {
 
     if (filters.category) {
       conditions.push(eq(transactions.category, filters.category));
+    }
+
+    if (filters.paidBy) {
+      conditions.push(eq(transactions.paidBy, filters.paidBy));
     }
 
     if (filters.startDate) {

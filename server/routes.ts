@@ -30,12 +30,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Transaction routes
   app.get('/api/transactions', async (req, res) => {
     try {
-      const { groupId, type, category, startDate, endDate, search } = req.query;
+      const { groupId, type, category, paidBy, startDate, endDate, search } = req.query;
       
       const filters: any = {};
       if (groupId) filters.groupId = groupId;
       if (type) filters.type = type;
       if (category) filters.category = category;
+      if (paidBy) filters.paidBy = paidBy;
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
       if (search) filters.search = search;

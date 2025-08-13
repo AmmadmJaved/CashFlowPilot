@@ -46,17 +46,21 @@ export default function Dashboard() {
     search: "",
     dateRange: "month",
     category: "all",
+    type: "all", // all, income, expense
+    paidBy: "all", // filter by person name
     startDate: "",
     endDate: "",
   });
 
   // Fetch transactions
   const { data: transactions = [], isLoading: transactionsLoading } = useQuery<TransactionWithSplits[]>({
-    queryKey: ["/api/transactions", filters.search, filters.dateRange, filters.category, filters.startDate, filters.endDate],
+    queryKey: ["/api/transactions", filters.search, filters.dateRange, filters.category, filters.type, filters.paidBy, filters.startDate, filters.endDate],
     queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.search) params.append('search', filters.search);
       if (filters.category && filters.category !== 'all') params.append('category', filters.category);
+      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
+      if (filters.paidBy && filters.paidBy !== 'all') params.append('paidBy', filters.paidBy);
       if (filters.startDate) params.append('startDate', filters.startDate);
       if (filters.endDate) params.append('endDate', filters.endDate);
       
@@ -268,7 +272,7 @@ export default function Dashboard() {
             <CardTitle>Filters & Export</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-4">
               <div>
                 <Label htmlFor="search">Search</Label>
                 <Input
@@ -278,6 +282,47 @@ export default function Dashboard() {
                   onChange={(e) => handleFilterChange("search", e.target.value)}
                   data-testid="input-search"
                 />
+              </div>
+
+              <div>
+                <Label htmlFor="type">Type</Label>
+                <Select value={filters.type} onValueChange={(value) => handleFilterChange("type", value)}>
+                  <SelectTrigger data-testid="select-type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="income">💰 Income</SelectItem>
+                    <SelectItem value="expense">💳 Expense</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="category">Category</Label>
+                <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
+                  <SelectTrigger data-testid="select-category">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {/* Expense Categories */}
+                    <SelectItem value="food">🍽️ Food & Dining</SelectItem>
+                    <SelectItem value="utilities">⚡ Utilities</SelectItem>
+                    <SelectItem value="entertainment">🎬 Entertainment</SelectItem>
+                    <SelectItem value="transportation">🚗 Transportation</SelectItem>
+                    <SelectItem value="shopping">🛍️ Shopping</SelectItem>
+                    <SelectItem value="healthcare">🏥 Healthcare</SelectItem>
+                    <SelectItem value="education">📚 Education</SelectItem>
+                    {/* Income Categories */}
+                    <SelectItem value="salary">💼 Salary/Wages</SelectItem>
+                    <SelectItem value="freelance">💻 Freelance</SelectItem>
+                    <SelectItem value="business">🏢 Business</SelectItem>
+                    <SelectItem value="investment">📈 Investment</SelectItem>
+                    <SelectItem value="rental">🏠 Rental</SelectItem>
+                    <SelectItem value="other">📋 Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <div>
@@ -297,18 +342,22 @@ export default function Dashboard() {
               </div>
 
               <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
-                  <SelectTrigger data-testid="select-category">
+                <Label htmlFor="paidBy">Paid/Received By</Label>
+                <Select value={filters.paidBy} onValueChange={(value) => handleFilterChange("paidBy", value)}>
+                  <SelectTrigger data-testid="select-paid-by">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    <SelectItem value="food">Food</SelectItem>
-                    <SelectItem value="utilities">Utilities</SelectItem>
-                    <SelectItem value="entertainment">Entertainment</SelectItem>
-                    <SelectItem value="transportation">Transportation</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                    <SelectItem value="all">All People</SelectItem>
+                    <SelectItem value={profile?.publicName || "me"}>
+                      👤 {profile?.publicName || "Me"} (Default)
+                    </SelectItem>
+                    {/* Dynamic list of unique payers from transactions */}
+                    {Array.from(new Set(transactions.map(t => t.paidBy).filter(p => p !== profile?.publicName))).map(person => (
+                      <SelectItem key={person} value={person}>
+                        👥 {person}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
