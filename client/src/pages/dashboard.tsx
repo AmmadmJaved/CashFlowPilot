@@ -24,6 +24,7 @@ import { useProfile } from "@/hooks/useProfile";
 import AnimatedTransactionItem from "@/components/AnimatedTransactionItem";
 import { TransactionSkeleton, StatsSkeleton } from "@/components/AnimatedSkeleton";
 import AnimatedButton from "@/components/AnimatedButton";
+import PWAInstallBanner, { PWAInstallButton } from "@/components/PWAInstallBanner";
 import {
   DropdownMenu,
   DropdownMenuContent,
