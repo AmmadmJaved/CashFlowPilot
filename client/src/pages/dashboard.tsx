@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings } from "lucide-react";
+import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
@@ -19,11 +19,21 @@ import { SettingsModal } from "@/components/SettingsModal";
 import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
+import { useProfile } from "@/hooks/useProfile";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
+  const { profile } = useProfile();
   
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
@@ -97,44 +107,110 @@ export default function Dashboard() {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-green-500 rounded-lg flex items-center justify-center">
-                <Share2 className="text-white text-lg" />
-              </div>
+            {/* Left side - Logo and status */}
+            <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <h1 className="text-xl font-semibold text-gray-900">ExpenseShare</h1>
-                <div className="flex items-center space-x-1">
-                  <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`}></div>
-                  <span className="text-xs text-gray-500 font-medium">
-                    {isConnected ? 'Live' : 'Offline'}
-                  </span>
+                <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
+                  <Share2 className="text-white w-5 h-5" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900 tracking-tight">ExpenseShare</h1>
+                  <div className="flex items-center space-x-1">
+                    <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-red-500'}`}></div>
+                    <span className="text-xs text-gray-500 font-medium">
+                      {isConnected ? 'Live' : 'Offline'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              <SettingsModal>
-                <Button variant="outline" size="sm" data-testid="button-settings">
-                  <Settings className="w-4 h-4 mr-2" />
-                  Settings
+
+            {/* Center - Quick Action Buttons */}
+            <div className="hidden md:flex items-center space-x-3">
+              <div className="flex bg-gray-50 rounded-2xl p-1 shadow-inner">
+                <Button
+                  onClick={() => setIsIncomeModalOpen(true)}
+                  className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2"
+                  size="sm"
+                  data-testid="button-add-income"
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Income
                 </Button>
-              </SettingsModal>
-              <Button
-                onClick={() => setIsIncomeModalOpen(true)}
-                className="bg-green-500 hover:bg-green-600"
-                data-testid="button-add-income"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Income
-              </Button>
-              <Button
-                onClick={() => setIsExpenseModalOpen(true)}
-                className="bg-red-500 hover:bg-red-600"
-                data-testid="button-add-expense"
-              >
-                <Minus className="w-4 h-4 mr-2" />
-                Add Expense
-              </Button>
+                <Button
+                  onClick={() => setIsExpenseModalOpen(true)}
+                  className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2 ml-2"
+                  size="sm"
+                  data-testid="button-add-expense"
+                >
+                  <Minus className="w-4 h-4 mr-2" />
+                  Expense
+                </Button>
+              </div>
+            </div>
+
+            {/* Right side - Profile menu */}
+            <div className="flex items-center space-x-3">
+              {/* Mobile quick actions */}
+              <div className="flex md:hidden space-x-2">
+                <Button
+                  onClick={() => setIsIncomeModalOpen(true)}
+                  size="sm"
+                  className="bg-green-500 hover:bg-green-600 rounded-full w-10 h-10 p-0"
+                  data-testid="button-add-income-mobile"
+                >
+                  <Plus className="w-4 h-4" />
+                </Button>
+                <Button
+                  onClick={() => setIsExpenseModalOpen(true)}
+                  size="sm"
+                  className="bg-red-500 hover:bg-red-600 rounded-full w-10 h-10 p-0"
+                  data-testid="button-add-expense-mobile"
+                >
+                  <Minus className="w-4 h-4" />
+                </Button>
+              </div>
+
+              {/* Profile dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="relative flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors" data-testid="button-profile-menu">
+                    <Avatar className="w-8 h-8">
+                      <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold">
+                        {profile?.publicName?.charAt(0).toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="hidden sm:block text-left">
+                      <div className="text-sm font-medium text-gray-900">
+                        {profile?.publicName || 'User'}
+                      </div>
+                      <div className="text-xs text-gray-500">
+                        {profile?.currency || 'PKR'} • {profile?.language?.toUpperCase() || 'EN'}
+                      </div>
+                    </div>
+                    <ChevronDown className="w-4 h-4 text-gray-400" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2 border-b">
+                    <p className="text-sm font-medium">{profile?.publicName || 'User'}</p>
+                    <p className="text-xs text-gray-500">{profile?.email || 'No email set'}</p>
+                  </div>
+                  <DropdownMenuItem asChild>
+                    <SettingsModal>
+                      <div className="flex items-center w-full cursor-pointer" data-testid="menu-settings">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Settings & Preferences
+                      </div>
+                    </SettingsModal>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="text-gray-500" disabled>
+                    <User className="w-4 h-4 mr-2" />
+                    Profile ID: {profile?.id?.slice(0, 8) || 'Loading...'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </div>
