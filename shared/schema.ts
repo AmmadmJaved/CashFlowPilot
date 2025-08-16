@@ -122,8 +122,9 @@ export const groupInvites = pgTable("group_invites", {
 // User profiles and settings (linked to authenticated users)
 export const userProfiles = pgTable("user_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
   publicName: varchar("public_name", { length: 255 }).notNull(),
+  email: varchar("email", { length: 255 }), // Keep existing email column to prevent data loss
   currency: varchar("currency", { length: 10 }).default("PKR"),
   language: varchar("language", { length: 10 }).default("en"),
   timezone: varchar("timezone", { length: 50 }).default("Asia/Karachi"),

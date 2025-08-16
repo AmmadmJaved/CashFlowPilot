@@ -503,7 +503,9 @@ export class DatabaseStorage implements IStorage {
     console.log('Upserting user with data:', userData);
     
     // First try to find user by email if ID is not found
-    const existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+    const existingUser = userData.email 
+      ? await db.select().from(users).where(eq(users.email, userData.email)).limit(1)
+      : [];
     
     if (existingUser.length > 0) {
       // Update existing user
@@ -565,9 +567,9 @@ export class DatabaseStorage implements IStorage {
     }
     
     // Get total count
-    const countQuery = db.select({ count: sql<number>`count(*)` }).from(users);
+    let countQuery = db.select({ count: sql<number>`count(*)` }).from(users);
     if (conditions.length > 0) {
-      countQuery.where(and(...conditions));
+      countQuery = countQuery.where(and(...conditions));
     }
     const [{ count: total }] = await countQuery;
     
