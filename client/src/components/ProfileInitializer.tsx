@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -49,21 +49,26 @@ interface ProfileInitializerProps {
 }
 
 export function ProfileInitializer({ children }: ProfileInitializerProps) {
-  const { profile, isLoading, hasProfile, createProfile } = useProfile();
+  const { user, isLoading, isAuthenticated } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<InsertUserProfile>>({
     publicName: "",
-    email: "",
     ...PAKISTAN_DEFAULTS,
   });
   const { toast } = useToast();
 
-  // Show dialog if no profile exists
+  // Show dialog if authenticated but no profile exists
   useEffect(() => {
-    if (!isLoading && !hasProfile) {
+    if (!isLoading && isAuthenticated && user && !user.profile) {
       setIsOpen(true);
+      // Pre-fill with user data
+      const displayName = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email?.split('@')[0] || 'User';
+      setFormData(prev => ({
+        ...prev,
+        publicName: displayName,
+      }));
     }
-  }, [isLoading, hasProfile]);
+  }, [isLoading, isAuthenticated, user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,12 +83,22 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
     }
 
     try {
-      await createProfile.mutateAsync(formData as InsertUserProfile);
+      const response = await fetch('/api/profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+      });
+      
+      if (!response.ok) throw new Error('Failed to create profile');
+      
       setIsOpen(false);
       toast({
         title: "Welcome!",
         description: `Profile created successfully. Welcome to ExpenseShare, ${formData.publicName}!`,
       });
+      
+      // Refresh to get updated user data
+      window.location.reload();
     } catch (error) {
       toast({
         title: "Error",
@@ -97,7 +112,7 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  // Show children only when profile exists
+  // Show children only when authenticated and profile exists
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -109,7 +124,13 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
     );
   }
 
-  if (!hasProfile) {
+  // Don't render profile setup for non-authenticated users
+  if (!isAuthenticated) {
+    return <>{children}</>;
+  }
+
+  // Show profile setup if authenticated but no profile
+  if (isAuthenticated && user && !user.profile) {
     return (
       <Dialog open={isOpen} onOpenChange={() => {}}>
         <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()}>
@@ -144,13 +165,13 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email (Optional)</Label>
+                  <Label htmlFor="email">Email</Label>
                   <Input
                     id="email"
                     type="email"
-                    placeholder="your.email@example.com"
-                    value={formData.email || ""}
-                    onChange={(e) => updateFormData("email", e.target.value)}
+                    value={user?.email || ""}
+                    disabled
+                    className="bg-gray-100 dark:bg-gray-800"
                     data-testid="input-setup-email"
                   />
                 </div>
@@ -220,17 +241,11 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
             <div className="flex justify-end gap-3">
               <Button
                 type="submit"
-                disabled={createProfile.isPending || !formData.publicName?.trim()}
+                disabled={!formData.publicName?.trim()}
                 data-testid="button-create-profile"
               >
-                {createProfile.isPending ? (
-                  "Setting up..."
-                ) : (
-                  <>
-                    <Settings className="w-4 h-4 mr-2" />
-                    Create Profile
-                  </>
-                )}
+                <Settings className="w-4 h-4 mr-2" />
+                Create Profile
               </Button>
             </div>
           </form>

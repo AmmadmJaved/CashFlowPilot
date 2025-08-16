@@ -1,111 +1,130 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Share2, Users, TrendingUp, Download } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { DollarSign, Users, BarChart3, Smartphone } from "lucide-react";
 
 export default function Landing() {
+  const handleLogin = () => {
+    window.location.href = "/api/login";
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-income rounded-lg flex items-center justify-center">
-                <Share2 className="text-white text-lg" />
-              </div>
-              <h1 className="text-xl font-semibold text-gray-900">ExpenseShare</h1>
-            </div>
-            
-            <Button 
-              onClick={() => window.location.href = '/api/login'}
-              className="bg-primary hover:bg-blue-700"
-              data-testid="button-login"
-            >
-              Sign In
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      <div className="container mx-auto px-4 py-16">
+        {/* Header */}
         <div className="text-center mb-16">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">
-            Smart Expense Splitting Made Simple
+          <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            ExpenseShare
           </h1>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Track personal expenses, split costs with roommates, and manage your finances 
-            with powerful filtering and export capabilities.
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
+            Track your expenses, share costs with friends, and stay on top of your finances with our modern expense management platform.
           </p>
+          <Button 
+            onClick={handleLogin}
+            size="lg"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
+            data-testid="button-login"
+          >
+            Sign in with Email/Gmail
+          </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-16">
-          <Card className="text-center">
+        {/* Features Grid */}
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 mb-16">
+          <Card className="text-center hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-income rounded-lg flex items-center justify-center mx-auto mb-4">
-                <TrendingUp className="text-white" />
-              </div>
+              <DollarSign className="h-12 w-12 mx-auto text-blue-600 mb-4" />
               <CardTitle>Track Expenses</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Monitor your income and expenses with detailed categorization and date filtering.
-              </p>
+              <CardDescription>
+                Easily record and categorize your income and expenses with our intuitive interface.
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-primary rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Users className="text-white" />
-              </div>
+              <Users className="h-12 w-12 mx-auto text-green-600 mb-4" />
               <CardTitle>Share with Groups</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Create groups with roommates and friends to split expenses fairly and automatically.
-              </p>
+              <CardDescription>
+                Create groups and split expenses with friends, family, or roommates seamlessly.
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-warning rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Share2 className="text-white" />
-              </div>
-              <CardTitle>Real-time Sync</CardTitle>
+              <BarChart3 className="h-12 w-12 mx-auto text-purple-600 mb-4" />
+              <CardTitle>Smart Analytics</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Offline-first design with automatic syncing when you're back online.
-              </p>
+              <CardDescription>
+                Get insights into your spending patterns with detailed reports and statistics.
+              </CardDescription>
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center hover:shadow-lg transition-shadow">
             <CardHeader>
-              <div className="w-12 h-12 bg-expense rounded-lg flex items-center justify-center mx-auto mb-4">
-                <Download className="text-white" />
-              </div>
-              <CardTitle>Export Data</CardTitle>
+              <Smartphone className="h-12 w-12 mx-auto text-orange-600 mb-4" />
+              <CardTitle>Mobile Ready</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-gray-600">
-                Export your financial data in PDF or Excel format with custom date ranges.
-              </p>
+              <CardDescription>
+                Access your financial data anywhere with our responsive, mobile-friendly design.
+              </CardDescription>
             </CardContent>
           </Card>
         </div>
 
+        {/* Features Highlight */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-16">
+          <h2 className="text-3xl font-bold text-center mb-8">Why Choose ExpenseShare?</h2>
+          <div className="grid md:grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-blue-600">Real-time Collaboration</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                See updates instantly when group members add expenses or make payments. Stay synchronized with live notifications.
+              </p>
+              
+              <h3 className="text-xl font-semibold mb-4 text-green-600">Multi-currency Support</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Handle expenses in different currencies with automatic conversion and localized formatting.
+              </p>
+            </div>
+            
+            <div>
+              <h3 className="text-xl font-semibold mb-4 text-purple-600">Advanced Filtering</h3>
+              <p className="text-gray-600 dark:text-gray-300 mb-6">
+                Find exactly what you're looking for with powerful filtering by date, category, person, or amount.
+              </p>
+              
+              <h3 className="text-xl font-semibold mb-4 text-orange-600">Data Export</h3>
+              <p className="text-gray-600 dark:text-gray-300">
+                Export your financial data to Excel or PDF for tax purposes, budgeting, or record keeping.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* CTA Section */}
         <div className="text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Take Control of Your Finances?</h2>
+          <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
+            Join thousands of users who trust ExpenseShare to manage their money.
+          </p>
           <Button 
-            size="lg" 
-            onClick={() => window.location.href = '/api/login'}
-            className="bg-primary hover:bg-blue-700 text-lg px-8 py-3"
-            data-testid="button-get-started"
+            onClick={handleLogin}
+            size="lg"
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 text-lg"
+            data-testid="button-cta-login"
           >
-            Get Started for Free
+            Get Started Now
           </Button>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

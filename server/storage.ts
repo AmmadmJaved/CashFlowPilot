@@ -5,6 +5,7 @@ import {
   transactionSplits,
   groupInvites,
   userProfiles,
+  users,
   type Group,
   type InsertGroup,
   type Transaction,
@@ -17,6 +18,8 @@ import {
   type InsertGroupInvite,
   type UserProfile,
   type InsertUserProfile,
+  type User,
+  type UpsertUser,
   type TransactionWithSplits,
   type GroupWithMembers,
 } from "@shared/schema";
@@ -70,9 +73,14 @@ export interface IStorage {
   getGroupInvites(groupId: string): Promise<GroupInvite[]>;
   deactivateGroupInvite(inviteId: string): Promise<void>;
 
+  // User authentication operations
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+
   // User profile operations
   createUserProfile(profile: InsertUserProfile): Promise<UserProfile>;
   getUserProfile(id: string): Promise<UserProfile | undefined>;
+  getUserProfileByUserId(userId: string): Promise<UserProfile | undefined>;
   getUserProfileByName(publicName: string): Promise<UserProfile | undefined>;
   updateUserProfile(id: string, updates: Partial<InsertUserProfile>): Promise<UserProfile>;
   deleteUserProfile(id: string): Promise<void>;
@@ -448,6 +456,35 @@ export class DatabaseStorage implements IStorage {
 
   async deleteUserProfile(id: string): Promise<void> {
     await db.delete(userProfiles).where(eq(userProfiles.id, id));
+  }
+
+  // User authentication operations
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async getUserProfileByUserId(userId: string): Promise<UserProfile | undefined> {
+    const [profile] = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.userId, userId));
+    return profile;
   }
 }
 

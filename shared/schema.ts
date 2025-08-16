@@ -14,6 +14,28 @@ import {
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// Users table for authentication
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: varchar("email").unique().notNull(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Groups for expense sharing
 export const groups = pgTable("groups", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
@@ -70,11 +92,11 @@ export const groupInvites = pgTable("group_invites", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
-// User profiles and settings
+// User profiles and settings (linked to authenticated users)
 export const userProfiles = pgTable("user_profiles", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   publicName: varchar("public_name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
   currency: varchar("currency", { length: 10 }).default("PKR"),
   language: varchar("language", { length: 10 }).default("en"),
   timezone: varchar("timezone", { length: 50 }).default("Asia/Karachi"),
@@ -88,6 +110,17 @@ export const userProfiles = pgTable("user_profiles", {
 });
 
 // Relations
+export const usersRelations = relations(users, ({ one }) => ({
+  profile: one(userProfiles),
+}));
+
+export const userProfilesRelations = relations(userProfiles, ({ one }) => ({
+  user: one(users, {
+    fields: [userProfiles.userId],
+    references: [users.id],
+  }),
+}));
+
 export const groupsRelations = relations(groups, ({ many }) => ({
   members: many(groupMembers),
   transactions: many(transactions),
@@ -121,10 +154,6 @@ export const groupInvitesRelations = relations(groupInvites, ({ one }) => ({
     fields: [groupInvites.groupId],
     references: [groups.id],
   }),
-}));
-
-export const userProfilesRelations = relations(userProfiles, ({ many }) => ({
-  // Future: link to groups created or joined by this profile
 }));
 
 // Insert schemas
@@ -161,6 +190,12 @@ export const insertUserProfileSchema = createInsertSchema(userProfiles).omit({
   updatedAt: true,
 });
 
+export const insertUserSchema = createInsertSchema(users).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertGroup = z.infer<typeof insertGroupSchema>;
 export type Group = typeof groups.$inferSelect;
@@ -174,6 +209,9 @@ export type InsertGroupInvite = z.infer<typeof insertGroupInviteSchema>;
 export type GroupInvite = typeof groupInvites.$inferSelect;
 export type InsertUserProfile = z.infer<typeof insertUserProfileSchema>;
 export type UserProfile = typeof userProfiles.$inferSelect;
+export type InsertUser = z.infer<typeof insertUserSchema>;
+export type User = typeof users.$inferSelect;
+export type UpsertUser = typeof users.$inferInsert;
 
 // Extended types for API responses
 export type TransactionWithSplits = Transaction & {

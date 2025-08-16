@@ -7,14 +7,36 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import InvitePage from "@/pages/invite";
+import Landing from "@/pages/landing";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { ProfileInitializer } from "@/components/ProfileInitializer";
+import { useAuth } from "@/hooks/useAuth";
 
 function Router() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  // Show loading screen while checking authentication
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
-      <Route path="/invite/:inviteCode" component={InvitePage} />
+      {!isAuthenticated ? (
+        <Route path="/" component={Landing} />
+      ) : (
+        <>
+          <Route path="/" component={Dashboard} />
+          <Route path="/invite/:inviteCode" component={InvitePage} />
+        </>
+      )}
       <Route component={NotFound} />
     </Switch>
   );

@@ -20,7 +20,7 @@ import { SettingsModal } from "@/components/SettingsModal";
 import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useProfile } from "@/hooks/useProfile";
+import { useAuth } from "@/hooks/useAuth";
 import AnimatedTransactionItem from "@/components/AnimatedTransactionItem";
 import { TransactionSkeleton, StatsSkeleton } from "@/components/AnimatedSkeleton";
 import AnimatedButton from "@/components/AnimatedButton";
@@ -38,7 +38,7 @@ import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
-  const { profile } = useProfile();
+  const { user } = useAuth();
   
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
