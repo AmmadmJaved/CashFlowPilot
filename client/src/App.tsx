@@ -8,6 +8,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import InvitePage from "@/pages/invite";
 import Landing from "@/pages/landing";
+import AdminPanel from "@/pages/admin";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { ProfileInitializer } from "@/components/ProfileInitializer";
 import { useAuth } from "@/hooks/useAuth";
@@ -35,6 +36,7 @@ function Router() {
         <>
           <Route path="/" component={Dashboard} />
           <Route path="/invite/:inviteCode" component={InvitePage} />
+          <Route path="/admin" component={AdminPanel} />
         </>
       )}
       <Route component={NotFound} />

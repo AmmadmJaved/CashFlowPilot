@@ -269,7 +269,21 @@ export default function Dashboard() {
                       </div>
                     </SettingsModal>
                   </DropdownMenuItem>
+                  {((user as any)?.role === 'admin' || (user as any)?.role === 'super_admin') && (
+                    <DropdownMenuItem asChild>
+                      <a href="/admin" className="flex items-center w-full cursor-pointer" data-testid="menu-admin-panel">
+                        <Settings className="w-4 h-4 mr-2" />
+                        Admin Panel
+                      </a>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild>
+                    <a href="/api/logout" className="flex items-center w-full cursor-pointer" data-testid="menu-logout">
+                      <User className="w-4 h-4 mr-2" />
+                      Logout
+                    </a>
+                  </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-500" disabled>
                     <User className="w-4 h-4 mr-2" />
                     Profile ID: {profile?.id?.slice(0, 8) || 'Loading...'}

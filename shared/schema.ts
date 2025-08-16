@@ -25,15 +25,42 @@ export const sessions = pgTable(
   (table) => [index("IDX_session_expire").on(table.expire)],
 );
 
-// Users table for authentication
+// Users table for authentication with admin functionality
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
-  email: varchar("email").unique().notNull(),
+  id: varchar("id").primaryKey(),
+  email: varchar("email").unique(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  role: varchar("role").default("user"), // user, admin, super_admin
+  status: varchar("status").default("active"), // active, suspended, deleted
+  lastLoginAt: timestamp("last_login_at"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Admin activity logs
+export const adminLogs = pgTable("admin_logs", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  adminId: varchar("admin_id").notNull().references(() => users.id),
+  action: varchar("action").notNull(), // suspend_user, create_admin, delete_user, etc.
+  targetUserId: varchar("target_user_id").references(() => users.id),
+  details: text("details"),
+  ipAddress: varchar("ip_address"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// System analytics for admin dashboard
+export const siteAnalytics = pgTable("site_analytics", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  date: varchar("date").notNull(), // YYYY-MM-DD format
+  totalUsers: integer("total_users").default(0),
+  activeUsers: integer("active_users").default(0),
+  newUsers: integer("new_users").default(0),
+  totalTransactions: integer("total_transactions").default(0),
+  totalRevenue: decimal("total_revenue", { precision: 12, scale: 2 }).default("0"),
+  pageViews: integer("page_views").default(0),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 // Groups for expense sharing
@@ -212,6 +239,10 @@ export type UserProfile = typeof userProfiles.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type UpsertUser = typeof users.$inferInsert;
+export type AdminLog = typeof adminLogs.$inferSelect;
+export type InsertAdminLog = typeof adminLogs.$inferInsert;
+export type SiteAnalytics = typeof siteAnalytics.$inferSelect;
+export type InsertSiteAnalytics = typeof siteAnalytics.$inferInsert;
 
 // Extended types for API responses
 export type TransactionWithSplits = Transaction & {

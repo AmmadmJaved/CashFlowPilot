@@ -6,6 +6,8 @@ import {
   groupInvites,
   userProfiles,
   users,
+  adminLogs,
+  siteAnalytics,
   type Group,
   type InsertGroup,
   type Transaction,
@@ -20,6 +22,9 @@ import {
   type InsertUserProfile,
   type User,
   type UpsertUser,
+  type AdminLog,
+  type InsertAdminLog,
+  type SiteAnalytics,
   type TransactionWithSplits,
   type GroupWithMembers,
 } from "@shared/schema";
@@ -84,6 +89,14 @@ export interface IStorage {
   getUserProfileByName(publicName: string): Promise<UserProfile | undefined>;
   updateUserProfile(id: string, updates: Partial<InsertUserProfile>): Promise<UserProfile>;
   deleteUserProfile(id: string): Promise<void>;
+
+  // Admin operations
+  getUsers(options: { page: number; limit: number; search?: string; status?: string; role?: string }): Promise<{ users: User[]; total: number }>;
+  updateUserStatus(userId: string, status: string): Promise<void>;
+  updateUserRole(userId: string, role: string): Promise<void>;
+  logAdminAction(action: InsertAdminLog): Promise<AdminLog>;
+  getAdminLogs(options: { page: number; limit: number }): Promise<{ logs: AdminLog[]; total: number }>;
+  getAnalytics(startDate?: string, endDate?: string): Promise<SiteAnalytics[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -485,6 +498,104 @@ export class DatabaseStorage implements IStorage {
       .from(userProfiles)
       .where(eq(userProfiles.userId, userId));
     return profile;
+  }
+
+  // Admin operations
+  async getUsers(options: { page: number; limit: number; search?: string; status?: string; role?: string }): Promise<{ users: User[]; total: number }> {
+    let query = db.select().from(users);
+    
+    // Apply filters
+    const conditions = [];
+    if (options.search) {
+      conditions.push(
+        or(
+          ilike(users.email, `%${options.search}%`),
+          ilike(users.firstName, `%${options.search}%`),
+          ilike(users.lastName, `%${options.search}%`)
+        )
+      );
+    }
+    if (options.status) {
+      conditions.push(eq(users.status, options.status));
+    }
+    if (options.role) {
+      conditions.push(eq(users.role, options.role));
+    }
+    
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+    
+    // Get total count
+    const countQuery = db.select({ count: sql<number>`count(*)` }).from(users);
+    if (conditions.length > 0) {
+      countQuery.where(and(...conditions));
+    }
+    const [{ count: total }] = await countQuery;
+    
+    // Get paginated results
+    const users_list = await query
+      .limit(options.limit)
+      .offset((options.page - 1) * options.limit)
+      .orderBy(desc(users.createdAt));
+    
+    return { users: users_list, total };
+  }
+
+  async updateUserStatus(userId: string, status: string): Promise<void> {
+    await db.update(users)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async updateUserRole(userId: string, role: string): Promise<void> {
+    await db.update(users)
+      .set({ role, updatedAt: new Date() })
+      .where(eq(users.id, userId));
+  }
+
+  async logAdminAction(action: InsertAdminLog): Promise<AdminLog> {
+    const [log] = await db.insert(adminLogs).values(action).returning();
+    return log;
+  }
+
+  async getAdminLogs(options: { page: number; limit: number }): Promise<{ logs: AdminLog[]; total: number }> {
+    // Get total count
+    const [{ count: total }] = await db.select({ count: sql<number>`count(*)` }).from(adminLogs);
+    
+    // Get paginated results with admin user info
+    const logs = await db.select({
+      id: adminLogs.id,
+      adminId: adminLogs.adminId,
+      action: adminLogs.action,
+      targetUserId: adminLogs.targetUserId,
+      details: adminLogs.details,
+      ipAddress: adminLogs.ipAddress,
+      createdAt: adminLogs.createdAt,
+      adminEmail: users.email,
+    })
+    .from(adminLogs)
+    .leftJoin(users, eq(adminLogs.adminId, users.id))
+    .limit(options.limit)
+    .offset((options.page - 1) * options.limit)
+    .orderBy(desc(adminLogs.createdAt));
+    
+    return { logs: logs as any, total };
+  }
+
+  async getAnalytics(startDate?: string, endDate?: string): Promise<SiteAnalytics[]> {
+    let query = db.select().from(siteAnalytics);
+    
+    if (startDate && endDate) {
+      query = query.where(
+        and(
+          gte(siteAnalytics.date, startDate),
+          lte(siteAnalytics.date, endDate)
+        )
+      );
+    }
+    
+    return await query.orderBy(desc(siteAnalytics.date));
   }
 }
 

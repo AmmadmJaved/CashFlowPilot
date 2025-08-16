@@ -86,6 +86,135 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Admin middleware to check if user is admin or super_admin
+  const isAdmin: RequestHandler = async (req, res, next) => {
+    try {
+      const userId = (req as any).user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== 'admin' && user.role !== 'super_admin')) {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+      
+      (req as any).adminUser = user;
+      next();
+    } catch (error) {
+      res.status(403).json({ message: "Admin access required" });
+    }
+  };
+
+  // Admin routes
+  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { page = 1, limit = 50, search, status, role } = req.query;
+      const users = await storage.getUsers({
+        page: parseInt(page),
+        limit: parseInt(limit),
+        search,
+        status,
+        role,
+      });
+      res.json(users);
+    } catch (error) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post('/api/admin/users/:userId/suspend', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const { reason } = req.body;
+      const adminUser = req.adminUser;
+      
+      await storage.updateUserStatus(userId, 'suspended');
+      await storage.logAdminAction({
+        adminId: adminUser.id,
+        action: 'suspend_user',
+        targetUserId: userId,
+        details: reason || 'No reason provided',
+        ipAddress: req.ip,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error suspending user:", error);
+      res.status(500).json({ message: "Failed to suspend user" });
+    }
+  });
+
+  app.post('/api/admin/users/:userId/activate', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const adminUser = req.adminUser;
+      
+      await storage.updateUserStatus(userId, 'active');
+      await storage.logAdminAction({
+        adminId: adminUser.id,
+        action: 'activate_user',
+        targetUserId: userId,
+        details: 'User reactivated',
+        ipAddress: req.ip,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error activating user:", error);
+      res.status(500).json({ message: "Failed to activate user" });
+    }
+  });
+
+  app.post('/api/admin/users/:userId/make-admin', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { userId } = req.params;
+      const adminUser = req.adminUser;
+      
+      // Only super_admin can create new admins
+      if (adminUser.role !== 'super_admin') {
+        return res.status(403).json({ message: "Super admin access required" });
+      }
+      
+      await storage.updateUserRole(userId, 'admin');
+      await storage.logAdminAction({
+        adminId: adminUser.id,
+        action: 'create_admin',
+        targetUserId: userId,
+        details: 'User promoted to admin',
+        ipAddress: req.ip,
+      });
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error making user admin:", error);
+      res.status(500).json({ message: "Failed to make user admin" });
+    }
+  });
+
+  app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      const analytics = await storage.getAnalytics(startDate, endDate);
+      res.json(analytics);
+    } catch (error) {
+      console.error("Error fetching analytics:", error);
+      res.status(500).json({ message: "Failed to fetch analytics" });
+    }
+  });
+
+  app.get('/api/admin/logs', isAuthenticated, isAdmin, async (req: any, res) => {
+    try {
+      const { page = 1, limit = 50 } = req.query;
+      const logs = await storage.getAdminLogs({
+        page: parseInt(page),
+        limit: parseInt(limit),
+      });
+      res.json(logs);
+    } catch (error) {
+      console.error("Error fetching admin logs:", error);
+      res.status(500).json({ message: "Failed to fetch admin logs" });
+    }
+  });
+
   // Transaction routes
   app.get('/api/transactions', isAuthenticated, async (req, res) => {
     try {
