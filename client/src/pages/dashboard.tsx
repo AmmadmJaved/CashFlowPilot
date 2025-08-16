@@ -39,6 +39,7 @@ export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
   const { user } = useAuth();
+  const profile = (user as any)?.profile;
   
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();

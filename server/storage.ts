@@ -477,19 +477,56 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async updateUserId(oldId: string, newId: string): Promise<User> {
+    try {
+      const [user] = await db
+        .update(users)
+        .set({ id: newId, updatedAt: new Date() })
+        .where(eq(users.id, oldId))
+        .returning();
+      return user;
+    } catch (error) {
+      console.error("Error updating user ID:", error);
+      // If update fails, return the original user
+      const [originalUser] = await db.select().from(users).where(eq(users.id, oldId));
+      return originalUser;
+    }
+  }
+
   async upsertUser(userData: UpsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
+    console.log('Upserting user with data:', userData);
+    
+    // First try to find user by email if ID is not found
+    const existingUser = await db.select().from(users).where(eq(users.email, userData.email)).limit(1);
+    
+    if (existingUser.length > 0) {
+      // Update existing user
+      const [updatedUser] = await db
+        .update(users)
+        .set({
           ...userData,
           updatedAt: new Date(),
-        },
-      })
-      .returning();
-    return user;
+        })
+        .where(eq(users.id, existingUser[0].id))
+        .returning();
+      return updatedUser;
+    } else {
+      // Create new user
+      const [newUser] = await db
+        .insert(users)
+        .values({
+          ...userData,
+          role: userData.role || 'user',
+          status: userData.status || 'active',
+        })
+        .returning();
+      return newUser;
+    }
   }
 
   async getUserProfileByUserId(userId: string): Promise<UserProfile | undefined> {

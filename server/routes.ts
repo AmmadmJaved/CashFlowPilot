@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
@@ -35,13 +35,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
-      const user = await storage.getUser(userId);
+      const userEmail = req.user.claims.email;
+      
+      console.log('Fetching user with ID:', userId, 'Email:', userEmail);
+      
+      // Try to get user by ID first, then by email
+      let user = await storage.getUser(userId);
+      if (!user && userEmail) {
+        // Try to find by email
+        const userByEmail = await storage.getUserByEmail(userEmail);
+        if (userByEmail) {
+          // Update the user ID to match the Replit user ID
+          user = await storage.updateUserId(userByEmail.id, userId);
+        }
+      }
+      
       if (!user) {
         return res.status(404).json({ message: "User not found" });
       }
       
       // Get or create user profile
-      let profile = await storage.getUserProfileByUserId(userId);
+      let profile = await storage.getUserProfileByUserId(user.id);
       if (!profile) {
         // Create default profile for new user
         const displayName = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email?.split('@')[0] || 'User';
