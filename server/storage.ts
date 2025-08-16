@@ -618,19 +618,25 @@ export class DatabaseStorage implements IStorage {
     .offset((options.page - 1) * options.limit)
     .orderBy(desc(adminLogs.createdAt));
     
-    return { logs: logs as any, total };
+    return { 
+      logs: logs.map(log => ({
+        ...log,
+        adminEmail: log.adminEmail || 'Unknown'
+      })) as AdminLog[], 
+      total 
+    };
   }
 
   async getAnalytics(startDate?: string, endDate?: string): Promise<SiteAnalytics[]> {
-    let query = db.select().from(siteAnalytics);
+    const query = db.select().from(siteAnalytics);
     
     if (startDate && endDate) {
-      query = query.where(
+      return await query.where(
         and(
           gte(siteAnalytics.date, startDate),
           lte(siteAnalytics.date, endDate)
         )
-      );
+      ).orderBy(desc(siteAnalytics.date));
     }
     
     return await query.orderBy(desc(siteAnalytics.date));
