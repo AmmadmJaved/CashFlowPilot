@@ -67,5 +67,6 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+    console.log('✅ Server started successfully - ready for connections');
   });
 })();
