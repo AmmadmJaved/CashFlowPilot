@@ -93,9 +93,9 @@ export function SettingsModal({ children }: SettingsModalProps) {
   const saveProfileMutation = useMutation({
     mutationFn: async (data: Partial<InsertUserProfile>) => {
       if ((currentProfile as any)?.id) {
-        return await apiRequest(`/api/profile/${(currentProfile as any).id}`, 'PATCH', data);
+        return await apiRequest('PATCH', `/api/profile/${(currentProfile as any).id}`, data);
       } else {
-        return await apiRequest('/api/profile', 'POST', data);
+        return await apiRequest('POST', '/api/profile', data);
       }
     },
     onSuccess: () => {

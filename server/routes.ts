@@ -100,6 +100,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Update profile route
+  app.patch('/api/profile/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const profileId = req.params.id;
+      const profileData = req.body;
+
+      // Verify the profile belongs to the authenticated user
+      const existingProfile = await storage.getUserProfileByUserId(userId);
+      if (!existingProfile || existingProfile.id !== profileId) {
+        return res.status(404).json({ message: "Profile not found" });
+      }
+
+      const updatedProfile = await storage.updateUserProfile(profileId, profileData);
+      res.json(updatedProfile);
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      res.status(500).json({ message: "Failed to update profile" });
+    }
+  });
+
   // Admin middleware to check if user is admin or super_admin
   const isAdmin: RequestHandler = async (req, res, next) => {
     try {
