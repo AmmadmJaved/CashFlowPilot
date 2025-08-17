@@ -722,20 +722,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { groupId } = req.params;
       const { invitedBy, expiresAt, maxUses } = req.body;
       
-      console.log("Creating invite:", { groupId, invitedBy, maxUses });
+      console.log("🎯 Creating invite request received:", { 
+        groupId, 
+        invitedBy, 
+        maxUses, 
+        userId: (req.user as any)?.claims?.sub,
+        userEmail: (req.user as any)?.claims?.email 
+      });
       
       if (!invitedBy || !invitedBy.trim()) {
+        console.log("❌ Invite creation failed: Missing invited by name");
         return res.status(400).json({ message: "Invited by name is required" });
       }
       
-      // Validate group exists and user has access (optional - could add group membership check)
+      // Validate group exists and user has access
       const group = await storage.getGroupById(groupId);
       if (!group) {
+        console.log("❌ Invite creation failed: Group not found");
         return res.status(404).json({ message: "Group not found" });
       }
       
+      console.log("✅ Group found:", group.name);
+      
       // Generate unique invite code
       const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      console.log("🔗 Generated invite code:", inviteCode);
       
       const inviteData = {
         groupId,
@@ -745,15 +756,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
         maxUses: maxUses || null,
       };
       
+      console.log("💾 Saving invite data:", inviteData);
       const invite = await storage.createGroupInvite(inviteData);
-      console.log("Invite created successfully:", invite);
+      console.log("✅ Invite created successfully in database:", invite);
       
       // Broadcast the invite creation
       broadcastUpdate('invite-created', { invite });
+      console.log("📡 Broadcasted invite creation update");
       
       res.json(invite);
     } catch (error: any) {
-      console.error("Error creating group invite:", error);
+      console.error("🔥 Error creating group invite:", error);
       res.status(500).json({ message: "Failed to create group invite", error: error?.message || "Unknown error" });
     }
   });

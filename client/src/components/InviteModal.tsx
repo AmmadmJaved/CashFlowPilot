@@ -54,20 +54,31 @@ export function InviteModal({ group, children }: InviteModalProps) {
   const createInviteMutation = useMutation({
     mutationFn: async (data: { invitedBy: string; maxUses?: number }) => {
       try {
-        console.log("Creating invite for group:", group.id, "with data:", data);
-        const response = await apiRequest('POST', `/api/groups/${group.id}/invites`, data);
+        console.log("🚀 Starting invite creation for group:", group.id, "with data:", data);
+        
+        // Add credentials to ensure proper session handling
+        const response = await fetch(`/api/groups/${group.id}/invites`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include', // Ensure cookies are sent
+          body: JSON.stringify(data),
+        });
+        
+        console.log("📡 Response status:", response.status, response.statusText);
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Invite creation failed:", response.status, errorText);
-          throw new Error(`${response.status}: ${errorText}`);
+          console.error("❌ Invite creation failed:", response.status, errorText);
+          throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
 
         const result = await response.json();
-        console.log("Invite created successfully:", result);
+        console.log("✅ Invite created successfully:", result);
         return result;
       } catch (error) {
-        console.error("Error in invite creation:", error);
+        console.error("🔥 Error in invite creation:", error);
         throw error;
       }
     },
