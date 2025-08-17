@@ -38,7 +38,8 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Create invite mutation
   const createInviteMutation = useMutation({
     mutationFn: async (data: { invitedBy: string; maxUses?: number }) => {
-      return await apiRequest('POST', `/api/groups/${group.id}/invites`, data);
+      const response = await apiRequest('POST', `/api/groups/${group.id}/invites`, data);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -49,7 +50,8 @@ export function InviteModal({ group, children }: InviteModalProps) {
       setInvitedBy("");
       setMaxUses("");
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error creating invite:", error);
       toast({
         title: "Error",
         description: "Failed to create invite link. Please try again.",
@@ -61,7 +63,8 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Deactivate invite mutation
   const deactivateInviteMutation = useMutation({
     mutationFn: async (inviteId: string) => {
-      return await apiRequest('PATCH', `/api/invites/${inviteId}/deactivate`);
+      const response = await apiRequest('PATCH', `/api/invites/${inviteId}/deactivate`);
+      return await response.json();
     },
     onSuccess: () => {
       toast({
@@ -70,7 +73,8 @@ export function InviteModal({ group, children }: InviteModalProps) {
       });
       queryClient.invalidateQueries({ queryKey: ['/api/groups', group.id, 'invites'] });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Error deactivating invite:", error);
       toast({
         title: "Error",
         description: "Failed to deactivate invite. Please try again.",
