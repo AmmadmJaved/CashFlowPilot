@@ -139,7 +139,11 @@ export function InviteModal({ group, children }: InviteModalProps) {
   });
 
   const handleCreateInvite = () => {
+    console.log("🎯 handleCreateInvite called");
+    console.log("📋 Form validation - invitedBy:", invitedBy.trim());
+    
     if (!invitedBy.trim()) {
+      console.log("❌ Validation failed: No name provided");
       toast({
         title: "Name Required",
         description: "Please enter your name to create an invite.",
@@ -148,10 +152,13 @@ export function InviteModal({ group, children }: InviteModalProps) {
       return;
     }
 
-    createInviteMutation.mutate({
+    const mutationData = {
       invitedBy: invitedBy.trim(),
       maxUses: maxUses ? parseInt(maxUses) : undefined,
-    });
+    };
+    
+    console.log("🚀 Starting mutation with data:", mutationData);
+    createInviteMutation.mutate(mutationData);
   };
 
   const copyInviteLink = (inviteCode: string) => {
@@ -235,7 +242,11 @@ export function InviteModal({ group, children }: InviteModalProps) {
               </div>
 
               <Button 
-                onClick={handleCreateInvite}
+                onClick={() => {
+                  console.log("🔘 Create Invite button clicked!");
+                  console.log("📝 Current form values:", { invitedBy, maxUses });
+                  handleCreateInvite();
+                }}
                 disabled={createInviteMutation.isPending || !invitedBy.trim()}
                 className="w-full"
                 data-testid="button-create-invite"
