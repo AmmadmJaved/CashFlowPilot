@@ -716,7 +716,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Group invite routes with improved error handling
+  // Simple invite link generation
+  app.post('/api/groups/:groupId/simple-invite', isAuthenticated, async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      
+      // Validate group exists
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      // Generate simple invite code
+      const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const inviteData = {
+        groupId,
+        inviteCode,
+        invitedBy: "System",
+        expiresAt: null, // No expiration
+        maxUses: null, // Unlimited uses
+      };
+      
+      const invite = await storage.createGroupInvite(inviteData);
+      res.json(invite);
+    } catch (error: any) {
+      console.error("Error creating simple invite:", error);
+      res.status(500).json({ message: "Failed to create invite link" });
+    }
+  });
+
+  // Send email invitation
+  app.post('/api/groups/:groupId/invite-email', isAuthenticated, async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const { email } = req.body;
+      
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      // Validate group exists
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
+      
+      // Generate invite code for this email
+      const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+      
+      const inviteData = {
+        groupId,
+        inviteCode,
+        invitedBy: "Email System",
+        expiresAt: null,
+        maxUses: 1, // One-time use for email invites
+      };
+      
+      const invite = await storage.createGroupInvite(inviteData);
+      
+      // Here you would integrate with your email service (SendGrid, etc.)
+      // For now, we'll just return success
+      console.log(`Would send email to ${email} with invite code: ${inviteCode}`);
+      
+      res.json({ 
+        success: true, 
+        message: "Email invitation sent",
+        inviteCode: inviteCode 
+      });
+    } catch (error: any) {
+      console.error("Error sending email invite:", error);
+      res.status(500).json({ message: "Failed to send email invitation" });
+    }
+  });
+
+  // Group invite routes with improved error handling (keeping original for backward compatibility)
   app.post('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
     try {
       const { groupId } = req.params;

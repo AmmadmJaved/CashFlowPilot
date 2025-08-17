@@ -15,7 +15,7 @@ import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download,
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
-import { InviteModal } from "@/components/InviteModal";
+import { SimpleInviteModal } from "@/components/SimpleInviteModal";
 import { SettingsModal } from "@/components/SettingsModal";
 import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
@@ -659,12 +659,18 @@ export default function Dashboard() {
                               <p className="text-sm text-gray-500">Total Shared</p>
                               <p className="font-semibold">{formatCurrency(group.totalShared || 0)}</p>
                             </div>
-                            <InviteModal group={group}>
-                              <Button size="sm" variant="outline" data-testid={`button-invite-${group.id}`}>
-                                <Share2 className="w-3 h-3 mr-1" />
-                                Invite
-                              </Button>
-                            </InviteModal>
+                            <Button 
+                              size="sm" 
+                              variant="outline" 
+                              onClick={() => {
+                                setSelectedGroup(group);
+                                setInviteModalOpen(true);
+                              }}
+                              data-testid={`button-invite-${group.id}`}
+                            >
+                              <Share2 className="w-3 h-3 mr-1" />
+                              Invite
+                            </Button>
                           </div>
                         </div>
                       </div>
@@ -691,6 +697,13 @@ export default function Dashboard() {
         isOpen={isGroupModalOpen} 
         onClose={() => setIsGroupModalOpen(false)} 
       />
+      {inviteModalOpen && selectedGroup && (
+        <SimpleInviteModal
+          isOpen={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          group={selectedGroup}
+        />
+      )}
     </div>
   );
 }
