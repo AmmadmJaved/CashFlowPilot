@@ -80,6 +80,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+
+
   // Auth middleware (applies to routes below)
   await setupAuth(app);
 

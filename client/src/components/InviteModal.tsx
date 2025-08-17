@@ -38,8 +38,11 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Create invite mutation
   const createInviteMutation = useMutation({
     mutationFn: async (data: { invitedBy: string; maxUses?: number }) => {
+      console.log("Creating invite for group:", group.id, "data:", data);
       const response = await apiRequest('POST', `/api/groups/${group.id}/invites`, data);
-      return await response.json();
+      const result = await response.json();
+      console.log("Invite creation result:", result);
+      return result;
     },
     onSuccess: () => {
       toast({
@@ -50,11 +53,21 @@ export function InviteModal({ group, children }: InviteModalProps) {
       setInvitedBy("");
       setMaxUses("");
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Error creating invite:", error);
+      console.log("Error details:", {
+        message: error.message,
+        stack: error.stack,
+        cause: error.cause
+      });
+      
+      const errorMessage = error.message.includes("Unauthorized") 
+        ? "You need to log in again to create invites." 
+        : "Failed to create invite link. Please try again.";
+      
       toast({
         title: "Error",
-        description: "Failed to create invite link. Please try again.",
+        description: errorMessage,
         variant: "destructive",
       });
     },
@@ -92,6 +105,11 @@ export function InviteModal({ group, children }: InviteModalProps) {
       });
       return;
     }
+
+    console.log("Creating invite with data:", {
+      invitedBy: invitedBy.trim(),
+      maxUses: maxUses ? parseInt(maxUses) : undefined,
+    });
 
     createInviteMutation.mutate({
       invitedBy: invitedBy.trim(),
