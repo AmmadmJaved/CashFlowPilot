@@ -716,11 +716,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Group invite routes
+  // Group invite routes with improved error handling
   app.post('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
     try {
       const { groupId } = req.params;
       const { invitedBy, expiresAt, maxUses } = req.body;
+      
+      console.log("Creating invite:", { groupId, invitedBy, maxUses });
+      
+      if (!invitedBy || !invitedBy.trim()) {
+        return res.status(400).json({ message: "Invited by name is required" });
+      }
+      
+      // Validate group exists and user has access (optional - could add group membership check)
+      const group = await storage.getGroupById(groupId);
+      if (!group) {
+        return res.status(404).json({ message: "Group not found" });
+      }
       
       // Generate unique invite code
       const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
@@ -728,31 +740,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const inviteData = {
         groupId,
         inviteCode,
-        invitedBy,
+        invitedBy: invitedBy.trim(),
         expiresAt: expiresAt ? new Date(expiresAt) : null,
         maxUses: maxUses || null,
       };
       
       const invite = await storage.createGroupInvite(inviteData);
+      console.log("Invite created successfully:", invite);
       
       // Broadcast the invite creation
       broadcastUpdate('invite-created', { invite });
       
       res.json(invite);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error creating group invite:", error);
-      res.status(500).json({ message: "Failed to create group invite" });
+      res.status(500).json({ message: "Failed to create group invite", error: error?.message || "Unknown error" });
     }
   });
 
   app.get('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
     try {
       const { groupId } = req.params;
+      console.log("Fetching invites for group:", groupId);
+      
       const invites = await storage.getGroupInvites(groupId);
+      console.log("Found invites:", invites.length);
+      
       res.json(invites);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error fetching group invites:", error);
-      res.status(500).json({ message: "Failed to fetch group invites" });
+      res.status(500).json({ message: "Failed to fetch group invites", error: error?.message || "Unknown error" });
     }
   });
 
