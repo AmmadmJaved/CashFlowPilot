@@ -28,7 +28,59 @@ function broadcastUpdate(event: string, data: any) {
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Auth middleware
+  // Public routes (no authentication required)
+  app.get('/api/invites/:inviteCode', async (req, res) => {
+    try {
+      const { inviteCode } = req.params;
+      const invite = await storage.getGroupInvite(inviteCode);
+      
+      if (!invite) {
+        return res.status(404).json({ message: "Invite not found" });
+      }
+      
+      // Get group info for the invite
+      const group = await storage.getGroupById(invite.groupId);
+      
+      res.json({
+        invite,
+        group: group ? { id: group.id, name: group.name, description: group.description } : null,
+      });
+    } catch (error) {
+      console.error("Error fetching invite info:", error);
+      res.status(500).json({ message: "Failed to fetch invite info" });
+    }
+  });
+
+  app.post('/api/invites/:inviteCode/join', async (req, res) => {
+    try {
+      const { inviteCode } = req.params;
+      const { memberName, memberEmail } = req.body;
+      
+      if (!memberName) {
+        return res.status(400).json({ message: "Member name is required" });
+      }
+      
+      const result = await storage.useGroupInvite(inviteCode, memberName, memberEmail);
+      
+      if (!result) {
+        return res.status(400).json({ message: "Invalid or expired invite" });
+      }
+      
+      // Broadcast the member join
+      broadcastUpdate('member-joined', { 
+        group: result.group, 
+        member: result.member,
+        joinedViaInvite: true
+      });
+      
+      res.json(result);
+    } catch (error) {
+      console.error("Error joining group via invite:", error);
+      res.status(500).json({ message: "Failed to join group" });
+    }
+  });
+
+  // Auth middleware (applies to routes below)
   await setupAuth(app);
 
   // Auth routes
@@ -702,7 +754,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/invites/:inviteCode/join', isAuthenticated, async (req, res) => {
+  app.post('/api/invites/:inviteCode/join', async (req, res) => {
     try {
       const { inviteCode } = req.params;
       const { memberName, memberEmail } = req.body;
@@ -728,28 +780,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error joining group via invite:", error);
       res.status(500).json({ message: "Failed to join group" });
-    }
-  });
-
-  app.get('/api/invites/:inviteCode', async (req, res) => {
-    try {
-      const { inviteCode } = req.params;
-      const invite = await storage.getGroupInvite(inviteCode);
-      
-      if (!invite) {
-        return res.status(404).json({ message: "Invite not found" });
-      }
-      
-      // Get group info for the invite
-      const group = await storage.getGroupById(invite.groupId);
-      
-      res.json({
-        invite,
-        group: group ? { id: group.id, name: group.name, description: group.description } : null,
-      });
-    } catch (error) {
-      console.error("Error fetching invite info:", error);
-      res.status(500).json({ message: "Failed to fetch invite info" });
     }
   });
 

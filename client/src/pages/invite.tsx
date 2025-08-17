@@ -26,7 +26,8 @@ export default function InvitePage() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (data: { memberName: string; memberEmail?: string }) => {
-      return await apiRequest(`/api/invites/${inviteCode}/join`, 'POST', data);
+      const response = await apiRequest('POST', `/api/invites/${inviteCode}/join`, data);
+      return await response.json();
     },
     onSuccess: (result: any) => {
       setHasJoined(true);
