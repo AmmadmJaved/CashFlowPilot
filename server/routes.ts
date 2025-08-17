@@ -663,7 +663,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Group invite routes
-  app.post('/api/groups/:groupId/invites', async (req, res) => {
+  app.post('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
     try {
       const { groupId } = req.params;
       const { invitedBy, expiresAt, maxUses } = req.body;
@@ -691,7 +691,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/groups/:groupId/invites', async (req, res) => {
+  app.get('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
     try {
       const { groupId } = req.params;
       const invites = await storage.getGroupInvites(groupId);
@@ -702,7 +702,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/invites/:inviteCode/join', async (req, res) => {
+  app.post('/api/invites/:inviteCode/join', isAuthenticated, async (req, res) => {
     try {
       const { inviteCode } = req.params;
       const { memberName, memberEmail } = req.body;
@@ -753,7 +753,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/invites/:inviteId/deactivate', async (req, res) => {
+  app.patch('/api/invites/:inviteId/deactivate', isAuthenticated, async (req, res) => {
     try {
       const { inviteId } = req.params;
       await storage.deactivateGroupInvite(inviteId);
