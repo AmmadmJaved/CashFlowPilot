@@ -48,6 +48,8 @@ export default function Dashboard() {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
     dateRange: "month",
