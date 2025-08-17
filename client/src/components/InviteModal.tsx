@@ -38,7 +38,7 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Create invite mutation
   const createInviteMutation = useMutation({
     mutationFn: async (data: { invitedBy: string; maxUses?: number }) => {
-      return await apiRequest(`/api/groups/${group.id}/invites`, 'POST', data);
+      return await apiRequest('POST', `/api/groups/${group.id}/invites`, data);
     },
     onSuccess: () => {
       toast({
@@ -61,7 +61,7 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Deactivate invite mutation
   const deactivateInviteMutation = useMutation({
     mutationFn: async (inviteId: string) => {
-      return await apiRequest(`/api/invites/${inviteId}/deactivate`, 'PATCH');
+      return await apiRequest('PATCH', `/api/invites/${inviteId}/deactivate`);
     },
     onSuccess: () => {
       toast({
