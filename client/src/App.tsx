@@ -30,7 +30,10 @@ function Router() {
 
   return (
     <Switch>
-      {!isAuthenticated ? (
+      <Route path="/" component={Dashboard} />
+          {/* <Route path="/invite/:inviteCode" component={InvitePage} /> */}
+          <Route path="/admin" component={AdminPanel} />
+      {/* {!isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
           <Route path="/invite/:inviteCode" component={InvitePage} />
@@ -38,10 +41,11 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
-          <Route path="/invite/:inviteCode" component={InvitePage} />
-          <Route path="/admin" component={AdminPanel} />
+          {/* <Route path="/invite/:inviteCode" component={InvitePage} /> */}
+          {/* <Route path="/admin" component={AdminPanel} />
         </>
-      )}
+      )} */}
+
       <Route component={NotFound} />
     </Switch>
   );
