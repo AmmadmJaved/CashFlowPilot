@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthProvider } from "@/hooks/useAuth";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,9 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { Shield, Users, Activity, AlertTriangle, Plus, Search, Filter } from "lucide-react";
 import { formatDistance } from "date-fns";
+import { useAuth } from "react-oidc-context";
 
 export default function AdminPanel() {
-  const { user, isAuthenticated } = useAuth();
+  const auth = useAuth();
+  const { user, isAuthenticated } = useAuthProvider();
   const { toast } = useToast();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -26,31 +28,76 @@ export default function AdminPanel() {
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
   // Check if user is admin
-  const { data: currentUser } = useQuery({
-    queryKey: ["/api/auth/user"],
-    enabled: isAuthenticated,
-  });
+  // const { data: currentUser } = useQuery({
+  //   queryKey: ["/api/auth/user"],
+  //   enabled: isAuthenticated,
+  // });
 
-  const isAdmin = (currentUser as any)?.role === 'admin' || (currentUser as any)?.role === 'super_admin';
-  const isSuperAdmin = (currentUser as any)?.role === 'super_admin';
+  const isAdmin = (user as any)?.role === 'admin' || (user as any)?.role === 'super_admin';
+  const isSuperAdmin = (user as any)?.role === 'super_admin';
 
-  // Fetch users
-  const { data: usersData, isLoading: usersLoading } = useQuery({
-    queryKey: ["/api/admin/users", { search: searchQuery, status: statusFilter !== 'all' ? statusFilter : undefined, role: roleFilter !== 'all' ? roleFilter : undefined }],
-    enabled: isAdmin,
-  });
+ const token = auth.user?.id_token; // or access_token depending on your config
 
-  // Fetch analytics
-  const { data: analytics } = useQuery({
-    queryKey: ["/api/admin/analytics"],
-    enabled: isAdmin,
-  });
+// Fetch users
+const { data: usersData, isLoading: usersLoading } = useQuery({
+  queryKey: [
+    "/api/admin/users",
+    {
+      search: searchQuery,
+      status: statusFilter !== "all" ? statusFilter : undefined,
+      role: roleFilter !== "all" ? roleFilter : undefined,
+      token, // make query refetch if token changes
+    },
+  ],
+  queryFn: async () => {
+    const params = new URLSearchParams();
+    if (searchQuery) params.append("search", searchQuery);
+    if (statusFilter !== "all") params.append("status", statusFilter);
+    if (roleFilter !== "all") params.append("role", roleFilter);
 
-  // Fetch admin logs
-  const { data: logsData } = useQuery({
-    queryKey: ["/api/admin/logs"],
-    enabled: isAdmin,
-  });
+    const res = await fetch(`/api/admin/users?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch users");
+    return res.json();
+  },
+  enabled: isAdmin && !!token,
+});
+
+// Fetch analytics
+const { data: analytics } = useQuery({
+  queryKey: ["/api/admin/analytics", token],
+  queryFn: async () => {
+    const res = await fetch(`/api/admin/analytics`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch analytics");
+    return res.json();
+  },
+  enabled: isAdmin && !!token,
+});
+
+// Fetch admin logs
+const { data: logsData } = useQuery({
+  queryKey: ["/api/admin/logs", token],
+  queryFn: async () => {
+    const res = await fetch(`/api/admin/logs`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch logs");
+    return res.json();
+  },
+  enabled: isAdmin && !!token,
+});
 
   // Mutations
   const suspendUserMutation = useMutation({

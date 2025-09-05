@@ -1,8 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, BarChart3, Smartphone } from "lucide-react";
+import { useAuth } from "react-oidc-context";
 
 export default function Landing() {
+   const auth = useAuth();
   const handleLogin = () => {
     window.location.href = "/api/login";
   };
@@ -19,7 +21,16 @@ export default function Landing() {
             Track your expenses, share costs with friends, and stay on top of your finances with our modern expense management platform.
           </p>
           <Button 
-            onClick={handleLogin}
+            onClick={() => {
+                        console.log("✅ Button clicked");
+                        if (!auth || !auth.signinRedirect) {
+                          console.error("auth is not ready", auth);
+                          return;
+                        }
+                        auth.signinRedirect().catch((err: any) => {
+                          console.error("signinRedirect failed", err);
+                        });
+                      }}
             size="lg"
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
             data-testid="button-login"

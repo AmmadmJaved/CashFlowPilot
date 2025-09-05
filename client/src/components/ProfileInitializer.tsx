@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthProvider } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -49,7 +49,7 @@ interface ProfileInitializerProps {
 }
 
 export function ProfileInitializer({ children }: ProfileInitializerProps) {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated } = useAuthProvider();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<InsertUserProfile>>({
     publicName: "",

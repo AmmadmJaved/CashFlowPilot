@@ -8,7 +8,7 @@ import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, in
 import { z } from "zod";
 import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
-import { setupAuth, isAuthenticated } from "./replitAuth";
+import { verifyGoogleToken } from "./auth";
 
 // Store connected WebSocket clients
 const connectedClients = new Set<WebSocket>();
@@ -83,10 +83,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
   // Auth middleware (applies to routes below)
-  await setupAuth(app);
-
+   // protect everything else
+  // app.use("/api", verifyGoogleToken);
   // Auth routes
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user',  async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const userEmail = req.user.claims.email;
@@ -127,7 +127,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Profile routes
-  app.post('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.post('/api/profile' , async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const profileData = {
@@ -143,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/profile', isAuthenticated, async (req: any, res) => {
+  app.get('/api/profile' , async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const profile = await storage.getUserProfileByUserId(userId);
@@ -155,7 +155,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update profile route
-  app.patch('/api/profile/:id', isAuthenticated, async (req: any, res) => {
+  app.patch('/api/profile/:id' , async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const profileId = req.params.id;
@@ -193,7 +193,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   };
 
   // Admin routes
-  app.get('/api/admin/users', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/users' , isAdmin, async (req: any, res) => {
     try {
       const { page = 1, limit = 50, search, status, role } = req.query;
       const users = await storage.getUsers({
@@ -210,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/users/:userId/suspend', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/users/:userId/suspend' , isAdmin, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const { reason } = req.body;
@@ -232,7 +232,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/users/:userId/activate', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/users/:userId/activate' , isAdmin, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const adminUser = req.adminUser;
@@ -253,7 +253,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/admin/users/:userId/make-admin', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.post('/api/admin/users/:userId/make-admin' , isAdmin, async (req: any, res) => {
     try {
       const { userId } = req.params;
       const adminUser = req.adminUser;
@@ -279,7 +279,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/analytics', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/analytics' , isAdmin, async (req: any, res) => {
     try {
       const { startDate, endDate } = req.query;
       const analytics = await storage.getAnalytics(startDate, endDate);
@@ -290,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/admin/logs', isAuthenticated, isAdmin, async (req: any, res) => {
+  app.get('/api/admin/logs' , isAdmin, async (req: any, res) => {
     try {
       const { page = 1, limit = 50 } = req.query;
       const logs = await storage.getAdminLogs({
@@ -305,7 +305,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions', isAuthenticated, async (req, res) => {
+  app.get('/api/transactions' , async (req, res) => {
     try {
       const { groupId, type, category, paidBy, startDate, endDate, search, onlyUser, onlyGroupMembers } = req.query;
       
@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/transactions', isAuthenticated, async (req, res) => {
+  app.post('/api/transactions' , async (req, res) => {
     try {
       const data = insertTransactionSchema.parse({
         ...req.body,
@@ -384,7 +384,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/transactions/:id', isAuthenticated, async (req, res) => {
+  app.put('/api/transactions/:id' , async (req, res) => {
     try {
       const { id } = req.params;
       const updates = req.body;
@@ -400,7 +400,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.delete('/api/transactions/:id', isAuthenticated, async (req, res) => {
+  app.delete('/api/transactions/:id' , async (req, res) => {
     try {
       const { id } = req.params;
       await storage.deleteTransaction(id);
@@ -412,7 +412,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export routes  
-  app.post('/api/export/excel', isAuthenticated, async (req, res) => {
+  app.post('/api/export/excel' , async (req, res) => {
     try {
       const { transactions, filters, summary } = req.body;
       const ExcelJS = await import('exceljs');
@@ -576,7 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Group routes
-  app.get('/api/groups', isAuthenticated, async (req, res) => {
+  app.get('/api/groups' , async (req, res) => {
     try {
       const groups = await storage.getAllGroups();
       res.json(groups);
@@ -586,7 +586,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/groups', isAuthenticated, async (req, res) => {
+  app.post('/api/groups' , async (req, res) => {
     try {
       const data = insertGroupSchema.parse(req.body);
       const group = await storage.createGroup(data);
@@ -601,7 +601,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/groups/:id/members', isAuthenticated, async (req, res) => {
+  app.post('/api/groups/:id/members' , async (req, res) => {
     try {
       const { id } = req.params;
       const memberData = insertGroupMemberSchema.parse({
@@ -622,7 +622,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Statistics routes
-  app.get('/api/stats/monthly', isAuthenticated, async (req, res) => {
+  app.get('/api/stats/monthly' , async (req, res) => {
     try {
       const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
       
@@ -635,7 +635,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Export routes
-  app.post('/api/export/pdf', isAuthenticated, async (req, res) => {
+  app.post('/api/export/pdf' , async (req, res) => {
     try {
       const { filters } = req.body;
       const transactions = await storage.getAllTransactions(filters);
@@ -717,7 +717,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Simple invite link generation
-  app.post('/api/groups/:groupId/simple-invite', isAuthenticated, async (req, res) => {
+  app.post('/api/groups/:groupId/simple-invite' , async (req, res) => {
     try {
       const { groupId } = req.params;
       
@@ -747,7 +747,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send email invitation
-  app.post('/api/groups/:groupId/invite-email', isAuthenticated, async (req, res) => {
+  app.post('/api/groups/:groupId/invite-email' , async (req, res) => {
     try {
       const { groupId } = req.params;
       const { email } = req.body;
@@ -791,7 +791,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Group invite routes with improved error handling (keeping original for backward compatibility)
-  app.post('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
+  app.post('/api/groups/:groupId/invites' , async (req, res) => {
     try {
       const { groupId } = req.params;
       const { invitedBy, expiresAt, maxUses } = req.body;
@@ -845,7 +845,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get('/api/groups/:groupId/invites', isAuthenticated, async (req, res) => {
+  app.get('/api/groups/:groupId/invites' , async (req, res) => {
     try {
       const { groupId } = req.params;
       console.log("Fetching invites for group:", groupId);
@@ -889,7 +889,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.patch('/api/invites/:inviteId/deactivate', isAuthenticated, async (req, res) => {
+  app.patch('/api/invites/:inviteId/deactivate' , async (req, res) => {
     try {
       const { inviteId } = req.params;
       await storage.deactivateGroupInvite(inviteId);

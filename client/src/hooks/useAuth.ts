@@ -1,22 +1,29 @@
 import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "react-oidc-context";
 
-export function useAuth() {
-  const { data: user, isLoading, error } = useQuery({
+export function useAuthProvider() {
+
+const auth = useAuth();
+  async function fetchUser() {
+    const token = auth.user?.id_token; // or access_token depending on your config
+    const res = await fetch("/api/auth/user", {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
+    if (!res.ok) throw new Error("Unauthorized");
+    return res.json();
+  }
+
+  const { data: user, isLoading } = useQuery({
     queryKey: ["/api/auth/user"],
+    queryFn: () => fetchUser(),
     retry: false,
-    retryOnMount: false,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchInterval: false,
   });
-
-  // If we get a 401 or 404, the user is not authenticated
-  const isNotAuthenticated = error && ((error as any).message?.includes('401') || (error as any).message?.includes('404'));
 
   return {
     user,
-    isLoading: isLoading && !isNotAuthenticated,
-    isAuthenticated: !!user && !isNotAuthenticated,
+    isLoading,
+    isAuthenticated: !!user,
   };
 }

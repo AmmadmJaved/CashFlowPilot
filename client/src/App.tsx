@@ -11,10 +11,31 @@ import Landing from "@/pages/landing";
 import AdminPanel from "@/pages/admin";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { ProfileInitializer } from "@/components/ProfileInitializer";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "react-oidc-context";
+import { useEffect } from "react";
+import CallbackPage from "./pages/callback";
 
 function Router() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const  { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) {
+    // Show nothing or a loading spinner while checking stored token
+    return <div>Loading...</div>;
+  }
+
+   useEffect(() => {
+  const handler = (event: PopStateEvent) => {
+    if (isAuthenticated && window.location.href.includes("callback")) {
+      event.preventDefault();
+      window.history.pushState(null, "", "/");
+    }
+  };
+  window.addEventListener("popstate", handler);
+
+    return () => window.removeEventListener("popstate", handler);
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+  }, [isAuthenticated]);
 
   // Show loading screen while checking authentication
   if (isLoading) {
@@ -30,9 +51,19 @@ function Router() {
 
   return (
     <Switch>
-      <Route path="/" component={Dashboard} />
+      <Route path="/auth/google/callback" component={CallbackPage} />
+
+        {isAuthenticated ? (
+        <Route path="/" component={Dashboard} />
+      ) : (
+        <>
+          <Route path="/" component={Landing} />
+        </>
+      )}
+      <Route component={NotFound} />
+      {/* <Route path="/" component={Dashboard} /> */}
           {/* <Route path="/invite/:inviteCode" component={InvitePage} /> */}
-          <Route path="/admin" component={AdminPanel} />
+          {/* <Route path="/admin" component={AdminPanel} /> */}
       {/* {!isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />

@@ -20,7 +20,6 @@ import { SettingsModal } from "@/components/SettingsModal";
 import ExportButtons from "@/components/ExportButtons";
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { useWebSocket } from "@/hooks/useWebSocket";
-import { useAuth } from "@/hooks/useAuth";
 import AnimatedTransactionItem from "@/components/AnimatedTransactionItem";
 import { TransactionSkeleton, StatsSkeleton } from "@/components/AnimatedSkeleton";
 import AnimatedButton from "@/components/AnimatedButton";
@@ -34,13 +33,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
+import { useAuth } from "react-oidc-context";
 
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
-  const { user } = useAuth();
-  const profile = (user as any)?.profile;
-  
+  const auth = useAuth();
+  const profile = (auth.user as any)?.profile;
+
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
   
@@ -63,25 +63,47 @@ export default function Dashboard() {
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filteredTransactionCount, setFilteredTransactionCount] = useState(0);
+async function fetchTransactions(filters: any, token: string) {
+  const params = new URLSearchParams();
+  if (filters.search) params.append("search", filters.search);
+  if (filters.category && filters.category !== "all") params.append("category", filters.category);
+  if (filters.type && filters.type !== "all") params.append("type", filters.type);
+  if (filters.paidBy && filters.paidBy !== "all") params.append("paidBy", filters.paidBy);
+  if (filters.startDate) params.append("startDate", filters.startDate);
+  if (filters.endDate) params.append("endDate", filters.endDate);
 
-  // Fetch transactions
-  const { data: transactions = [], isLoading: transactionsLoading } = useQuery<TransactionWithSplits[]>({
-    queryKey: ["/api/transactions", filters.search, filters.dateRange, filters.category, filters.type, filters.paidBy, filters.startDate, filters.endDate],
-    queryFn: async () => {
-      const params = new URLSearchParams();
-      if (filters.search) params.append('search', filters.search);
-      if (filters.category && filters.category !== 'all') params.append('category', filters.category);
-      if (filters.type && filters.type !== 'all') params.append('type', filters.type);
-      if (filters.paidBy && filters.paidBy !== 'all') params.append('paidBy', filters.paidBy);
-      if (filters.startDate) params.append('startDate', filters.startDate);
-      if (filters.endDate) params.append('endDate', filters.endDate);
-      
-      const response = await fetch(`/api/transactions?${params.toString()}`);
-      if (!response.ok) throw new Error('Failed to fetch transactions');
-      return response.json();
+  const res = await fetch(`/api/transactions?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
     },
-    retry: false,
   });
+
+  if (!res.ok) throw new Error("Failed to fetch transactions");
+  return res.json();
+}
+
+// In your component
+const token = auth.user?.id_token; // or access_token depending on your config
+
+const {
+  data: transactions = [],
+  isLoading: transactionsLoading,
+} = useQuery<TransactionWithSplits[]>({
+  queryKey: [
+    "/api/transactions",
+    filters.search,
+    filters.dateRange,
+    filters.category,
+    filters.type,
+    filters.paidBy,
+    filters.startDate,
+    filters.endDate,
+    token, // include token so query refetches if it changes
+  ],
+  queryFn: () => fetchTransactions(filters, token!),
+  enabled: !!token, // only run if token is available
+  retry: false,
+});
 
   // Fetch groups
   const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
@@ -272,7 +294,7 @@ export default function Dashboard() {
                       </div>
                     </SettingsModal>
                   </DropdownMenuItem>
-                  {((user as any)?.role === 'admin' || (user as any)?.role === 'super_admin') && (
+                  {((auth?.user as any)?.role === 'admin' || (auth?.user as any)?.role === 'super_admin') && (
                     <DropdownMenuItem asChild>
                       <a href="/admin" className="flex items-center w-full cursor-pointer" data-testid="menu-admin-panel">
                         <Settings className="w-4 h-4 mr-2" />
