@@ -304,10 +304,13 @@ const {
                   )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem asChild>
-                    <a href="/api/logout" className="flex items-center w-full cursor-pointer" data-testid="menu-logout">
-                      <User className="w-4 h-4 mr-2" />
-                      Logout
-                    </a>
+                    <Button 
+                      variant="destructive" 
+                      onClick={() => auth.signoutRedirect({ post_logout_redirect_uri: window.location.origin })}
+                      className="w-full"
+                    >
+                      Sign Out
+                    </Button>
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-gray-500" disabled>
                     <User className="w-4 h-4 mr-2" />
