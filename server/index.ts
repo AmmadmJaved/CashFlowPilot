@@ -50,16 +50,15 @@ app.use((req, res, next) => {
   //   serveStatic(app);
   // }
 
+  // Health check must come first
+  app.get("/api/health", (req, res) => {
+    res.json({ status: "ok", timestamp: new Date().toISOString() });
+  });
+
     // Serve the prebuilt client from dist/public
   const publicPath = path.resolve(process.cwd(), "dist", "public");
   app.use(express.static(publicPath));
-    // Health check
-  app.get("/api/health", (req, res) => {
-    res.json({
-      status: "ok",
-      timestamp: new Date().toISOString(),
-    });
-  });
+
   app.get("*", (_req, res) => {
     res.sendFile(path.resolve(publicPath, "index.html"));
   });
