@@ -59,7 +59,7 @@ const token = auth.user?.id_token;
   const createGroupMutation = useMutation({
     mutationFn: async (data: GroupFormData) => {
       // Create the group first
-      const group = await apiRequest("POST", "/api/groups", data) as any;
+      const group = await apiRequest("POST", "/api/groups", data, token) as any;
       
       // Add members to the group
       const validMembers = members.filter(member => member.name.trim());

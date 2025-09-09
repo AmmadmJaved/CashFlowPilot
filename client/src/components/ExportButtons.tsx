@@ -4,6 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, FileSpreadsheet, Download, Eye, TrendingUp } from "lucide-react";
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
+import { useAuth } from "react-oidc-context";
 
 interface ExportButtonsProps {
   filters: {
@@ -35,6 +36,8 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const { toast } = useToast();
+  const auth = useAuth();
+    const token = auth.user?.id_token;
 
   const fetchFilteredTransactions = async (): Promise<Transaction[]> => {
     const params = new URLSearchParams();
@@ -47,8 +50,12 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
 
     if (filters.onlyUser) params.append('onlyUser', 'true');
     if (filters.onlyGroupMembers) params.append('onlyGroupMembers', 'true');
-    
-    const response = await fetch(`/api/transactions?${params.toString()}`);
+
+    const response = await fetch(`/api/transactions?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!response.ok) throw new Error('Failed to fetch transactions');
     return response.json();
   };
@@ -238,6 +245,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
       },
       body: JSON.stringify({ 
         transactions,

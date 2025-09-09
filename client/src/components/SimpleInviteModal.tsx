@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Copy, Share2, Mail, Link, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useAuth } from "react-oidc-context";
 
 interface Group {
   id: string;
@@ -29,13 +30,15 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
   const [generatedLink, setGeneratedLink] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+   const auth = useAuth();
+  const token = auth.user?.id_token;
 
   // Generate simple invite link
   const generateLinkMutation = useMutation({
     mutationFn: async () => {
       const response = await fetch(`/api/groups/${group.id}/simple-invite`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
       });
       
@@ -65,9 +68,9 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
   // Send email invitation
   const sendEmailMutation = useMutation({
     mutationFn: async (emailAddress: string) => {
-      const response = await fetch(`/api/groups/${group.id}/invite-email`, {
+      const response = await fetch(`/api/groups/${group.id}/add-member`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
         body: JSON.stringify({ email: emailAddress }),
       });

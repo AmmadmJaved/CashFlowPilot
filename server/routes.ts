@@ -9,6 +9,7 @@ import { z } from "zod";
 import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
 import { verifyGoogleToken } from "./auth";
+import { use } from "passport";
 
 // Store connected WebSocket clients
 const connectedClients = new Set<WebSocket>();
@@ -631,11 +632,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Statistics routes
-  app.get('/api/stats/monthly' , async (req, res) => {
+ // Statistics routes
+  app.get('/api/stats/monthly', async (req, res) => {
     try {
+      // Get the user ID from the authenticated request
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
       const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
-      
-      const stats = await storage.getMonthlyStats(parseInt(year as string), parseInt(month as string));
+
+      // Get user profile for filtering
+      const profile = await storage.getUserProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "User profile not found" });
+      }
+
+      // Pass user profile to get only their stats
+      const stats = await storage.getMonthlyStats(
+        parseInt(year as string),
+        parseInt(month as string),
+        userId
+      );
+
+      // Add cache control headers
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+
       res.json(stats);
     } catch (error) {
       console.error("Error fetching monthly stats:", error);
@@ -756,48 +781,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send email invitation
-  app.post('/api/groups/:groupId/invite-email' , async (req, res) => {
-    try {
-      const { groupId } = req.params;
-      const { email } = req.body;
-      
-      if (!email) {
-        return res.status(400).json({ message: "Email is required" });
-      }
-      
-      // Validate group exists
-      const group = await storage.getGroupById(groupId);
-      if (!group) {
-        return res.status(404).json({ message: "Group not found" });
-      }
-      
-      // Generate invite code for this email
-      const inviteCode = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-      
-      const inviteData = {
-        groupId,
-        inviteCode,
-        invitedBy: "Email System",
-        expiresAt: null,
-        maxUses: 1, // One-time use for email invites
-      };
-      
-      const invite = await storage.createGroupInvite(inviteData);
-      
-      // Here you would integrate with your email service (SendGrid, etc.)
-      // For now, we'll just return success
-      console.log(`Would send email to ${email} with invite code: ${inviteCode}`);
-      
-      res.json({ 
-        success: true, 
-        message: "Email invitation sent",
-        inviteCode: inviteCode 
-      });
-    } catch (error: any) {
-      console.error("Error sending email invite:", error);
-      res.status(500).json({ message: "Failed to send email invitation" });
+ app.post('/api/groups/:groupId/add-member', async (req, res) => {
+  try {
+    const { groupId } = req.params;
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
     }
-  });
+
+    // Validate group exists
+    const group = await storage.getGroupById(groupId);
+    if (!group) {
+      return res.status(404).json({ message: "Group not found" });
+    }
+
+    // Find user by email
+    const user = await storage.getUserByEmail(email);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // Add user as member
+    const memberData = insertGroupMemberSchema.parse({
+      groupId,
+      userId: user.id,
+      name: user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email?.split('@')[0] || 'User',
+      email: user.email,
+    });
+    const member = await storage.addGroupMember(memberData);
+
+    res.json({
+      success: true,
+      message: `User ${email} added to group successfully`,
+      member,
+    });
+  } catch (error: any) {
+    console.error("Error adding member to group:", error);
+    res.status(500).json({ message: "Failed to add member to group" });
+  }
+});
 
   // Group invite routes with improved error handling (keeping original for backward compatibility)
   app.post('/api/groups/:groupId/invites' , async (req, res) => {

@@ -60,10 +60,13 @@ const token = auth.user?.id_token;
         console.log("🚀 Starting invite creation for group:", group.id, "with data:", data);
         
         // Add credentials to ensure proper session handling
+        // add token in header as well
+        
         const response = await fetch(`/api/groups/${group.id}/invites`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
           },
           credentials: 'include', // Ensure cookies are sent
           body: JSON.stringify(data),
