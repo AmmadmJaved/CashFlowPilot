@@ -1,5 +1,5 @@
 import React from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -34,6 +34,8 @@ const incomeSchema = z.object({
   date: z.string().min(1, "Date is required"),
   paidBy: z.string().min(1, "Received by is required"),
   category: z.string().default("other"),
+  isShared: z.boolean().default(false),
+  groupId: z.string().nullable().optional(), // only required if isShared=true
 });
 
 type IncomeFormData = z.infer<typeof incomeSchema>;
@@ -41,6 +43,17 @@ type IncomeFormData = z.infer<typeof incomeSchema>;
 interface AddIncomeModalProps {
   isOpen: boolean;
   onClose: () => void;
+}
+
+ function useGroups() {
+  return useQuery({
+    queryKey: ["/api/groups"],
+    queryFn: async () => {
+      const res = await fetch("/api/groups");
+      if (!res.ok) throw new Error("Failed to fetch groups");
+      return res.json() as Promise<{ id: string; name: string }[]>;
+    },
+  });
 }
 
 export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps) {
@@ -56,6 +69,8 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
       date: new Date().toISOString().split('T')[0],
       paidBy: profile?.publicName || "",
       category: "other",
+      isShared: false,
+      groupId: null,
     },
   });
 
@@ -66,6 +81,8 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
     }
   }, [profile, form]);
 
+ 
+const { data: groups = [], isLoading: groupsLoading } = useGroups();
   const createIncomeMutation = useMutation({
     mutationFn: async (data: IncomeFormData) => {
       return await apiRequest("POST", "/api/transactions", {
@@ -73,8 +90,8 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
         type: "income",
         amount: data.amount,
         category: data.category,
-        isShared: false,
-        groupId: null,
+        isShared: data.isShared,
+        groupId: data.isShared ? data.groupId : null,
       });
     },
     onSuccess: () => {
@@ -247,6 +264,62 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
                 </FormItem>
               )}
             />
+            <FormField
+              control={form.control}
+              name="isShared"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Share with Group?</FormLabel>
+                  <FormControl>
+                    <select
+                      value={field.value ? "yes" : "no"}
+                      onChange={(e) => field.onChange(e.target.value === "yes")}
+                      className="border rounded px-2 py-1 w-full"
+                    >
+                      <option value="no">No</option>
+                      <option value="yes">Yes</option>
+                    </select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+
+            {form.watch("isShared") && (
+              <FormField
+                control={form.control}
+                name="groupId"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assign Group</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a group" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {groupsLoading && (
+                          <SelectItem value="loading" disabled>
+                            Loading groups...
+                          </SelectItem>
+                        )}
+                        {!groupsLoading && groups.length === 0 && (
+                          <SelectItem value="none" disabled>
+                            No groups available
+                          </SelectItem>
+                        )}
+                        {groups.map((group) => (
+                          <SelectItem key={group.id} value={group.id}>
+                            {group.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
 
             <div className="flex gap-3 pt-4">
               <Button

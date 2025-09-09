@@ -54,10 +54,15 @@ function Router() {
       <Route path="/auth/google/callback" component={CallbackPage} />
 
         {isAuthenticated ? (
-        <Route path="/" component={Dashboard} />
-      ) : (
-        <>
-          <Route path="/" component={Landing} />
+          <>
+            <Route path="/" component={Dashboard} />
+            <Route path="/invite/:inviteCode" component={InvitePage} />
+            <Route path="/admin" component={AdminPanel} />
+          </>
+        ) : (
+          <>
+            <Route path="/" component={Landing} />
+            <Route path="/invite/:inviteCode" component={InvitePage} />
         </>
       )}
       <Route component={NotFound} />
