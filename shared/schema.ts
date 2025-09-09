@@ -84,6 +84,7 @@ export const groupMembers = pgTable("group_members", {
 // Transactions (expenses and income)
 export const transactions = pgTable("transactions", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // NEW
   groupId: varchar("group_id").references(() => groups.id, { onDelete: 'cascade' }),
   type: varchar("type", { enum: ['expense', 'income'] }).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
@@ -91,7 +92,7 @@ export const transactions = pgTable("transactions", {
   category: varchar("category", { length: 100 }),
   date: timestamp("date").notNull(),
   isShared: boolean("is_shared").default(false),
-  paidBy: varchar("paid_by", { length: 255 }).notNull(), // Name of who paid
+  paidBy: varchar("paid_by", { length: 255 }).notNull(),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -100,6 +101,7 @@ export const transactions = pgTable("transactions", {
 export const transactionSplits = pgTable("transaction_splits", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   transactionId: varchar("transaction_id").notNull().references(() => transactions.id, { onDelete: 'cascade' }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }), // NEW
   memberName: varchar("member_name", { length: 255 }).notNull(),
   amount: decimal("amount", { precision: 10, scale: 2 }).notNull(),
   isPaid: boolean("is_paid").default(false),
@@ -163,6 +165,10 @@ export const groupMembersRelations = relations(groupMembers, ({ one }) => ({
 }));
 
 export const transactionsRelations = relations(transactions, ({ one, many }) => ({
+  user: one(users, {
+    fields: [transactions.userId],
+    references: [users.id],
+  }),
   group: one(groups, {
     fields: [transactions.groupId],
     references: [groups.id],

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,7 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
+import { get } from "http";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -105,21 +106,48 @@ const {
   retry: false,
 });
 
-  // Fetch groups
-  const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
-    queryKey: ["/api/groups"],
-    retry: false,
+  // First define the fetch functions
+async function fetchGroups(token: string) {
+  const res = await fetch('/api/groups', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
   });
+  if (!res.ok) throw new Error('Failed to fetch groups');
+  return res.json();
+}
 
-  // Fetch monthly stats
-  const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
-    totalIncome: string;
-    totalExpenses: string;
-    netBalance: string;
-  }>({
-    queryKey: ["/api/stats/monthly"],
-    retry: false,
+async function fetchMonthlyStats(token: string) {
+  const res = await fetch('/api/stats/monthly', {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    },
   });
+  if (!res.ok) throw new Error('Failed to fetch monthly stats');
+  return res.json();
+}
+
+// Fetch groups with token
+const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
+  queryKey: ['/api/groups', token],
+  queryFn: () => fetchGroups(token!),
+  enabled: !!token,
+  retry: false,
+});
+
+// Fetch monthly stats with token
+const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
+  totalIncome: string;
+  totalExpenses: string;
+  netBalance: string;
+}>({
+  queryKey: ['/api/stats/monthly', token],
+  queryFn: () => fetchMonthlyStats(token!),
+  enabled: !!token,
+  retry: false,
+});
 
   const handleFilterChange = (key: string, value: string | boolean | string[]) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -140,6 +168,17 @@ const {
       onlyGroupMembers: false,
     });
   };
+  // Populate filter dropdowns when transactions or groups change
+  // (If you need to run side effects, use useEffect instead of useState)
+  // Example:
+  useEffect(() => {
+    debugger;
+    if (transactions && groups) {
+      debugger;
+      console.log("Transactions or groups updated:", transactions, groups);
+      // Do something here
+    }
+  }, [transactionsLoading, groupsLoading]);
 
   // Get all unique users from transactions and group members
   const allUsers = Array.from(new Set([
@@ -719,6 +758,7 @@ const {
       <AddIncomeModal 
         isOpen={isIncomeModalOpen} 
         onClose={() => setIsIncomeModalOpen(false)} 
+        groups={groups}
       />
       <AddGroupModal 
         isOpen={isGroupModalOpen} 

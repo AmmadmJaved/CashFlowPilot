@@ -24,6 +24,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Trash2, Plus } from "lucide-react";
+import { useAuth } from "react-oidc-context";
 
 const groupSchema = z.object({
   name: z.string().min(1, "Group name is required"),
@@ -42,7 +43,10 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
   const queryClient = useQueryClient();
   const [members, setMembers] = useState<{ name: string; email?: string }[]>([
     { name: "", email: "" }
+    
   ]);
+  const auth = useAuth();
+const token = auth.user?.id_token;
 
   const form = useForm<GroupFormData>({
     resolver: zodResolver(groupSchema),
@@ -65,7 +69,7 @@ export default function AddGroupModal({ isOpen, onClose }: AddGroupModalProps) {
             apiRequest("POST", `/api/groups/${group.id}/members`, {
               name: member.name.trim(),
               email: member.email?.trim() || null,
-            })
+            }, token)
           )
         );
       }

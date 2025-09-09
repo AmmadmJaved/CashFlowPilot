@@ -23,7 +23,10 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { useProfile } from "@/hooks/useProfile";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Calendar, User, Tag } from "lucide-react";
+import { DollarSign, Calendar, User, Tag, Users } from "lucide-react";
+import { Switch } from "./ui/switch";
+import { GroupWithMembers } from "@shared/schema";
+import { useAuth } from "react-oidc-context";
 
 const incomeSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -43,23 +46,16 @@ type IncomeFormData = z.infer<typeof incomeSchema>;
 interface AddIncomeModalProps {
   isOpen: boolean;
   onClose: () => void;
+  groups: GroupWithMembers[];
 }
 
- function useGroups() {
-  return useQuery({
-    queryKey: ["/api/groups"],
-    queryFn: async () => {
-      const res = await fetch("/api/groups");
-      if (!res.ok) throw new Error("Failed to fetch groups");
-      return res.json() as Promise<{ id: string; name: string }[]>;
-    },
-  });
-}
 
-export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps) {
+export default function AddIncomeModal({ isOpen, onClose, groups }: AddIncomeModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { profile } = useProfile();
+  const auth = useAuth();
+  const token = auth.user?.id_token;
 
   const form = useForm<IncomeFormData>({
     resolver: zodResolver(incomeSchema),
@@ -81,8 +77,7 @@ export default function AddIncomeModal({ isOpen, onClose }: AddIncomeModalProps)
     }
   }, [profile, form]);
 
- 
-const { data: groups = [], isLoading: groupsLoading } = useGroups();
+
   const createIncomeMutation = useMutation({
     mutationFn: async (data: IncomeFormData) => {
       return await apiRequest("POST", "/api/transactions", {
@@ -92,7 +87,7 @@ const { data: groups = [], isLoading: groupsLoading } = useGroups();
         category: data.category,
         isShared: data.isShared,
         groupId: data.isShared ? data.groupId : null,
-      });
+      }, token);
     },
     onSuccess: () => {
       toast({
@@ -119,6 +114,10 @@ const { data: groups = [], isLoading: groupsLoading } = useGroups();
       });
     },
   });
+
+   const isShared = form.watch("isShared");
+  const selectedGroupId = form.watch("groupId");
+  const selectedGroup = groups.find(g => g.id === selectedGroupId);
 
   const onSubmit = (data: IncomeFormData) => {
     createIncomeMutation.mutate(data);
@@ -183,7 +182,7 @@ const { data: groups = [], isLoading: groupsLoading } = useGroups();
                     <Tag className="h-4 w-4 text-blue-600" />
                     Category
                   </FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                   <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                     <FormControl>
                       <SelectTrigger data-testid="select-income-category">
                         <SelectValue placeholder="Other (default category)" />
@@ -264,62 +263,78 @@ const { data: groups = [], isLoading: groupsLoading } = useGroups();
                 </FormItem>
               )}
             />
-            <FormField
-              control={form.control}
-              name="isShared"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Share with Group?</FormLabel>
-                  <FormControl>
-                    <select
-                      value={field.value ? "yes" : "no"}
-                      onChange={(e) => field.onChange(e.target.value === "yes")}
-                      className="border rounded px-2 py-1 w-full"
-                    >
-                      <option value="no">No</option>
-                      <option value="yes">Yes</option>
-                    </select>
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+            {groups.length > 0 && (
+                          <FormField
+                            control={form.control}
+                            name="isShared"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
+                                <div className="space-y-0.5">
+                                  <FormLabel className="flex items-center gap-2">
+                                    <Users className="h-4 w-4 text-blue-600" />
+                                    Shared Expense
+                                  </FormLabel>
+                                  <div className="text-sm text-gray-500">
+                                    Split this expense with a group
+                                  </div>
+                                </div>
+                                <FormControl>
+                                  <Switch
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    data-testid="switch-shared-expense"
+                                  />
+                                </FormControl>
+                              </FormItem>
+                            )}
+                          />
+                        )}
 
-            {form.watch("isShared") && (
-              <FormField
-                control={form.control}
-                name="groupId"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Assign Group</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a group" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        {groupsLoading && (
-                          <SelectItem value="loading" disabled>
-                            Loading groups...
-                          </SelectItem>
-                        )}
-                        {!groupsLoading && groups.length === 0 && (
-                          <SelectItem value="none" disabled>
-                            No groups available
-                          </SelectItem>
-                        )}
-                        {groups.map((group) => (
-                          <SelectItem key={group.id} value={group.id}>
-                            {group.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            )}
+            {isShared && (
+                         <FormField
+                           control={form.control}
+                           name="groupId"
+                           render={({ field }) => (
+                             <FormItem>
+                               <FormLabel>Select Group</FormLabel>
+                               <Select onValueChange={field.onChange} value={field.value ?? undefined}>
+                                 <FormControl>
+                                   <SelectTrigger data-testid="select-group">
+                                     <SelectValue placeholder="Choose a group" />
+                                   </SelectTrigger>
+                                 </FormControl>
+                                 <SelectContent>
+                                   {groups.map((group) => (
+                                     <SelectItem key={group.id} value={group.id}>
+                                       <div>
+                                         <div className="font-medium">{group.name}</div>
+                                         <div className="text-sm text-gray-500">
+                                           {group.memberCount} members
+                                         </div>
+                                       </div>
+                                     </SelectItem>
+                                   ))}
+                                 </SelectContent>
+                               </Select>
+                               <FormMessage />
+                             </FormItem>
+                           )}
+                         />
+                       )}
+           
+                       {isShared && selectedGroup && (
+                         <div className="p-3 bg-blue-50 rounded-lg">
+                           <h4 className="font-medium text-blue-900 mb-2">Split Details</h4>
+                           <p className="text-sm text-blue-700">
+                             This expense will be split equally among {selectedGroup?.memberCount || 0} members of "{selectedGroup?.name}"
+                           </p>
+                           {form.getValues().amount && selectedGroup && (
+                             <p className="text-sm font-medium text-blue-800 mt-1">
+                               Each member owes: ₨ {(parseFloat(form.getValues().amount || "0") / (selectedGroup.memberCount || 1)).toFixed(2)}
+                             </p>
+                           )}
+                         </div>
+                       )}
 
             <div className="flex gap-3 pt-4">
               <Button

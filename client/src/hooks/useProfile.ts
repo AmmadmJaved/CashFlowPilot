@@ -1,10 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { UserProfile, InsertUserProfile } from "@shared/schema";
+import { useAuth } from "react-oidc-context";
 
 export function useProfile() {
   const queryClient = useQueryClient();
-
+const auth = useAuth();
+const token = auth.user?.id_token;
   // Get current profile
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['/api/profile'],
@@ -14,7 +16,7 @@ export function useProfile() {
   // Create profile mutation
   const createProfile = useMutation({
     mutationFn: async (data: InsertUserProfile) => {
-      return await apiRequest('/api/profile', 'POST', data);
+      return await apiRequest('/api/profile', 'POST', data, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
@@ -24,7 +26,7 @@ export function useProfile() {
   // Update profile mutation
   const updateProfile = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertUserProfile> }) => {
-      return await apiRequest(`/api/profile/${id}`, 'PATCH', data);
+      return await apiRequest(`/api/profile/${id}`, 'PATCH', data, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });

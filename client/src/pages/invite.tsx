@@ -17,6 +17,7 @@ export default function InvitePage() {
   const [hasJoined, setHasJoined] = useState(false);
   const { toast } = useToast();
 
+
   // Fetch invite information
   const { data: inviteInfo, isLoading, error } = useQuery({
     queryKey: ['/api/invites', inviteCode],

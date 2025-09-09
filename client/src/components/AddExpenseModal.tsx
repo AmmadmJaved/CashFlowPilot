@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import type { GroupWithMembers } from "@shared/schema";
 import { Users, CreditCard, Calendar, User, Tag } from "lucide-react";
+import { useAuth } from "react-oidc-context";
 
 const expenseSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine(
@@ -61,6 +62,8 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
   const queryClient = useQueryClient();
   const { profile } = useProfile();
   const [selectedMembers, setSelectedMembers] = useState<string[]>([]);
+  const auth = useAuth();
+  const token = auth.user?.id_token;
 
   const form = useForm<ExpenseFormData>({
     resolver: zodResolver(expenseSchema),
@@ -90,7 +93,7 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
         amount: data.amount,
         isShared: data.isShared,
         groupId: data.isShared ? data.groupId : null,
-      });
+      }, token);
     },
     onSuccess: () => {
       toast({

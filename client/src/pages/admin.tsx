@@ -102,7 +102,7 @@ const { data: logsData } = useQuery({
   // Mutations
   const suspendUserMutation = useMutation({
     mutationFn: async ({ userId, reason }: { userId: string; reason: string }) => {
-      await apiRequest("POST", `/api/admin/users/${userId}/suspend`, { reason });
+      await apiRequest("POST", `/api/admin/users/${userId}/suspend`, { reason }, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -117,7 +117,7 @@ const { data: logsData } = useQuery({
 
   const activateUserMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await apiRequest("POST", `/api/admin/users/${userId}/activate`);
+      await apiRequest("POST", `/api/admin/users/${userId}/activate`, undefined, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
@@ -130,7 +130,7 @@ const { data: logsData } = useQuery({
 
   const makeAdminMutation = useMutation({
     mutationFn: async (userId: string) => {
-      await apiRequest("POST", `/api/admin/users/${userId}/make-admin`);
+      await apiRequest("POST", `/api/admin/users/${userId}/make-admin`, undefined, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });

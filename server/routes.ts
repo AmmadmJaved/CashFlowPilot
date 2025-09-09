@@ -84,7 +84,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware (applies to routes below)
    // protect everything else
-  // app.use("/api", verifyGoogleToken);
+  app.use("/api", verifyGoogleToken);
   // Auth routes
   app.get('/api/auth/user',  async (req: any, res) => {
     try {
@@ -305,10 +305,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions' , async (req, res) => {
+  app.get('/api/transactions', async (req, res) => {
     try {
-      const { groupId, type, category, paidBy, startDate, endDate, search, onlyUser, onlyGroupMembers } = req.query;
-      
+      const { groupId, type, category, paidBy, startDate, endDate, search } = req.query;
+
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const filters: any = {};
       if (groupId) filters.groupId = groupId;
       if (type) filters.type = type;
@@ -318,29 +323,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (endDate) filters.endDate = new Date(endDate as string);
       if (search) filters.search = search;
 
-      if (onlyUser === 'true') filters.onlyUser = true;
-      if (onlyGroupMembers === 'true') filters.onlyGroupMembers = true;
-
+      // Fetch all transactions based on filters
       let transactions = await storage.getAllTransactions(filters);
-      
-      // Apply client-side filtering for onlyUser and onlyGroupMembers
-      // since these require profile/group context not available in storage
-      if (filters.onlyUser || filters.onlyGroupMembers) {
-        const userId = (req as any).user?.claims?.sub;
-        const profile = userId ? await storage.getUserProfileByUserId(userId) : null;
-        const allGroups = await storage.getAllGroups();
-        const groupMembers = new Set(allGroups.flatMap(g => g.members?.map(m => m.name) || []));
-        
-        transactions = transactions.filter(transaction => {
-          if (filters.onlyUser && transaction.paidBy !== profile?.publicName) {
-            return false;
-          }
-          if (filters.onlyGroupMembers && !groupMembers.has(transaction.paidBy)) {
-            return false;
-          }
-          return true;
-        });
-      }
+
+      // Get user profile
+      const profile = await storage.getUserProfileByUserId(userId);
+
+      // Get all groups and find which ones the user belongs to
+      const allGroups = await storage.getAllGroups();
+      const userGroups = allGroups.filter(g =>
+        g.members?.some(m => m.id === userId || m.name === profile?.publicName)
+      );
+      const allowedGroupIds = new Set(userGroups.map(g => g.id));
+
+      // Apply visibility rules:
+      // - User can always see their own transactions
+      // - User can see others' transactions only if group is shared
+      transactions = transactions.filter(tx => {
+        if (tx.userId === userId) return true;
+        if (tx.groupId && allowedGroupIds.has(tx.groupId)) return true;
+        return false;
+      });
 
       res.json(transactions);
     } catch (error) {
@@ -349,16 +352,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/transactions' , async (req, res) => {
+    app.post('/api/transactions', async (req, res) => {
     try {
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized: User not logged in" });
+      }
+
       const data = insertTransactionSchema.parse({
         ...req.body,
+        userId, // attach creator
         date: new Date(req.body.date),
       });
 
       const transaction = await storage.createTransaction(data);
 
-      // Broadcast the new transaction to all connected clients
       broadcastUpdate('transaction_created', transaction);
 
       // If it's a shared expense, create splits
@@ -371,6 +379,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             memberName: member.name,
             amount: splitAmount.toString(),
             isPaid: member.name === data.paidBy, // Creator has already paid
+            userId: userId,       // userId not available in member object
           }));
 
           await storage.createTransactionSplits(splits);

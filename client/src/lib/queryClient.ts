@@ -11,10 +11,24 @@ export async function apiRequest(
   method: string,
   url: string,
   data?: unknown | undefined,
+  token?: string | undefined,
 ): Promise<Response> {
+  // Prepare headers
+  const headers: Record<string, string> = {};
+  
+  // Add Content-Type if we have data
+  if (data) {
+    headers["Content-Type"] = "application/json";
+  }
+
+  // Add Authorization header if we have a token
+  if (token) {
+    headers["Authorization"] = `Bearer ${token}`;
+  }
+
   const res = await fetch(url, {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -23,14 +37,19 @@ export async function apiRequest(
   return res;
 }
 
+// Update the QueryFunction to include token
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
+  token?: string;
 }) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+  ({ on401: unauthorizedBehavior, token }) =>
   async ({ queryKey }) => {
     const res = await fetch(queryKey.join("/") as string, {
       credentials: "include",
+      headers: token ? {
+        Authorization: `Bearer ${token}`
+      } : {}
     });
 
     if (unauthorizedBehavior === "returnNull" && res.status === 401) {

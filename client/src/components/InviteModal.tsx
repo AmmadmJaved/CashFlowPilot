@@ -17,6 +17,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Badge } from "@/components/ui/badge";
 import type { GroupInvite, GroupWithMembers } from "@shared/schema";
+import { useAuth } from "react-oidc-context";
 
 interface InviteModalProps {
   group: GroupWithMembers;
@@ -29,6 +30,8 @@ export function InviteModal({ group, children }: InviteModalProps) {
   const [maxUses, setMaxUses] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const auth = useAuth();
+const token = auth.user?.id_token;
 
   // Set default invited by name when opening
   useEffect(() => {
@@ -114,7 +117,7 @@ export function InviteModal({ group, children }: InviteModalProps) {
   // Deactivate invite mutation
   const deactivateInviteMutation = useMutation({
     mutationFn: async (inviteId: string) => {
-      const response = await apiRequest('PATCH', `/api/invites/${inviteId}/deactivate`);
+      const response = await apiRequest('PATCH', `/api/invites/${inviteId}/deactivate`, {}, token);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`${response.status}: ${errorText}`);

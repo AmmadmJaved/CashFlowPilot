@@ -19,6 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import type { UserProfile, InsertUserProfile } from "@shared/schema";
+import { useAuth } from "react-oidc-context";
 
 interface SettingsModalProps {
   children: React.ReactNode;
@@ -76,9 +77,12 @@ export function SettingsModal({ children }: SettingsModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  const auth = useAuth();
+const token = auth.user?.id_token;
+
   // Fetch current profile
   const { data: currentProfile, isLoading } = useQuery({
-    queryKey: ['/api/profile'],
+    queryKey: ['/api/profile', token],
     enabled: isOpen,
   });
 
@@ -93,9 +97,9 @@ export function SettingsModal({ children }: SettingsModalProps) {
   const saveProfileMutation = useMutation({
     mutationFn: async (data: Partial<InsertUserProfile>) => {
       if ((currentProfile as any)?.id) {
-        return await apiRequest('PATCH', `/api/profile/${(currentProfile as any).id}`, data);
+        return await apiRequest('PATCH', `/api/profile/${(currentProfile as any).id}`, data, token);
       } else {
-        return await apiRequest('POST', '/api/profile', data);
+        return await apiRequest('POST', '/api/profile', data, token);
       }
     },
     onSuccess: () => {
