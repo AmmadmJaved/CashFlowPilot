@@ -35,6 +35,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
 import { get } from "http";
+import { group } from "console";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -686,6 +687,16 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
                               {transaction.category && (
                                 <Badge variant="secondary" className="ml-2">
                                   {transaction.category}
+                                </Badge>
+                              )}
+                              {transaction.groupId && (
+                                <Badge variant="outline" className="ml-2">
+                                 Shared Expense: {groups.find((group) => group.id === transaction.groupId)?.name}
+                                </Badge>
+                              )}
+                              {!transaction.groupId && (
+                                <Badge variant="destructive" className="ml-2">
+                                  Personal Expense
                                 </Badge>
                               )}
                             </div>
