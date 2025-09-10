@@ -315,6 +315,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Unauthorized" });
       }
 
+      const userEmail = (req as any).user.claims.email;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
       const filters: any = {};
       if (groupId) filters.groupId = groupId;
       if (type) filters.type = type;
@@ -329,9 +334,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Get user profile
       const profile = await storage.getUserProfileByUserId(userId);
-
+      // Get user email from token claims
+      
       // Get all groups and find which ones the user belongs to
-      const allGroups = await storage.getAllGroups();
+      const allGroups = await storage.getAllGroups(userEmail);
       const userGroups = allGroups.filter(g =>
         g.members?.some(m => m.id === userId || m.name === profile?.publicName)
       );
@@ -588,7 +594,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Group routes
   app.get('/api/groups' , async (req, res) => {
     try {
-      const groups = await storage.getAllGroups();
+
+      const userEmail = (req as any).user.claims.email;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized email not found" });
+      }
+      const groups = await storage.getAllGroups(userEmail);
       res.json(groups);
     } catch (error) {
       console.error("Error fetching groups:", error);
@@ -598,9 +609,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post('/api/groups' , async (req, res) => {
     try {
+      const userEmail = (req as any).user.claims.email;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized email not found" });
+      }
+
+       const username = (req as any).user.claims.name || "You";
       const data = insertGroupSchema.parse(req.body);
       const group = await storage.createGroup(data);
-      
+      await storage.addGroupMember({ groupId: group.id, name: username, email: userEmail });
       // Broadcast the new group to all connected clients
       broadcastUpdate('group_created', group);
       

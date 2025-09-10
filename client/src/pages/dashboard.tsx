@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X } from "lucide-react";
+import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X, MoreVertical, Edit2, Trash2 } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
@@ -36,6 +36,7 @@ import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
 import { get } from "http";
 import { group } from "console";
+import { EditTransactionModal } from "@/components/EditTransactionModal";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -45,13 +46,15 @@ export default function Dashboard() {
 
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
-  
+   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("personal");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  // Add state for edit modal
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
   const [filters, setFilters] = useState({
     search: "",
     groupId: "all",
@@ -158,6 +161,33 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
+  // Add delete mutation
+const deleteMutation = useMutation({
+  mutationFn: async (id: string) => {
+    const response = await fetch(`/api/transactions/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    });
+    if (!response.ok) throw new Error('Failed to delete transaction');
+    return response.json();
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+    toast({
+      title: "Success",
+      description: "Transaction deleted successfully",
+    });
+  },
+  onError: () => {
+    toast({
+      title: "Error",
+      description: "Failed to delete transaction",
+      variant: "destructive",
+    });
+  },
+});
 
 
   const clearAllFilters = () => {
@@ -715,6 +745,7 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
                       </div>
 
                       {/* Right section (amount) */}
+                      <div className="flex items-center space-x-4">
                       <div
                         className={`text-base sm:text-lg font-semibold text-right ${
                           transaction.type === "income" ? "text-green-600" : "text-red-600"
@@ -723,6 +754,31 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
                         {transaction.type === "income" ? "+" : "-"}
                         {formatCurrency(transaction.amount)}
                       </div>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setEditingTransaction(transaction)}>
+                            <Edit2 className="h-4 w-4 mr-2" />
+                            Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                deleteMutation.mutate(transaction.id);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                     </div>
                     </div>
                   ))}
                 </div>
@@ -803,6 +859,16 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add EditTransactionModal */}
+      {editingTransaction && (
+        <EditTransactionModal
+          isOpen={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          transaction={editingTransaction}
+          groups={groups}
+        />
+      )}
 
       {/* Modals */}
       <AddExpenseModal 

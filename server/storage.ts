@@ -34,7 +34,7 @@ import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql } from "drizzle-
 export interface IStorage {
   // Group operations
   createGroup(group: InsertGroup): Promise<Group>;
-  getAllGroups(): Promise<GroupWithMembers[]>;
+  getAllGroups(userEmail : string): Promise<GroupWithMembers[]>;
   getGroupById(id: string): Promise<GroupWithMembers | undefined>;
   addGroupMember(member: InsertGroupMember): Promise<GroupMember>;
   removeGroupMember(groupId: string, memberName: string): Promise<void>;
@@ -106,7 +106,7 @@ export class DatabaseStorage implements IStorage {
     return newGroup;
   }
 
-  async getAllGroups(): Promise<GroupWithMembers[]> {
+  async getAllGroups(userEmail : string): Promise<GroupWithMembers[]> {
     const result = await db
       .select({
         group: groups,
@@ -114,6 +114,7 @@ export class DatabaseStorage implements IStorage {
       })
       .from(groups)
       .leftJoin(groupMembers, eq(groups.id, groupMembers.groupId))
+      .where(eq(groupMembers.email, userEmail)) // or use userId if you add that later
       .groupBy(groups.id)
       .orderBy(desc(groups.createdAt));
 

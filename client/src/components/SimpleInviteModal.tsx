@@ -68,7 +68,7 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
   // Send email invitation
   const sendEmailMutation = useMutation({
     mutationFn: async (emailAddress: string) => {
-      const response = await fetch(`/api/groups/${group.id}/add-member`, {
+      const response = await fetch(`/api/groups/${group.id}/invite-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',
@@ -202,7 +202,7 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
           <div className="border-t pt-4 space-y-4">
             <div className="flex items-center space-x-2">
               <Mail className="w-4 h-4" />
-              <h3 className="font-medium">Send Email Invite</h3>
+              <h3 className="font-medium">Add via Email </h3>
             </div>
             
             <div className="space-y-2">
@@ -223,7 +223,7 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
                   {sendEmailMutation.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    "Send"
+                    "Join via Email"
                   )}
                 </Button>
               </div>
