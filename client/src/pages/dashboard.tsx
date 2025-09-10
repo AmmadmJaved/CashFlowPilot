@@ -374,43 +374,48 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
         {statsLoading ? (
           <StatsSkeleton />
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '400ms' } as React.CSSProperties}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500 animate-pulse-custom" />
+              <TrendingUp className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600 transition-all duration-300 hover:scale-105" data-testid="text-total-income">
-                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.totalIncome || 0)}
+              <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
+                {formatCurrency(monthlyStats?.totalIncome || 0)}
               </div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
             </CardContent>
           </Card>
 
-          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '500ms' } as React.CSSProperties}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-              <DollarSign className="h-4 w-4 text-red-500 animate-pulse-custom" />
+              <DollarSign className="h-4 w-4 text-red-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 transition-all duration-300 hover:scale-105" data-testid="text-total-expenses">
-                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.totalExpenses || 0)}
+              <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
+                {formatCurrency(monthlyStats?.totalExpenses || 0)}
               </div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
             </CardContent>
           </Card>
 
-          <Card className="card-hover animate-bounce-in animate-stagger" style={{ '--stagger-delay': '600ms' } as React.CSSProperties}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <Card className="card-hover">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-              <Calendar className="h-4 w-4 text-blue-500 animate-pulse-custom" />
+              <Calendar className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold transition-all duration-300 hover:scale-105 ${parseFloat(monthlyStats?.netBalance || '0') >= 0 ? 'text-green-600' : 'text-red-600'}`} data-testid="text-net-balance">
-                {statsLoading ? <Skeleton className="h-8 w-24 loading-skeleton animate-shimmer" /> : formatCurrency(monthlyStats?.netBalance || 0)}
+              <div
+                className={`text-xl sm:text-2xl font-bold ${
+                  parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
+                }`}
+                data-testid="text-net-balance"
+              >
+                {formatCurrency(monthlyStats?.netBalance || 0)}
               </div>
-              <p className="text-xs text-muted-foreground">This month</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
             </CardContent>
           </Card>
         </div>
@@ -650,68 +655,82 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {transactionsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(5)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4">
-                        <Skeleton className="h-10 w-10 rounded-full" />
-                        <div className="space-y-2">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-4 w-[100px]" />
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-base sm:text-lg md:text-xl">
+                Recent Transactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {transactionsLoading ? (
+                <div className="space-y-4">
+                  {[...Array(5)].map((_, i) => (
+                    <div key={i} className="flex items-center space-x-4">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-[180px] sm:w-[200px]" />
+                        <Skeleton className="h-4 w-[80px] sm:w-[100px]" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : transactions.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p>No transactions found. Add your first expense or income!</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {transactions.map((transaction) => (
+                    <div
+                      key={transaction.id}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-3"
+                      data-testid={`transaction-${transaction.id}`}
+                    >
+                      {/* Left section */}
+                      <div className="flex items-start sm:items-center space-x-3 flex-1">
+                        <div className="text-xl sm:text-2xl shrink-0">
+                          {getTransactionIcon(transaction.category || "", transaction.type)}
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-medium truncate">{transaction.description}</h3>
+                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                            <span className="whitespace-nowrap">
+                              {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
+                              {transaction.paidBy}
+                            </span>
+                            {transaction.category && (
+                              <Badge variant="secondary">{transaction.category}</Badge>
+                            )}
+                            {transaction.groupId ? (
+                              <Badge variant="outline">
+                                Shared:{" "}
+                                {groups.find((group) => group.id === transaction.groupId)?.name}
+                              </Badge>
+                            ) : (
+                              <Badge variant="destructive">Personal</Badge>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                ) : transactions.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p>No transactions found. Add your first expense or income!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {transactions.map((transaction) => (
-                      <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg" data-testid={`transaction-${transaction.id}`}>
-                        <div className="flex items-center space-x-3">
-                          <div className="text-2xl">
-                            {getTransactionIcon(transaction.category || '', transaction.type)}
-                          </div>
-                          <div>
-                            <h3 className="font-medium">{transaction.description}</h3>
-                            <div className="text-sm text-gray-500 flex items-center">
-                              <span>{new Date(transaction.date).toLocaleDateString()} • Paid by {transaction.paidBy}</span>
-                              {transaction.category && (
-                                <Badge variant="secondary" className="ml-2">
-                                  {transaction.category}
-                                </Badge>
-                              )}
-                              {transaction.groupId && (
-                                <Badge variant="outline" className="ml-2">
-                                 Shared Expense: {groups.find((group) => group.id === transaction.groupId)?.name}
-                                </Badge>
-                              )}
-                              {!transaction.groupId && (
-                                <Badge variant="destructive" className="ml-2">
-                                  Personal Expense
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className={`text-lg font-semibold ${transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                          {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount)}
-                        </div>
+
+                      {/* Right section (amount) */}
+                      <div
+                        className={`text-base sm:text-lg font-semibold text-right ${
+                          transaction.type === "income" ? "text-green-600" : "text-red-600"
+                        }`}
+                      >
+                        {transaction.type === "income" ? "+" : "-"}
+                        {formatCurrency(transaction.amount)}
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
 
           <TabsContent value="groups" className="space-y-4">
             <Card>
