@@ -53,6 +53,7 @@ export default function Dashboard() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     search: "",
+    groupId: "all",
     dateRange: "month",
     category: "all",
     type: "all", // all, income, expense
@@ -67,6 +68,7 @@ export default function Dashboard() {
 async function fetchTransactions(filters: any, token: string) {
   const params = new URLSearchParams();
   if (filters.search) params.append("search", filters.search);
+  if (filters.groupId && filters.groupId !== "all") params.append("groupId", filters.groupId);
   if (filters.category && filters.category !== "all") params.append("category", filters.category);
   if (filters.type && filters.type !== "all") params.append("type", filters.type);
   if (filters.paidBy && filters.paidBy !== "all") params.append("paidBy", filters.paidBy);
@@ -93,6 +95,7 @@ const {
   queryKey: [
     "/api/transactions",
     filters.search,
+    filters.groupId,
     filters.dateRange,
     filters.category,
     filters.type,
@@ -149,7 +152,8 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
   retry: false,
 });
 
-  const handleFilterChange = (key: string, value: string | boolean | string[]) => {
+  const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
+    debugger;
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -158,7 +162,8 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
   const clearAllFilters = () => {
     setFilters({
       search: "",
-      dateRange: "month", 
+      groupId: "all",
+      dateRange: "month",
       category: "all",
       type: "all",
       paidBy: "all",
@@ -172,9 +177,7 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
   // (If you need to run side effects, use useEffect instead of useState)
   // Example:
   useEffect(() => {
-    debugger;
     if (transactions && groups) {
-      debugger;
       console.log("Transactions or groups updated:", transactions, groups);
       // Do something here
     }
@@ -202,6 +205,9 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
       return false;
     }
     if (filters.paidBy !== 'all' && transaction.paidBy !== filters.paidBy) {
+      return false;
+    }
+    if (filters.groupId && transaction.groupId !== filters.groupId) {
       return false;
     }
     if (filters.onlyUser && transaction.paidBy !== profile?.publicName) {
@@ -437,7 +443,7 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
                 >
                   {showAdvancedFilters ? "Hide" : "Show"} Filters
                 </Button>
-                {(filters.search || filters.type !== 'all' || filters.category !== 'all' || 
+                {(filters.search || filters.groupId || filters.type !== 'all' || filters.category !== 'all' ||
                   filters.paidBy !== 'all' || filters.onlyUser || filters.onlyGroupMembers) && (
                   <Button
                     variant="ghost"
@@ -466,6 +472,25 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
                   data-testid="input-search"
                 />
               </div>
+              <div>
+                <Label htmlFor="group">Group</Label>
+                <Select
+                  value={filters.groupId || 'all'}
+                  onValueChange={(value) => handleFilterChange("groupId", value)}
+                >
+                  <SelectTrigger data-testid="select-group">
+                    <SelectValue placeholder="All Groups" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Groups</SelectItem>
+                    {groups.map(group => (
+                      <SelectItem key={group.id} value={group.id}>
+                        {group.name} ({group.members?.length || 0} members)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>  
 
               <div>
                 <Label htmlFor="type">Type</Label>
