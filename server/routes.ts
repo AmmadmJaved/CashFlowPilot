@@ -400,21 +400,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put('/api/transactions/:id' , async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-      if (updates.date) {
-        updates.date = new Date(updates.date);
-      }
+  app.put('/api/transactions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    let updates = req.body;
 
-      const transaction = await storage.updateTransaction(id, updates);
-      res.json(transaction);
-    } catch (error) {
-      console.error("Error updating transaction:", error);
-      res.status(500).json({ message: "Failed to update transaction" });
+    if (updates.date) {
+      updates.date = new Date(updates.date);
     }
-  });
+
+    // Normalize groupId
+    if (updates.groupId === "" || updates.groupId === null) {
+      updates.groupId = null;
+    }
+
+    const transaction = await storage.updateTransaction(id, updates);
+    res.json(transaction);
+  } catch (error) {
+    console.error("Error updating transaction:", error);
+    res.status(500).json({ message: "Failed to update transaction" });
+  }
+});
 
   app.delete('/api/transactions/:id' , async (req, res) => {
     try {
