@@ -6,6 +6,7 @@ const oidcConfig: AuthProviderProps = {
   client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
   redirect_uri: import.meta.env.VITE_GOOGLE_REDIRECT_URI,
   client_secret: import.meta.env.VITE_GOOGLE_CLIENT_SECRET,
+  silent_redirect_uri: `${window.location.origin}/silent-callback.html`, // 👈 add this
   response_type: import.meta.env.VITE_GOOGLE_RESPONSE_TYPE,
   scope: import.meta.env.VITE_GOOGLE_SCOPE,
   // Ask Google for a refresh token
