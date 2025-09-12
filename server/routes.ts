@@ -449,7 +449,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Set up the header with styling
       worksheet.mergeCells('A1:F1');
-      worksheet.getCell('A1').value = 'ExpenseShare - Ledger Report';
+      worksheet.getCell('A1').value = 'CashPilot - Ledger Report';
       worksheet.getCell('A1').font = { size: 18, bold: true, color: { argb: '2563EB' } };
       worksheet.getCell('A1').alignment = { horizontal: 'center' };
       

@@ -1,6 +1,6 @@
 {
-  "name": "ExpenseShare - Smart Expense Tracking",
-  "short_name": "ExpenseShare",
+  "name": "CashPilot - Smart Expense Tracking",
+  "short_name": "CashPilot",
   "description": "Smart expense tracking and sharing with real-time collaboration, group management, and comprehensive financial reporting",
   "start_url": "/",
   "scope": "/",
@@ -36,14 +36,14 @@
       "sizes": "1280x720",
       "type": "image/png",
       "form_factor": "wide",
-      "label": "ExpenseShare Dashboard"
+      "label": "CashPilot Dashboard"
     },
     {
       "src": "/screenshot-narrow.png",
       "sizes": "640x1136",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "ExpenseShare Mobile View"
+      "label": "CashPilot Mobile View"
     }
   ],
   "features": [

@@ -21,7 +21,7 @@ export default function PWAInstallBanner() {
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-gray-900 text-sm">
-                Install ExpenseShare
+                Install CashPilot
               </h3>
               <p className="text-xs text-gray-600 mt-1">
                 Get the full app experience with offline access and quick launch

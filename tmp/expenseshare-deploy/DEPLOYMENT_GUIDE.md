@@ -1,14 +1,14 @@
-# ExpenseShare - Complete Vercel Deployment Guide
+# CashPilot - Complete Vercel Deployment Guide
 
 ## 🚀 3-Step Quick Deployment
 
 ### Step 1: Extract and Install
 ```bash
 # Extract the deployment package
-tar -xzf expenseshare-vercel-ready.tar.gz
-# OR unzip expenseshare-vercel-ready.zip
+tar -xzf CashPilot-vercel-ready.tar.gz
+# OR unzip CashPilot-vercel-ready.zip
 
-cd expenseshare-deploy
+cd CashPilot-deploy
 
 # Install dependencies
 npm install
@@ -212,7 +212,7 @@ For deployment issues:
 
 ## 🎉 Success!
 
-Once deployed, your ExpenseShare app will be:
+Once deployed, your CashPilot app will be:
 - Accessible from any web browser
 - Installable as native app on phones/desktops
 - Working offline with cached data

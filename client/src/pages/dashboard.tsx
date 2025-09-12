@@ -278,7 +278,7 @@ const deleteMutation = useMutation({
                   <Share2 className="text-white w-5 h-5" />
                 </div>
                 <div>
-                  <h1 className="text-xl font-bold text-gray-900 tracking-tight animate-fade-in">ExpenseShare</h1>
+                  <h1 className="text-xl font-bold text-gray-900 tracking-tight animate-fade-in">CashPilot</h1>
                   <div className="flex items-center space-x-1">
                     <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 shadow-lg shadow-green-500/50' : 'bg-red-500'}`}></div>
                     <span className="text-xs text-gray-500 font-medium">
@@ -714,21 +714,17 @@ const deleteMutation = useMutation({
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border rounded-lg gap-3"
+                      className="flex items-start justify-between p-4 border rounded-lg gap-3"
                       data-testid={`transaction-${transaction.id}`}
                     >
                       {/* Left section */}
-                      <div className="flex items-start sm:items-center space-x-3 flex-1">
-                        <div className="text-xl sm:text-2xl shrink-0">
+                      <div className="flex items-start space-x-3 flex-1 min-w-0">
+                        <div className="text-xl shrink-0">
                           {getTransactionIcon(transaction.category || "", transaction.type)}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{transaction.description}</h3>
                           <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-2">
-                            <span className="whitespace-nowrap">
-                              {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
-                              {transaction.paidBy}
-                            </span>
                             {transaction.category && (
                               <Badge variant="secondary">{transaction.category}</Badge>
                             )}
@@ -741,11 +737,15 @@ const deleteMutation = useMutation({
                               <Badge variant="destructive">Personal</Badge>
                             )}
                           </div>
+                          <span className="whitespace-nowrap">
+                              {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
+                              {transaction.paidBy}
+                            </span>
                         </div>
                       </div>
 
                       {/* Right section (amount) */}
-                      <div className="flex items-center space-x-4">
+                      <div className="flex flex-col items-end shrink-0 text-right space-y-1">
                       <div
                         className={`text-base sm:text-lg font-semibold text-right ${
                           transaction.type === "income" ? "text-green-600" : "text-red-600"

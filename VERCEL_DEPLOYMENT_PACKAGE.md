@@ -1,14 +1,14 @@
-# ExpenseShare - Complete Vercel Deployment Package
+# CashPilot - Complete Vercel Deployment Package
 
 ## 🚀 Ready-to-Deploy Package Created!
 
-I've created a complete deployment package for ExpenseShare that's optimized for Vercel with full PWA functionality. Here's what you get:
+I've created a complete deployment package for CashPilot that's optimized for Vercel with full PWA functionality. Here's what you get:
 
 ### 📦 Package Contents
 
 **Complete Project Structure:**
 ```
-expenseshare-deploy/
+CashPilot-deploy/
 ├── api/                    # Vercel serverless functions
 ├── client/                 # React frontend with PWA
 ├── server/                 # Express backend
@@ -55,8 +55,8 @@ expenseshare-deploy/
 ### Step 1: Extract and Install
 ```bash
 # Extract the package
-tar -xzf expenseshare-vercel-ready.tar.gz
-cd expenseshare-deploy
+tar -xzf CashPilot-vercel-ready.tar.gz
+cd CashPilot-deploy
 
 # Install dependencies
 npm install

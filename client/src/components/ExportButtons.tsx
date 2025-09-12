@@ -233,7 +233,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(107, 114, 128);
-      doc.text(`ExpenseShare Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`, 105, 285, { align: 'center' });
+      doc.text(`CashPilot Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`, 105, 285, { align: 'center' });
     }
     
     const blobUrl = doc.output('bloburl');

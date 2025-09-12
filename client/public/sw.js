@@ -1,7 +1,7 @@
 // Service Worker for PWA functionality
-const CACHE_NAME = 'expenseshare-v1.0.0';
-const STATIC_CACHE_NAME = 'expenseshare-static-v1.0.0';
-const DYNAMIC_CACHE_NAME = 'expenseshare-dynamic-v1.0.0';
+const CACHE_NAME = 'CashPilot-v1.0.0';
+const STATIC_CACHE_NAME = 'CashPilot-static-v1.0.0';
+const DYNAMIC_CACHE_NAME = 'CashPilot-dynamic-v1.0.0';
 
 // Assets to cache immediately
 const STATIC_ASSETS = [

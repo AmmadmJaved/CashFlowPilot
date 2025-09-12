@@ -15,7 +15,7 @@ export default function Landing() {
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            ExpenseShare
+            CashPilot
           </h1>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8 max-w-2xl mx-auto">
             Track your expenses, share costs with friends, and stay on top of your finances with our modern expense management platform.
@@ -35,7 +35,7 @@ export default function Landing() {
             className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg"
             data-testid="button-login"
           >
-            Sign in with Email/Gmail
+            Sign in with Google
           </Button>
         </div>
 
@@ -92,7 +92,7 @@ export default function Landing() {
 
         {/* Features Highlight */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-16">
-          <h2 className="text-3xl font-bold text-center mb-8">Why Choose ExpenseShare?</h2>
+          <h2 className="text-3xl font-bold text-center mb-8">Why Choose CashPilot?</h2>
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <h3 className="text-xl font-semibold mb-4 text-blue-600">Real-time Collaboration</h3>
@@ -124,7 +124,7 @@ export default function Landing() {
         <div className="text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Take Control of Your Finances?</h2>
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
-            Join thousands of users who trust ExpenseShare to manage their money.
+            Join thousands of users who trust CashPilot to manage their money.
           </p>
           <Button 
             onClick={handleLogin}

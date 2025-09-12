@@ -94,7 +94,7 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
       setIsOpen(false);
       toast({
         title: "Welcome!",
-        description: `Profile created successfully. Welcome to ExpenseShare, ${formData.publicName}!`,
+        description: `Profile created successfully. Welcome to CashPilot, ${formData.publicName}!`,
       });
       
       // Refresh to get updated user data
@@ -137,7 +137,7 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
-              Welcome to ExpenseShare
+              Welcome to CashPilot
             </DialogTitle>
             <DialogDescription>
               Let's set up your profile with Pakistan-friendly defaults. You can change these settings anytime.

@@ -193,7 +193,7 @@ const token = auth.user?.id_token;
   const shareViaEmail = (inviteCode: string) => {
     const inviteUrl = `${window.location.origin}/invite/${inviteCode}`;
     const subject = `Join "${group.name}" expense group`;
-    const body = `Hi there!\n\nYou've been invited to join our expense group "${group.name}" on ExpenseShare.\n\nClick the link below to join:\n${inviteUrl}\n\nThis will help us track shared expenses and split costs easily!\n\nBest regards!`;
+    const body = `Hi there!\n\nYou've been invited to join our expense group "${group.name}" on CashPilot.\n\nClick the link below to join:\n${inviteUrl}\n\nThis will help us track shared expenses and split costs easily!\n\nBest regards!`;
     const emailUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     window.open(emailUrl);
   };

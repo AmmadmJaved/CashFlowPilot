@@ -1,4 +1,4 @@
-# ExpenseShare - Smart Expense Tracking PWA
+# CashPilot - Smart Expense Tracking PWA
 
 A user-friendly full-stack Progressive Web Application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. Features real-time collaboration, group management, comprehensive financial reporting, and offline support.
 
@@ -44,7 +44,7 @@ A user-friendly full-stack Progressive Web Application for expense tracking and 
 ```bash
 # Clone the repository
 git clone <your-repo>
-cd expenseshare
+cd CashPilot
 
 # Install dependencies
 npm install

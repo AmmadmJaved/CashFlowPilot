@@ -1,7 +1,7 @@
-# ExpenseShare - Vercel Deployment Guide
+# CashPilot - Vercel Deployment Guide
 
 ## Overview
-This guide helps you deploy ExpenseShare to Vercel with PWA support and proper configuration.
+This guide helps you deploy CashPilot to Vercel with PWA support and proper configuration.
 
 ## Prerequisites
 1. Vercel CLI installed (`npm i -g vercel`)

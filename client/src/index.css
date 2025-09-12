@@ -113,7 +113,7 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
   
-  /* ExpenseShare specific colors */
+  /* CashPilot specific colors */
   --income: hsl(158.4 64.4% 51.8%);
   --expense: hsl(0 84.2% 60.2%);
   --warning: hsl(43.2 96.4% 56.3%);
@@ -165,7 +165,7 @@
   --shadow-xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00), 0px 8px 10px -1px hsl(202.8169 89.1213% 53.1373% / 0.00);
   --shadow-2xl: 0px 2px 0px 0px hsl(202.8169 89.1213% 53.1373% / 0.00);
   
-  /* ExpenseShare specific colors for dark mode */
+  /* CashPilot specific colors for dark mode */
   --income: hsl(158.4 64.4% 51.8%);
   --expense: hsl(0 84.2% 60.2%);
   --warning: hsl(43.2 96.4% 56.3%);
@@ -241,7 +241,7 @@
     animation-delay: var(--stagger-delay, 0ms);
   }
 
-/* ExpenseShare utility classes */
+/* CashPilot utility classes */
   .text-income {
     color: var(--income);
   }

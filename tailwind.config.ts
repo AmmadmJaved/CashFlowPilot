@@ -61,7 +61,7 @@ export default {
           border: "var(--sidebar-border)",
           ring: "var(--sidebar-ring)",
         },
-        // ExpenseShare specific colors
+        // CashPilot specific colors
         income: "var(--income)",
         expense: "var(--expense)",
         warning: "var(--warning)",

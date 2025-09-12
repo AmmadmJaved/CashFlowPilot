@@ -1,8 +1,8 @@
-# ExpenseShare Application
+# CashPilot Application
 
 ## Overview
 
-ExpenseShare is a user-friendly full-stack web application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. The application allows anyone to immediately start tracking personal expenses, create expense groups for sharing costs with others, and export financial data without requiring signup or login. It features a modern UI built with shadcn/ui components and Tailwind CSS.
+CashPilot is a user-friendly full-stack web application for expense tracking and sharing built with React, TypeScript, Express.js, and PostgreSQL. The application allows anyone to immediately start tracking personal expenses, create expense groups for sharing costs with others, and export financial data without requiring signup or login. It features a modern UI built with shadcn/ui components and Tailwind CSS.
 
 **Status**: Fully functional with simplified no-authentication architecture, multi-user group management, advanced filtering, custom date ranges, comprehensive data export, and real-time collaborative editing. Ready for immediate use without user accounts.
 
