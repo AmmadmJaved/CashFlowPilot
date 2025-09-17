@@ -6,7 +6,7 @@
   <body>
     <script>
       // Needed by oidc-client-ts for silent renew
-      window.location.hash = window.location.search;
+      new window.Oidc.UserManager().signinSilentCallback();
     </script>
   </body>
 </html>

@@ -127,7 +127,16 @@ export default function Landing() {
             Join thousands of users who trust CashPilot to manage their money.
           </p>
           <Button 
-            onClick={handleLogin}
+            onClick={() => {
+                        console.log("✅ Button clicked");
+                        if (!auth || !auth.signinRedirect) {
+                          console.error("auth is not ready", auth);
+                          return;
+                        }
+                        auth.signinRedirect().catch((err: any) => {
+                          console.error("signinRedirect failed", err);
+                        });
+                      }}
             size="lg"
             className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 text-lg"
             data-testid="button-cta-login"

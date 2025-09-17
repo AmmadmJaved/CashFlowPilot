@@ -16,11 +16,29 @@ import { useEffect } from "react";
 import CallbackPage from "./pages/callback";
 
 function Router() {
-  const  { isAuthenticated, isLoading } = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, isLoading } = auth;
   if (isLoading) {
     // Show nothing or a loading spinner while checking stored token
     return <div>Loading...</div>;
   }
+
+  // 🔄 Try silent login when token expires
+  useEffect(() => {
+    if (!auth.user) return;
+
+    if (auth.user.expired) {
+      auth
+        .signinSilent()
+        .then((user) => {
+          console.log("Silent renew success:", user);
+        })
+        .catch((err) => {
+          console.warn("Silent renew failed:", err);
+          // ❌ don't force logout here — let user click Login when needed
+        });
+    }
+  }, [auth.user, auth]);
 
    useEffect(() => {
   const handler = (event: PopStateEvent) => {
