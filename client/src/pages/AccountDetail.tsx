@@ -8,12 +8,14 @@ import { TrendingUp, DollarSign, Calendar, Share2 } from "lucide-react";
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { TransactionWithSplits } from "@shared/schema";
+import { GroupWithMembers, TransactionWithSplits } from "@shared/schema";
 import Filters from "@/components/Filters";
 
 import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { TransactionSkeleton, StatsSkeleton } from "@/components/AnimatedSkeleton";
 import ExportButtons from "@/components/ExportButtons";
+import Header from "@/components/Header";
+import { useWebSocket } from "@/hooks/useWebSocket";
 
 type AccountDetailProps = {
   accountId: string;
@@ -23,7 +25,15 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
   const auth = useAuth();
+  const profile = (auth.user as any)?.profile;
   const queryClient = useQueryClient();
+ const { isConnected } = useWebSocket();
+  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
+  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+  const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
+  const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
+  const [inviteModalOpen, setInviteModalOpen] = useState(false);
+
   const token = auth.user?.id_token;
 
   const [filters, setFilters] = useState({
@@ -93,16 +103,17 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   });
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-          <Share2 className="text-white w-5 h-5" />
-        </div>
-        <h1 className="text-2xl font-bold text-gray-900">Account Details</h1>
-      </div>
-
-      {/* Filters + Export */}
+      <Header
+        isConnected={isConnected}
+        profile={profile}
+        auth={auth}
+        setIsIncomeModalOpen={setIsIncomeModalOpen}
+        setIsExpenseModalOpen={setIsExpenseModalOpen}
+      />
+     <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4">
+     {/* Filters + Export */}
       <ExportButtons filters={filters} />
       <Filters filters={filters} handleFilterChange={handleFilterChange} />
 
@@ -180,6 +191,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
           <p className="text-gray-500">No transactions found.</p>
         )}
       </div>
+     </div>      
     </div>
   );
 }

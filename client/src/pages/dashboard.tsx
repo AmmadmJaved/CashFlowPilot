@@ -48,7 +48,7 @@ export default function Dashboard() {
 
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
-   const queryClient = useQueryClient();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("personal");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
@@ -201,7 +201,6 @@ const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMember
 
 
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
-    debugger;
     setFilters(prev => ({ ...prev, [key]: value }));
   };
 
@@ -443,9 +442,7 @@ const deleteMutation = useMutation({
         </div>
       </header>
 
-      
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" style={{ animationDelay: '300ms' } as React.CSSProperties}>
+      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4">
         {/* Export Navigation - Eye-catching position */}
         <ExportButtons filters={filters} />
         {/* Date Range Filters */}
@@ -727,7 +724,7 @@ const deleteMutation = useMutation({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 animate-slide-in" style={{ animationDelay: '700ms' } as React.CSSProperties}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
-            <TabsTrigger value="groups" data-testid="tab-groups">Shared Account</TabsTrigger>
+            <TabsTrigger value="groups" data-testid="tab-groups">Shared Accounts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
@@ -770,11 +767,13 @@ const deleteMutation = useMutation({
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{transaction.description}</h3>
-                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center gap-2">
+                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center ">
                             {transaction.category && (
                               <Badge variant="secondary">{transaction.category}</Badge>
-                            )}
-                            {transaction.groupId ? (
+                            )} 
+                          </div>
+                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
+                          {transaction.groupId ? (
                               <Badge variant="outline">
                                 Shared:{" "}
                                 {groups.find((group) => group.id === transaction.groupId)?.name}
@@ -782,49 +781,51 @@ const deleteMutation = useMutation({
                             ) : (
                               <Badge variant="destructive">Personal</Badge>
                             )}
-                          </div>
+                        </div>
                           <span className="whitespace-nowrap">
                               {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
                               {transaction.paidBy}
-                            </span>
+                          </span>
+                          <div className="flex space-x-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingTransaction(transaction)}
+                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                              <span>Edit</span>
+                            </Button>
+
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                  deleteMutation.mutate(transaction.id);
+                                }
+                              }}
+                              className="flex items-center space-x-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                              <span>Delete</span>
+                            </Button>
+                          </div>
                         </div>
                       </div>
 
                       {/* Right section (amount) */}
                       <div className="flex flex-col items-end shrink-0 text-right space-y-1">
-                      <div
-                        className={`text-base sm:text-lg font-semibold text-right ${
-                          transaction.type === "income" ? "text-green-600" : "text-red-600"
-                        }`}
-                      >
-                        {transaction.type === "income" ? "+" : "-"}
-                        {formatCurrency(transaction.amount)}
+                        <div
+                          className={`text-base sm:text-lg font-semibold text-right ${
+                            transaction.type === "income" ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {transaction.type === "income" ? "+" : "-"}
+                          {formatCurrency(transaction.amount)}
+                        </div> 
+                        
                       </div>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => setEditingTransaction(transaction)}>
-                            <Edit2 className="h-4 w-4 mr-2" />
-                            Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            className="text-red-600"
-                            onClick={() => {
-                              if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                deleteMutation.mutate(transaction.id);
-                              }
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                     </div>
                     </div>
                   ))}
                 </div>
@@ -840,7 +841,7 @@ const deleteMutation = useMutation({
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Users className="w-5 h-5 mr-2" />
-                    Shared Groups
+                    Shared Accounts
                   </div>
                   <Button
                     onClick={() => setIsGroupModalOpen(true)}
@@ -863,7 +864,7 @@ const deleteMutation = useMutation({
                 ) : groups.length === 0 ? (
                   <div className="text-center py-8 text-gray-500">
                     <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                    <p>No groups yet. Create a group to share expenses with friends!</p>
+                    <p>No groups yet. Create an Accounts to share expenses with friends!</p>
                   </div>
                 ) : (
                   <div className="space-y-4">

@@ -25,10 +25,10 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
   const [open, setOpen] = useState(false);
 
   return (
-    <div className="flex flex-wrap md:flex-nowrap items-end gap-4 mt-4 pt-4 mb-6 overflow-x-auto">
+    <div className="flex flex-wrap md:flex-nowrap items-end gap-3 mt-4 pt-4 mb-6 overflow-x-auto">
       {/* Start Date */}
-      <div className="flex-shrink-0">
-        <Label htmlFor="startDate">Start Date</Label>
+      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
+        <Label htmlFor="startDate" className="ml-2">Start Date</Label>
         <Input
           id="startDate"
           type="date"
@@ -36,12 +36,13 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
           className="w-[180px]"
+          placeholder="Start Date"
         />
       </div>
 
       {/* End Date */}
-      <div className="flex-shrink-0">
-        <Label htmlFor="endDate">End Date</Label>
+      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
+        <Label htmlFor="endDate" className="ml-2">End Date</Label>
         <Input
           id="endDate"
           type="date"
@@ -49,11 +50,12 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
           className="w-[180px]"
+          placeholder="End Date"
         />
       </div>
 
       {/* Filter Button */}
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
         <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -62,35 +64,20 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-4 space-y-4">
-                {/* User Filter */}
+                  {/* Type Filter */}
                 <div>
-                    <Label>User</Label>
-                    <Select onValueChange={(v) => handleFilterChange("user", v)}>
+                    <Label>Type</Label>
+                    <Select onValueChange={(v) => handleFilterChange("type", v)}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Select user" />
+                        <SelectValue placeholder="Select type" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="user1">User 1</SelectItem>
-                        <SelectItem value="user2">User 2</SelectItem>
-                        <SelectItem value="user3">User 3</SelectItem>
-                    </SelectContent>
+                    <SelectItem value="all">All Types</SelectItem>
+                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="income">Income</SelectItem>
+                  </SelectContent>
                     </Select>
                 </div>
-
-                {/* Group Filter */}
-                <div>
-                    <Label>Group</Label>
-                    <Select onValueChange={(v) => handleFilterChange("group", v)}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select group" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="group1">Group 1</SelectItem>
-                        <SelectItem value="group2">Group 2</SelectItem>
-                    </SelectContent>
-                    </Select>
-                </div>
-
                 {/* Category Filter */}
                 <div>
                     <Label>Category</Label>

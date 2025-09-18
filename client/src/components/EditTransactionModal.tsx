@@ -102,23 +102,6 @@ export function EditTransactionModal({ isOpen, onClose, transaction, groups }: E
               required
             />
           </div>
-          <div>
-            <Label htmlFor="category">Category</Label>
-            <Select
-              value={formData.category}
-              onValueChange={(value) => setFormData({ ...formData, category: value })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select category" />
-              </SelectTrigger>
-              <SelectContent>
-                {/* Add your categories here */}
-                <SelectItem value="food">Food & Dining</SelectItem>
-                <SelectItem value="utilities">Utilities</SelectItem>
-                {/* ... other categories */}
-              </SelectContent>
-            </Select>
-          </div>
           <div className="flex justify-end space-x-2">
             <Button variant="outline" onClick={onClose}>
               Cancel
