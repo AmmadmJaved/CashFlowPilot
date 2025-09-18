@@ -14,14 +14,11 @@ import { ProfileInitializer } from "@/components/ProfileInitializer";
 import { useAuth } from "react-oidc-context";
 import { useEffect } from "react";
 import CallbackPage from "./pages/callback";
+import AccountDetail from "@/pages/AccountDetail";
 
 function Router() {
   const auth = useAuth();
   const { isAuthenticated, isLoading } = auth;
-  if (isLoading) {
-    // Show nothing or a loading spinner while checking stored token
-    return <div>Loading...</div>;
-  }
 
   // 🔄 Try silent login when token expires
   useEffect(() => {
@@ -74,6 +71,10 @@ function Router() {
         {isAuthenticated ? (
           <>
             <Route path="/" component={Dashboard} />
+            <Route
+              path="/account/:id"
+              component={({ params }) => <AccountDetail accountId={params.id} />}
+            />
             <Route path="/invite/:inviteCode" component={InvitePage} />
             <Route path="/admin" component={AdminPanel} />
           </>

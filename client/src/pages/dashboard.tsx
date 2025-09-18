@@ -37,6 +37,8 @@ import { useAuth } from "react-oidc-context";
 import { get } from "http";
 import { group } from "console";
 import { EditTransactionModal } from "@/components/EditTransactionModal";
+import Filters from "@/components/Filters";
+import { Link } from "wouter";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -125,16 +127,68 @@ async function fetchGroups(token: string) {
   return res.json();
 }
 
-async function fetchMonthlyStats(token: string) {
-  const res = await fetch('/api/stats/monthly', {
+async function fetchMonthlyStats(
+  token: string,
+  {
+    startDate,
+    endDate,
+    userId,
+    groupId,
+  }: {
+    startDate?: Date;
+    endDate?: Date;
+    userId?: string;
+    groupId?: string;
+  } = {}
+) {
+  const params = new URLSearchParams();
+
+  if (startDate) params.append("startDate", startDate.toISOString());
+  if (endDate) params.append("endDate", endDate.toISOString());
+  if (userId) params.append("userId", userId);
+  if (groupId) params.append("groupId", groupId);
+
+  const res = await fetch(`/api/stats/monthly?${params.toString()}`, {
     headers: {
       Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
   });
-  if (!res.ok) throw new Error('Failed to fetch monthly stats');
+
+  if (!res.ok) throw new Error("Failed to fetch monthly stats");
   return res.json();
 }
+
+// Define variables for stats filters
+const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
+const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
+const userId = profile?.id;
+const groupId = filters.groupId !== "all" ? filters.groupId : undefined;
+
+// Fetch monthly stats with token
+const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
+  totalIncome: string;
+  totalExpenses: string;
+  netBalance: string;
+}>({
+  queryKey: [
+    "/api/stats/monthly",
+    token,
+    startDate,
+    endDate,
+    userId,
+    groupId,
+  ], // ✅ cache key includes filters
+  queryFn: () =>
+    fetchMonthlyStats(token!, {
+      startDate,
+      endDate,
+      userId,
+      groupId,
+    }),
+  enabled: !!token,
+  retry: false,
+});
 
 // Fetch groups with token
 const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
@@ -144,17 +198,7 @@ const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMember
   retry: false,
 });
 
-// Fetch monthly stats with token
-const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
-  totalIncome: string;
-  totalExpenses: string;
-  netBalance: string;
-}>({
-  queryKey: ['/api/stats/monthly', token],
-  queryFn: () => fetchMonthlyStats(token!),
-  enabled: !!token,
-  retry: false,
-});
+
 
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
     debugger;
@@ -399,7 +443,13 @@ const deleteMutation = useMutation({
         </div>
       </header>
 
+      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 animate-fade-in" style={{ animationDelay: '300ms' } as React.CSSProperties}>
+        {/* Export Navigation - Eye-catching position */}
+        <ExportButtons filters={filters} />
+        {/* Date Range Filters */}
+        <Filters filters={filters} handleFilterChange={handleFilterChange} />
         {/* Stats Cards */}
         {statsLoading ? (
           <StatsSkeleton />
@@ -451,14 +501,11 @@ const deleteMutation = useMutation({
         </div>
         )}
 
-        {/* Export Navigation - Eye-catching position */}
-        <ExportButtons filters={filters} />
-
         {/* Real-time Notifications */}
         <RealTimeNotifications isConnected={isConnected} />
 
         {/* Advanced Filters & Financial Reports */}
-        <Card className="mb-6 card-hover animate-slide-in" style={{ animationDelay: '800ms' } as React.CSSProperties}>
+        {/* <Card className="mb-6 card-hover animate-slide-in" style={{ animationDelay: '800ms' } as React.CSSProperties}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -551,7 +598,7 @@ const deleteMutation = useMutation({
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {/* Expense Categories */}
-                    <SelectItem value="food">🍽️ Food & Dining</SelectItem>
+                    {/* <SelectItem value="food">🍽️ Food & Dining</SelectItem>
                     <SelectItem value="utilities">⚡ Utilities</SelectItem>
                     <SelectItem value="entertainment">🎬 Entertainment</SelectItem>
                     <SelectItem value="transportation">🚗 Transportation</SelectItem>
@@ -559,7 +606,7 @@ const deleteMutation = useMutation({
                     <SelectItem value="healthcare">🏥 Healthcare</SelectItem>
                     <SelectItem value="education">📚 Education</SelectItem>
                     {/* Income Categories */}
-                    <SelectItem value="salary">💼 Salary/Wages</SelectItem>
+                    {/* <SelectItem value="salary">💼 Salary/Wages</SelectItem>
                     <SelectItem value="freelance">💻 Freelance</SelectItem>
                     <SelectItem value="business">🏢 Business</SelectItem>
                     <SelectItem value="investment">📈 Investment</SelectItem>
@@ -567,9 +614,9 @@ const deleteMutation = useMutation({
                     <SelectItem value="other">📋 Other</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </div> */}
               
-              <div>
+              {/* <div>
                 <Label htmlFor="dateRange">Date Range</Label>
                 <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange("dateRange", value)}>
                   <SelectTrigger data-testid="select-date-range">
@@ -585,14 +632,14 @@ const deleteMutation = useMutation({
                 </Select>
               </div>
 
-                </div>
+                </div> */}
 
                 {/* User Selection Section */}
-                <div className="border-t pt-4 mt-4">
-                  <Label className="text-base font-semibold mb-3 block">Filter by Transaction Source</Label>
+                {/* <div className="border-t pt-4 mt-4"> */}
+                  {/* <Label className="text-base font-semibold mb-3 block">Filter by Transaction Source</Label>
                   
                   {/* Quick Filter Checkboxes */}
-                  <div className="flex flex-wrap gap-4 mb-4">
+                  {/* <div className="flex flex-wrap gap-4 mb-4">
                     <div className="flex items-center space-x-2">
                       <Checkbox
                         id="only-user"
@@ -627,11 +674,10 @@ const deleteMutation = useMutation({
                     </ul>
                   </div>
                 </div>
-              </>
-            )}
+              </> */}
 
             {/* Financial Report Summary */}
-            {filteredTransactions.length > 0 && (
+            {/* {filteredTransactions.length > 0 && (
               <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mt-4 border border-blue-200">
                 <div className="flex items-center justify-between">
                   <div>
@@ -649,10 +695,10 @@ const deleteMutation = useMutation({
                 </div>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </CardContent> */}
+        {/* </Card> */} 
 
-            {showAdvancedFilters && filters.dateRange === "custom" && (
+            {/* {showAdvancedFilters && filters.dateRange === "custom" && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t pt-4">
                 <div>
                   <Label htmlFor="startDate">Start Date</Label>
@@ -675,13 +721,13 @@ const deleteMutation = useMutation({
                   />
                 </div>
               </div>
-            )}
+            )} */} 
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 animate-slide-in" style={{ animationDelay: '700ms' } as React.CSSProperties}>
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal" data-testid="tab-personal">Personal Expenses</TabsTrigger>
-            <TabsTrigger value="groups" data-testid="tab-groups">Shared Groups</TabsTrigger>
+            <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
+            <TabsTrigger value="groups" data-testid="tab-groups">Shared Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
@@ -794,7 +840,7 @@ const deleteMutation = useMutation({
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Users className="w-5 h-5 mr-2" />
-                    Expense Groups
+                    Shared Groups
                   </div>
                   <Button
                     onClick={() => setIsGroupModalOpen(true)}
@@ -825,11 +871,13 @@ const deleteMutation = useMutation({
                       <div key={group.id} className="p-4 border rounded-lg" data-testid={`group-${group.id}`}>
                         <div className="flex items-center justify-between">
                           <div>
-                            <h3 className="font-medium">{group.name}</h3>
-                            <p className="text-sm text-gray-500">
-                              {group.memberCount} members
-                              {group.description && ` • ${group.description}`}
-                            </p>
+                            <Link href={`/account/${group.id}`}>
+                              <h3 className="font-medium">{group.name}</h3>
+                              <p className="text-sm text-gray-500">
+                                {group.memberCount} members
+                                {group.description && ` • ${group.description}`}
+                              </p>
+                            </Link>
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">

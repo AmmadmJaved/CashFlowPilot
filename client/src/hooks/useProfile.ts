@@ -10,6 +10,12 @@ const token = auth.user?.id_token;
   // Get current profile
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['/api/profile'],
+    enabled: !!token,
+    queryFn: async () => {
+      const res = await apiRequest('/api/profile', 'GET', null, token);
+      if (!res.ok) throw new Error('Failed to fetch profile');
+      return res.json() as Promise<UserProfile>;
+    },
     retry: false,
   });
 

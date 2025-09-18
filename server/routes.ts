@@ -433,6 +433,59 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Account/Group transactions route
+  app.get("/api/accounts/:groupId/transactions", async (req, res) => {
+    try {
+      const { groupId } = req.params;
+      const { type, category, startDate, endDate, search } = req.query;
+
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      const userEmail = (req as any).user?.claims?.email;
+      if (!userEmail) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+
+      // --- Filters ---
+      const filters: any = { groupId };
+      if (type) filters.type = type;
+      if (category) filters.category = category;
+      if (startDate) filters.startDate = new Date(startDate as string);
+      if (endDate) filters.endDate = new Date(endDate as string);
+      if (search) filters.search = search;
+
+      // Fetch all account transactions based on filters
+      let transactions = await storage.getAllTransactions(filters);
+
+      // Get user profile
+      const profile = await storage.getUserProfileByUserId(userId);
+
+      // Get all groups user belongs to
+      const allGroups = await storage.getAllGroups(userEmail);
+      const userGroups = allGroups.filter((g) =>
+        g.members?.some((m) => m.id === userId || m.name === profile?.publicName)
+      );
+      const allowedGroupIds = new Set(userGroups.map((g) => g.id));
+
+      // Apply visibility rules:
+      // - User can always see their own transactions
+      // - User can see others' transactions only if group is shared
+      transactions = transactions.filter((tx) => {
+        if (tx.userId === userId) return true;
+        if (tx.groupId && allowedGroupIds.has(tx.groupId)) return true;
+        return false;
+      });
+
+      res.json(transactions);
+    } catch (error) {
+      console.error("Error fetching account transactions:", error);
+      res.status(500).json({ message: "Failed to fetch account transactions" });
+    }
+  });
+
   // Export routes  
   app.post('/api/export/excel' , async (req, res) => {
     try {
@@ -653,43 +706,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add group member" });
     }
   });
-
-  // Statistics routes
+  
  // Statistics routes
-  app.get('/api/stats/monthly', async (req, res) => {
-    try {
-      // Get the user ID from the authenticated request
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
-
-      const { year = new Date().getFullYear(), month = new Date().getMonth() + 1 } = req.query;
-
-      // Get user profile for filtering
-      const profile = await storage.getUserProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "User profile not found" });
-      }
-
-      // Pass user profile to get only their stats
-      const stats = await storage.getMonthlyStats(
-        parseInt(year as string),
-        parseInt(month as string),
-        userId
-      );
-
-      // Add cache control headers
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      res.setHeader('Pragma', 'no-cache');
-      res.setHeader('Expires', '0');
-
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching monthly stats:", error);
-      res.status(500).json({ message: "Failed to fetch monthly stats" });
+// Statistics routes
+app.get('/api/stats/monthly', async (req, res) => {
+  try {
+    // Authenticated user
+    const userId = (req as any).user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ message: "Authentication required" });
     }
-  });
+
+    // Query params
+    const {
+      startDate,
+      endDate,
+      groupId,
+      filterUser, // specific user filter
+    } = req.query;
+
+
+    // Get user profile (role + account info)
+    const profile = await storage.getUserProfileByUserId(userId);
+    if (!profile) {
+      return res.status(404).json({ message: "User profile not found" });
+    }
+
+    let stats;
+
+      // Account-specific stats
+      stats = await storage.getMonthlyStats({
+        year: startDate ? new Date(startDate as string).getFullYear() : new Date().getFullYear(),
+        month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
+        startDate: startDate ? new Date(startDate as string) : undefined,
+        endDate: endDate ? new Date(endDate as string) : undefined,
+        userId: filterUser ? filterUser : userId,    
+        groupId: groupId as string | undefined,
+      });
+
+    // No-cache headers
+    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
+
+    res.json(stats);
+  } catch (error) {
+    console.error("Error fetching monthly stats:", error);
+    res.status(500).json({ message: "Failed to fetch monthly stats" });
+  }
+});
+
+  
 
   // Export routes
   app.post('/api/export/pdf' , async (req, res) => {

@@ -60,11 +60,19 @@ export interface IStorage {
   updateTransactionSplit(id: string, updates: Partial<InsertTransactionSplit>): Promise<TransactionSplit>;
   
   // Statistics
-  getMonthlyStats(year: number, month: number): Promise<{
-    totalIncome: string;
-    totalExpenses: string;
-    netBalance: string;
-  }>;
+ getMonthlyStats(params: {
+  year: number;
+  month: number;
+  userId?: string;
+  startDate?: Date;
+  endDate?: Date;
+  groupId?: string;
+}): Promise<{
+  totalIncome: string;
+  totalExpenses: string;
+  netBalance: string;
+}>;
+
   
   getGroupBalances(groupId: string): Promise<{
     totalShared: string;
@@ -275,53 +283,70 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Statistics
- async getMonthlyStats(
-  year: number,
-  month: number,
-  userId?: string
-): Promise<{
-  totalIncome: string;
-  totalExpenses: string;
-  netBalance: string;
-}> {
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0, 23, 59, 59);
+  async getMonthlyStats({
+    year,
+    month,
+    userId,
+    startDate,
+    endDate,
+    groupId,
+  }: {
+    year: number;
+    month: number;
+    userId?: string;   // ✅ optional now
+    startDate?: Date;
+    endDate?: Date;
+    groupId?: string;
+  }): Promise<{
+    totalIncome: string;
+    totalExpenses: string;
+    netBalance: string;
+  }> {
+    const from = startDate || new Date(year, month - 1, 1);
+    const to = endDate || new Date(year, month, 0, 23, 59, 59);
 
-  const baseFilters = [
-    gte(transactions.date, startDate),
-    lte(transactions.date, endDate),
-  ];
+    const baseFilters = [
+      gte(transactions.date, from),
+      lte(transactions.date, to),
+    ];
 
-  if (userId) {
-    baseFilters.push(eq(transactions.userId, userId));
+    if (userId) {
+      baseFilters.push(eq(transactions.userId, userId));
+    }
+
+    if (groupId) {
+      baseFilters.push(eq(transactions.groupId, groupId));
+    }
+
+    // Income
+    const [incomeResult] = await db
+      .select({
+        total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+      })
+      .from(transactions)
+      .where(and(eq(transactions.type, "income"), ...baseFilters));
+
+    // Expenses
+    const [expenseResult] = await db
+      .select({
+        total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+      })
+      .from(transactions)
+      .where(and(eq(transactions.type, "expense"), ...baseFilters));
+
+    const totalIncome = incomeResult?.total || "0";
+    const totalExpenses = expenseResult?.total || "0";
+    const netBalance = (
+      parseFloat(totalIncome) - parseFloat(totalExpenses)
+    ).toFixed(2);
+
+    return {
+      totalIncome,
+      totalExpenses,
+      netBalance,
+    };
   }
 
-  // Income
-  const [incomeResult] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
-    })
-    .from(transactions)
-    .where(and(eq(transactions.type, 'income'), ...baseFilters));
-
-  // Expenses
-  const [expenseResult] = await db
-    .select({
-      total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
-    })
-    .from(transactions)
-    .where(and(eq(transactions.type, 'expense'), ...baseFilters));
-
-  const totalIncome = incomeResult?.total || '0';
-  const totalExpenses = expenseResult?.total || '0';
-  const netBalance = (parseFloat(totalIncome) - parseFloat(totalExpenses)).toFixed(2);
-
-  return {
-    totalIncome,
-    totalExpenses,
-    netBalance,
-  };
-}
 
 
   async getGroupBalances(groupId: string): Promise<{
