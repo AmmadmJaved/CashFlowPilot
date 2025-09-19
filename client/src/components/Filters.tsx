@@ -25,20 +25,18 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
    const [open, setOpen] = useState(false);
   const getFirstDayOfMonth = () => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 1)
+    return new Date(now.getFullYear(), now.getMonth(), 2)
       .toISOString()
       .split("T")[0];
   };
 
-  const getLasttDayOfMonth = () => {
+  const getTodayDate = () => {
     const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split("T")[0];
+    return now.toISOString().split("T")[0]; // yyyy-mm-dd
   };
 
   return (
-    <div className="flex flex-wrap md:flex-nowrap items-end gap-3 mt-4 pt-4 mb-6 overflow-x-auto">
+    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 mt-4 pt-4 mb-6 overflow-x-auto">
       {/* Start Date */}
       <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
         <Label htmlFor="startDate" className="ml-2">Start Date</Label>
@@ -48,7 +46,7 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
           value={filters.startDate || getFirstDayOfMonth()}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
-          className="w-[180px]"
+          className="w-[165px]"
           placeholder="Start Date"
         />
       </div>
@@ -59,10 +57,10 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
         <Input
           id="endDate"
           type="date"
-          value={filters.endDate || getLasttDayOfMonth()}
+          value={filters.endDate || getTodayDate()}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
-          className="w-[180px]"
+          className="w-[165px]"
           placeholder="End Date"
         />
       </div>

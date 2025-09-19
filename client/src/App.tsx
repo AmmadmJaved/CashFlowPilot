@@ -9,10 +9,9 @@ import Dashboard from "@/pages/dashboard";
 import InvitePage from "@/pages/invite";
 import Landing from "@/pages/landing";
 import AdminPanel from "@/pages/admin";
-import RealTimeNotifications from "@/components/RealTimeNotifications";
 import { ProfileInitializer } from "@/components/ProfileInitializer";
 import { useAuth } from "react-oidc-context";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import CallbackPage from "./pages/callback";
 import AccountDetail from "@/pages/AccountDetail";
 
@@ -20,39 +19,39 @@ function Router() {
   const auth = useAuth();
   const { isAuthenticated, isLoading } = auth;
 
-  // 🔄 Try silent login when token expires
+  // 🔄 Prevent repeated silent renew calls
+  const renewAttempted = useRef(false);
+
   useEffect(() => {
     if (!auth.user) return;
 
-    if (auth.user.expired) {
+    if (auth.user.expired && !renewAttempted.current) {
+      renewAttempted.current = true; // mark attempt
       auth
         .signinSilent()
         .then((user) => {
           console.log("Silent renew success:", user);
+          renewAttempted.current = false; // reset if successful
         })
         .catch((err) => {
           console.warn("Silent renew failed:", err);
-          // ❌ don't force logout here — let user click Login when needed
+          // You could redirect to login here if needed
         });
     }
   }, [auth.user, auth]);
 
-   useEffect(() => {
-  const handler = (event: PopStateEvent) => {
-    if (isAuthenticated && window.location.href.includes("callback")) {
-      event.preventDefault();
-      window.history.pushState(null, "", "/");
-    }
-  };
-  window.addEventListener("popstate", handler);
-
+  // 🚫 Prevent going back to /callback in history
+  useEffect(() => {
+    const handler = (event: PopStateEvent) => {
+      if (isAuthenticated && window.location.href.includes("callback")) {
+        event.preventDefault();
+        window.history.pushState(null, "", "/");
+      }
+    };
+    window.addEventListener("popstate", handler);
     return () => window.removeEventListener("popstate", handler);
   }, [isAuthenticated]);
 
-  useEffect(() => {
-  }, [isAuthenticated]);
-
-  // Show loading screen while checking authentication
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -68,38 +67,22 @@ function Router() {
     <Switch>
       <Route path="/auth/google/callback" component={CallbackPage} />
 
-        {isAuthenticated ? (
-          <>
-            <Route path="/" component={Dashboard} />
-            <Route
-              path="/account/:id"
-              component={({ params }) => <AccountDetail accountId={params.id} />}
-            />
-            <Route path="/invite/:inviteCode" component={InvitePage} />
-            <Route path="/admin" component={AdminPanel} />
-          </>
-        ) : (
-          <>
-            <Route path="/" component={Landing} />
-            <Route path="/invite/:inviteCode" component={InvitePage} />
+      {isAuthenticated ? (
+        <>
+          <Route path="/" component={Dashboard} />
+          <Route
+            path="/account/:id"
+            component={({ params }) => <AccountDetail accountId={params.id} />}
+          />
+          <Route path="/invite/:inviteCode" component={InvitePage} />
+          <Route path="/admin" component={AdminPanel} />
         </>
-      )}
-      <Route component={NotFound} />
-      {/* <Route path="/" component={Dashboard} /> */}
-          {/* <Route path="/invite/:inviteCode" component={InvitePage} /> */}
-          {/* <Route path="/admin" component={AdminPanel} /> */}
-      {/* {!isAuthenticated ? (
+      ) : (
         <>
           <Route path="/" component={Landing} />
           <Route path="/invite/:inviteCode" component={InvitePage} />
         </>
-      ) : (
-        <>
-          <Route path="/" component={Dashboard} />
-          {/* <Route path="/invite/:inviteCode" component={InvitePage} /> */}
-          {/* <Route path="/admin" component={AdminPanel} />
-        </>
-      )} */}
+      )}
 
       <Route component={NotFound} />
     </Switch>

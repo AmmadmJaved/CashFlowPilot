@@ -30,6 +30,7 @@ interface Transaction {
   paidBy: string;
   isShared: boolean;
   groupId: string | null;
+  showPreview: boolean;
 }
 
 export default function ExportButtons({ filters }: ExportButtonsProps) {
