@@ -22,7 +22,20 @@ type FiltersProps = {
 };
 
 export default function Filters({ filters, handleFilterChange }: FiltersProps) {
-  const [open, setOpen] = useState(false);
+   const [open, setOpen] = useState(false);
+  const getFirstDayOfMonth = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1)
+      .toISOString()
+      .split("T")[0];
+  };
+
+  const getLasttDayOfMonth = () => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0)
+      .toISOString()
+      .split("T")[0];
+  };
 
   return (
     <div className="flex flex-wrap md:flex-nowrap items-end gap-3 mt-4 pt-4 mb-6 overflow-x-auto">
@@ -32,7 +45,7 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
         <Input
           id="startDate"
           type="date"
-          value={filters.startDate}
+          value={filters.startDate || getFirstDayOfMonth()}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
           className="w-[180px]"
@@ -46,7 +59,7 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
         <Input
           id="endDate"
           type="date"
-          value={filters.endDate}
+          value={filters.endDate || getLasttDayOfMonth()}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
           className="w-[180px]"

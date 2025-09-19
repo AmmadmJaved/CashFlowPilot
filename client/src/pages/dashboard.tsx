@@ -773,20 +773,12 @@ const deleteMutation = useMutation({
                             )} 
                           </div>
                           <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
-                          {transaction.groupId ? (
-                              <Badge variant="outline">
-                                Shared:{" "}
-                                {groups.find((group) => group.id === transaction.groupId)?.name}
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive">Personal</Badge>
-                            )}
                         </div>
                           <span className="whitespace-nowrap">
                               {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
                               {transaction.paidBy}
                           </span>
-                          <div className="flex space-x-2">
+                          <div className="flex space-x-2 mt-1">
                             <Button
                               variant="outline"
                               size="sm"
