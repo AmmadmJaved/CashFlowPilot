@@ -127,6 +127,14 @@ async function fetchGroups(token: string) {
   return res.json();
 }
 
+// Fetch groups with token
+const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
+  queryKey: ['/api/groups', token],
+  queryFn: () => fetchGroups(token!),
+  enabled: !!token,
+  retry: false,
+});
+
 async function fetchMonthlyStats(
   token: string,
   {
@@ -189,16 +197,6 @@ const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
   enabled: !!token,
   retry: false,
 });
-
-// Fetch groups with token
-const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
-  queryKey: ['/api/groups', token],
-  queryFn: () => fetchGroups(token!),
-  enabled: !!token,
-  retry: false,
-});
-
-
 
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -724,7 +722,7 @@ const deleteMutation = useMutation({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 animate-slide-in" style={{ animationDelay: '700ms' } as React.CSSProperties}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
-            <TabsTrigger value="groups" data-testid="tab-groups">Shared Accounts</TabsTrigger>
+            <TabsTrigger value="groups" data-testid="tab-groups">Group Accounts</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
@@ -833,7 +831,7 @@ const deleteMutation = useMutation({
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
                     <Users className="w-5 h-5 mr-2" />
-                    Shared Accounts
+                    Group Accounts
                   </div>
                   <Button
                     onClick={() => setIsGroupModalOpen(true)}
@@ -907,7 +905,6 @@ const deleteMutation = useMutation({
           isOpen={!!editingTransaction}
           onClose={() => setEditingTransaction(null)}
           transaction={editingTransaction}
-          groups={groups}
         />
       )}
 

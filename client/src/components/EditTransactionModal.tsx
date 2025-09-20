@@ -12,10 +12,9 @@ interface EditTransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
   transaction: any;
-  groups: any[];
 }
 
-export function EditTransactionModal({ isOpen, onClose, transaction, groups }: EditTransactionModalProps) {
+export function EditTransactionModal({ isOpen, onClose, transaction }: EditTransactionModalProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const auth = useAuth();

@@ -437,7 +437,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/accounts/:groupId/transactions", async (req, res) => {
     try {
       const { groupId } = req.params;
-      const { type, category, startDate, endDate, search } = req.query;
+      const { type, category, startDate, endDate, search,filterUser } = req.query;
 
       const userId = (req as any).user?.claims?.sub;
       if (!userId) {
@@ -455,29 +455,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (category) filters.category = category;
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
-      if (search) filters.search = search;
+      if (filterUser) filters.userId = filterUser;
 
       // Fetch all account transactions based on filters
       let transactions = await storage.getAllTransactions(filters);
 
-      // Get user profile
-      const profile = await storage.getUserProfileByUserId(userId);
+      // // Get user profile
+      // const profile = await storage.getUserProfileByUserId(userId);
 
-      // Get all groups user belongs to
-      const allGroups = await storage.getAllGroups(userEmail);
-      const userGroups = allGroups.filter((g) =>
-        g.members?.some((m) => m.id === userId || m.name === profile?.publicName)
-      );
-      const allowedGroupIds = new Set(userGroups.map((g) => g.id));
+      // // Get all groups user belongs to
+      // const allGroups = await storage.getAllGroups(userEmail);
+      // const userGroups = allGroups.filter((g) =>
+      //   g.members?.some((m) => m.id === userId || m.name === profile?.publicName)
+      // );
+      // const allowedGroupIds = new Set(userGroups.map((g) => g.id));
 
-      // Apply visibility rules:
-      // - User can always see their own transactions
-      // - User can see others' transactions only if group is shared
-      transactions = transactions.filter((tx) => {
-        if (tx.userId === userId) return true;
-        if (tx.groupId && allowedGroupIds.has(tx.groupId)) return true;
-        return false;
-      });
+      // // Apply visibility rules:
+      // // - User can always see their own transactions
+      // // - User can see others' transactions only if group is shared
+      // transactions = transactions.filter((tx) => {
+      //   if (tx.userId === userId) return true;
+      //   if (tx.groupId && allowedGroupIds.has(tx.groupId)) return true;
+      //   return false;
+      // });
 
       res.json(transactions);
     } catch (error) {
@@ -740,7 +740,7 @@ app.get('/api/stats/monthly', async (req, res) => {
         month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
         startDate: startDate ? new Date(startDate as string) : undefined,
         endDate: endDate ? new Date(endDate as string) : undefined,
-        userId: filterUser ? filterUser : userId,    
+        userId: groupId ? filterUser : userId,    
         groupId: groupId as string | undefined,
       });
 
