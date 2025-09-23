@@ -789,7 +789,7 @@ app.get('/api/stats/monthly', async (req, res) => {
       
       report += '\n===============\n';
       report += `Total Income: +$${totalIncome.toFixed(2)}\n`;
-      report += `Total Expenses: -$${totalExpenses.toFixed(2)}\n`;
+      report += `Total Expenses: -$${totalExpenses.toFixed(2)}\n\n`;
       report += `Net Balance: $${(totalIncome - totalExpenses).toFixed(2)}\n`;
       
       res.setHeader('Content-Type', 'text/plain');

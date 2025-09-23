@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2 } from "lucide-react";
+import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2, ArrowLeft } from "lucide-react";
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
@@ -18,11 +18,16 @@ import Header from "@/components/Header";
 import { useWebSocket } from "@/hooks/useWebSocket";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EditTransactionModal } from "@/components/EditTransactionModal";
+import { useMonthlyStats } from "@/hooks/useMonthlyStats";
+import AddExpenseModal from "@/components/AddExpenseModal";
+import AddIncomeModal from "@/components/AddIncomeModal";
+import AddGroupModal from "@/components/AddGroupModal";
+import { SimpleInviteModal } from "@/components/SimpleInviteModal";
+import { useLocation  } from "wouter";
 
 type AccountDetailProps = {
   accountId: string;
 };
-
 export default function AccountDetail({ accountId }: AccountDetailProps) {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
@@ -36,21 +41,27 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   // Add state for edit modal
-    const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
-
+  const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
   const token = auth.user?.id_token;
-
-  const [filters, setFilters] = useState({
+   const [filters, setFilters] = useState({
     search: "",
-    dateRange: "",
+    groupId: "all",
+    dateRange: "month",
     category: "all",
-    type: "all",
-    paidBy: "",
+    type: "all", // all, income, expense
+    paidBy: "all", // filter by person name
     startDate: "",
     endDate: "",
-    onlyUser: false,
-    onlyGroupMembers: false,
   });
+  const [, navigate] = useLocation();
+
+  const goBack = () => {
+    if (window.history.length > 1) {
+      window.history.back(); // browser-native back
+    } else {
+      navigate("/"); // fallback route
+    }
+  };
 
   const handleFilterChange = (key: string, value: string | boolean) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -72,22 +83,19 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     return res.json();
   }
 
-  async function fetchAccountStats(token: string) {
+  // Define variables for stats filters
+  const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
+  const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
+  const userId = profile?.id;
+  const groupId = filters.groupId !== "all" ? filters.groupId : undefined;
 
-     const params = new URLSearchParams();
-    params.append("groupId", accountId);
-    if (filters.search) params.append("search", filters.search);
-    if (filters.category && filters.category !== "all") params.append("category", filters.category);
-    if (filters.type && filters.type !== "all") params.append("type", filters.type);
-    if (filters.startDate) params.append("startDate", filters.startDate);
-    if (filters.endDate) params.append("endDate", filters.endDate);
-
-    const res = await fetch(`/api/stats/monthly?${params}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (!res.ok) throw new Error("Failed to fetch account stats");
-    return res.json();
-  }
+// Fetch monthly stats with token
+  const { data: monthlyStats, isLoading: statsLoading } = useMonthlyStats(token ?? null, {
+    startDate,
+    endDate,
+    userId,
+    groupId: accountId, // must be accountId to get stats for this account
+  });
 
   const { data: transactions = [], isLoading: transactionsLoading } =
     useQuery<TransactionWithSplits[]>({
@@ -96,15 +104,25 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       enabled: !!token,
     });
 
-  const { data: accountStats, isLoading: statsLoading } = useQuery<{
-    totalIncome: string;
-    totalExpenses: string;
-    netBalance: string;
-  }>({
-    queryKey: ["/api/accounts/stats", accountId, token],
-    queryFn: () => fetchAccountStats(token!),
-    enabled: !!token,
-  });
+      // First define the fetch functions
+    async function fetchGroups(token: string) {
+      const res = await fetch('/api/groups', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      if (!res.ok) throw new Error('Failed to fetch groups');
+      return res.json();
+    }
+    
+    // Fetch groups with token
+    const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
+      queryKey: ['/api/groups', token],
+      queryFn: () => fetchGroups(token!),
+      enabled: !!token,
+      retry: false,
+    });
 
     const getTransactionIcon = (category: string, type: string) => {
     if (type === 'income') return '💰';
@@ -157,6 +175,10 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
         setIsExpenseModalOpen={setIsExpenseModalOpen}
       />
      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4">
+      <Button variant="outline" onClick={goBack} className="mb-4">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
      {/* Filters + Export */}
       <ExportButtons filters={filters} />
       <Filters filters={filters} handleFilterChange={handleFilterChange} />
@@ -172,7 +194,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-green-600">
-                {formatCurrency(accountStats?.totalIncome || 0)}
+                {formatCurrency(monthlyStats?.totalIncome || 0)}
               </div>
             </CardContent>
           </Card>
@@ -182,7 +204,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
             </CardHeader>
             <CardContent>
               <div className="text-xl font-bold text-red-600">
-                {formatCurrency(accountStats?.totalExpenses || 0)}
+                {formatCurrency(monthlyStats?.totalExpenses || 0)}
               </div>
             </CardContent>
           </Card>
@@ -193,12 +215,12 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
             <CardContent>
               <div
                 className={`text-xl font-bold ${
-                  parseFloat(accountStats?.netBalance || "0") >= 0
+                  parseFloat(monthlyStats?.netBalance || "0") >= 0
                     ? "text-green-600"
                     : "text-red-600"
                 }`}
               >
-                {formatCurrency(accountStats?.netBalance || 0)}
+                {formatCurrency(monthlyStats?.netBalance || 0)}
               </div>
             </CardContent>
           </Card>
@@ -308,6 +330,29 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
                       transaction={editingTransaction}
                     />
                   )}
+
+                  {/* Modals */}
+                        <AddExpenseModal 
+                          isOpen={isExpenseModalOpen} 
+                          onClose={() => setIsExpenseModalOpen(false)} 
+                          groups={groups}
+                        />
+                        <AddIncomeModal 
+                          isOpen={isIncomeModalOpen} 
+                          onClose={() => setIsIncomeModalOpen(false)} 
+                          groups={groups}
+                        />
+                        <AddGroupModal 
+                          isOpen={isGroupModalOpen} 
+                          onClose={() => setIsGroupModalOpen(false)} 
+                        />
+                        {inviteModalOpen && selectedGroup && (
+                          <SimpleInviteModal
+                            isOpen={inviteModalOpen}
+                            onClose={() => setInviteModalOpen(false)}
+                            group={selectedGroup}
+                          />
+                        )}
       </div>
      </div>      
     </div>

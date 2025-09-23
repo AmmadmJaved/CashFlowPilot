@@ -39,6 +39,7 @@ import { group } from "console";
 import { EditTransactionModal } from "@/components/EditTransactionModal";
 import Filters from "@/components/Filters";
 import { Link } from "wouter";
+import { useMonthlyStats } from "@/hooks/useMonthlyStats";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -135,37 +136,6 @@ const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMember
   retry: false,
 });
 
-async function fetchMonthlyStats(
-  token: string,
-  {
-    startDate,
-    endDate,
-    userId,
-    groupId,
-  }: {
-    startDate?: Date;
-    endDate?: Date;
-    userId?: string;
-    groupId?: string;
-  } = {}
-) {
-  const params = new URLSearchParams();
-
-  if (startDate) params.append("startDate", startDate.toISOString());
-  if (endDate) params.append("endDate", endDate.toISOString());
-  if (userId) params.append("userId", userId);
-  if (groupId) params.append("groupId", groupId);
-
-  const res = await fetch(`/api/stats/monthly?${params.toString()}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-    },
-  });
-
-  if (!res.ok) throw new Error("Failed to fetch monthly stats");
-  return res.json();
-}
 
 // Define variables for stats filters
 const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
@@ -174,29 +144,12 @@ const userId = profile?.id;
 const groupId = filters.groupId !== "all" ? filters.groupId : undefined;
 
 // Fetch monthly stats with token
-const { data: monthlyStats, isLoading: statsLoading } = useQuery<{
-  totalIncome: string;
-  totalExpenses: string;
-  netBalance: string;
-}>({
-  queryKey: [
-    "/api/stats/monthly",
-    token,
+const { data: monthlyStats, isLoading: statsLoading } = useMonthlyStats(token ?? null, {
     startDate,
     endDate,
     userId,
     groupId,
-  ], // ✅ cache key includes filters
-  queryFn: () =>
-    fetchMonthlyStats(token!, {
-      startDate,
-      endDate,
-      userId,
-      groupId,
-    }),
-  enabled: !!token,
-  retry: false,
-});
+  });
 
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
     setFilters(prev => ({ ...prev, [key]: value }));
@@ -265,32 +218,6 @@ const deleteMutation = useMutation({
     (groups || []).flatMap(g => g.members?.map(m => m.name) || [])
   )).filter(Boolean);
 
-  // Count filtered transactions for reporting
-  const filteredTransactions = (transactions || []).filter(transaction => {
-    if (filters.search && !transaction.description.toLowerCase().includes(filters.search.toLowerCase())) {
-      return false;
-    }
-    if (filters.type !== 'all' && transaction.type !== filters.type) {
-      return false;
-    }
-    if (filters.category !== 'all' && transaction.category !== filters.category) {
-      return false;
-    }
-    if (filters.paidBy !== 'all' && transaction.paidBy !== filters.paidBy) {
-      return false;
-    }
-    if (filters.groupId && transaction.groupId !== filters.groupId) {
-      return false;
-    }
-    if (filters.onlyUser && transaction.paidBy !== profile?.publicName) {
-      return false;
-    }
-    if (filters.onlyGroupMembers && !groupMembers.includes(transaction.paidBy)) {
-      return false;
-    }
-
-    return true;
-  });
 
   // Currency formatting is now handled by the useProfile hook
 
@@ -498,225 +425,6 @@ const deleteMutation = useMutation({
 
         {/* Real-time Notifications */}
         <RealTimeNotifications isConnected={isConnected} />
-
-        {/* Advanced Filters & Financial Reports */}
-        {/* <Card className="mb-6 card-hover animate-slide-in" style={{ animationDelay: '800ms' } as React.CSSProperties}>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Filter className="w-5 h-5 text-blue-600" />
-                Advanced Filters & Financial Reports
-              </div>
-              <div className="flex items-center gap-2">
-                {filteredTransactions.length > 0 && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">
-                    {filteredTransactions.length} transactions found
-                  </Badge>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className="text-sm"
-                >
-                  {showAdvancedFilters ? "Hide" : "Show"} Filters
-                </Button>
-                {(filters.search || filters.groupId || filters.type !== 'all' || filters.category !== 'all' ||
-                  filters.paidBy !== 'all' || filters.onlyUser || filters.onlyGroupMembers) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearAllFilters}
-                    className="text-red-600 hover:text-red-800 hover:bg-red-50"
-                  >
-                    <X className="w-4 h-4 mr-1" />
-                    Clear All
-                  </Button>
-                )}
-              </div>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {showAdvancedFilters && (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div>
-                <Label htmlFor="search">Search</Label>
-                <Input
-                  id="search"
-                  placeholder="Search transactions..."
-                  value={filters.search}
-                  onChange={(e) => handleFilterChange("search", e.target.value)}
-                  data-testid="input-search"
-                />
-              </div>
-              <div>
-                <Label htmlFor="group">Group</Label>
-                <Select
-                  value={filters.groupId || 'all'}
-                  onValueChange={(value) => handleFilterChange("groupId", value)}
-                >
-                  <SelectTrigger data-testid="select-group">
-                    <SelectValue placeholder="All Groups" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Groups</SelectItem>
-                    {groups.map(group => (
-                      <SelectItem key={group.id} value={group.id}>
-                        {group.name} ({group.members?.length || 0} members)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>  
-
-              <div>
-                <Label htmlFor="type">Type</Label>
-                <Select value={filters.type} onValueChange={(value) => handleFilterChange("type", value)}>
-                  <SelectTrigger data-testid="select-type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    <SelectItem value="income">💰 Income</SelectItem>
-                    <SelectItem value="expense">💳 Expense</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="category">Category</Label>
-                <Select value={filters.category} onValueChange={(value) => handleFilterChange("category", value)}>
-                  <SelectTrigger data-testid="select-category">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {/* Expense Categories */}
-                    {/* <SelectItem value="food">🍽️ Food & Dining</SelectItem>
-                    <SelectItem value="utilities">⚡ Utilities</SelectItem>
-                    <SelectItem value="entertainment">🎬 Entertainment</SelectItem>
-                    <SelectItem value="transportation">🚗 Transportation</SelectItem>
-                    <SelectItem value="shopping">🛍️ Shopping</SelectItem>
-                    <SelectItem value="healthcare">🏥 Healthcare</SelectItem>
-                    <SelectItem value="education">📚 Education</SelectItem>
-                    {/* Income Categories */}
-                    {/* <SelectItem value="salary">💼 Salary/Wages</SelectItem>
-                    <SelectItem value="freelance">💻 Freelance</SelectItem>
-                    <SelectItem value="business">🏢 Business</SelectItem>
-                    <SelectItem value="investment">📈 Investment</SelectItem>
-                    <SelectItem value="rental">🏠 Rental</SelectItem>
-                    <SelectItem value="other">📋 Other</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div> */}
-              
-              {/* <div>
-                <Label htmlFor="dateRange">Date Range</Label>
-                <Select value={filters.dateRange} onValueChange={(value) => handleFilterChange("dateRange", value)}>
-                  <SelectTrigger data-testid="select-date-range">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="week">This Week</SelectItem>
-                    <SelectItem value="month">This Month</SelectItem>
-                    <SelectItem value="quarter">This Quarter</SelectItem>
-                    <SelectItem value="year">This Year</SelectItem>
-                    <SelectItem value="custom">Custom Range</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-                </div> */}
-
-                {/* User Selection Section */}
-                {/* <div className="border-t pt-4 mt-4"> */}
-                  {/* <Label className="text-base font-semibold mb-3 block">Filter by Transaction Source</Label>
-                  
-                  {/* Quick Filter Checkboxes */}
-                  {/* <div className="flex flex-wrap gap-4 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="only-user"
-                        checked={filters.onlyUser}
-                        onCheckedChange={(checked) => handleFilterChange("onlyUser", checked)}
-                        data-testid="checkbox-only-user"
-                      />
-                      <Label htmlFor="only-user" className="text-sm font-medium">
-                        👤 Only My Transactions ({profile?.publicName || 'User'})
-                      </Label>
-                    </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        id="only-group-members"
-                        checked={filters.onlyGroupMembers}
-                        onCheckedChange={(checked) => handleFilterChange("onlyGroupMembers", checked)}
-                        data-testid="checkbox-only-group-members"
-                      />
-                      <Label htmlFor="only-group-members" className="text-sm font-medium">
-                        👥 Only Group Members ({groupMembers.length} members)
-                      </Label>
-                    </div>
-                  </div>
-
-                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <p className="mb-2 font-medium">📊 Filter by Transaction Source:</p>
-                    <ul className="text-xs space-y-1">
-                      <li>• <strong>Only My Transactions:</strong> Show transactions you paid for or received</li>
-                      <li>• <strong>Only Group Members:</strong> Show transactions from people in your shared groups</li>
-                      <li>• Use both filters together to see specific combinations</li>
-                    </ul>
-                  </div>
-                </div>
-              </> */}
-
-            {/* Financial Report Summary */}
-            {/* {filteredTransactions.length > 0 && (
-              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 mt-4 border border-blue-200">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h4 className="font-semibold text-blue-900 mb-1">Financial Report Ready</h4>
-                    <p className="text-sm text-blue-700">
-                      {filteredTransactions.length} transactions • 
-                      Income: {formatCurrency(filteredTransactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0))} • 
-                      Expenses: {formatCurrency(filteredTransactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0))}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5 text-blue-600" />
-                    <span className="text-sm font-medium text-blue-800">Use export buttons above to generate reports</span>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent> */}
-        {/* </Card> */} 
-
-            {/* {showAdvancedFilters && filters.dateRange === "custom" && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4 border-t pt-4">
-                <div>
-                  <Label htmlFor="startDate">Start Date</Label>
-                  <Input
-                    id="startDate"
-                    type="date"
-                    value={filters.startDate}
-                    onChange={(e) => handleFilterChange("startDate", e.target.value)}
-                    data-testid="input-start-date"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="endDate">End Date</Label>
-                  <Input
-                    id="endDate"
-                    type="date"
-                    value={filters.endDate}
-                    onChange={(e) => handleFilterChange("endDate", e.target.value)}
-                    data-testid="input-end-date"
-                  />
-                </div>
-              </div>
-            )} */} 
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4 animate-slide-in" style={{ animationDelay: '700ms' } as React.CSSProperties}>

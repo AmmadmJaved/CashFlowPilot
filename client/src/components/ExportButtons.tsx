@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { FileText, FileSpreadsheet, Download, Eye, TrendingUp } from "lucide-react";
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { useAuth } from "react-oidc-context";
+import { useParams } from "wouter";
 
 interface ExportButtonsProps {
   filters: {
@@ -15,8 +16,7 @@ interface ExportButtonsProps {
     paidBy: string;
     startDate: string;
     endDate: string;
-    onlyUser: boolean;
-    onlyGroupMembers: boolean;
+    groupId: string | null;
   };
 }
 
@@ -38,7 +38,9 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const { toast } = useToast();
   const auth = useAuth();
-    const token = auth.user?.id_token;
+  const token = auth.user?.id_token;
+
+  const { id: accountId } = useParams<{ id: string }>();
 
   const fetchFilteredTransactions = async (): Promise<Transaction[]> => {
     const params = new URLSearchParams();
@@ -48,17 +50,26 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     if (filters.paidBy && filters.paidBy !== 'all') params.append('paidBy', filters.paidBy);
     if (filters.startDate) params.append('startDate', filters.startDate);
     if (filters.endDate) params.append('endDate', filters.endDate);
+    if (accountId) params.append('groupId', accountId);
 
-    if (filters.onlyUser) params.append('onlyUser', 'true');
-    if (filters.onlyGroupMembers) params.append('onlyGroupMembers', 'true');
 
-    const response = await fetch(`/api/transactions?${params.toString()}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    if (!response.ok) throw new Error('Failed to fetch transactions');
-    return response.json();
+    if(accountId) {
+      const res = await fetch(`/api/accounts/${accountId}/transactions?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch group account transactions");
+      return res.json();
+    
+    }else{
+
+      const response = await fetch(`/api/transactions?${params.toString()}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+      if (!response.ok) throw new Error('Failed to fetch transactions');
+      return response.json();
+    }
   };
 
   const generateLedgerPDF = async (transactions: Transaction[]): Promise<string> => {
@@ -193,26 +204,57 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       doc.text(runningBalance.toLocaleString(), 170, yPos + 5);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
-      
+
       yPos += 10;
       rowCount++;
     });
-    
-    // Final totals section
-    yPos += 10;
-    doc.setFillColor(243, 244, 246);
-    doc.rect(20, yPos, 170, 25, 'F');
-    doc.setDrawColor(107, 114, 128);
-    doc.rect(20, yPos, 170, 25, 'S');
-    
-    const totalIncome = sortedTransactions
+
+
+     // ToTals row
+
+     const totalIncome = sortedTransactions
       .filter(t => t.type === 'income')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     const totalExpenses = sortedTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
     const finalBalance = totalIncome - totalExpenses;
+    // ---------------------------------------
+    yPos += 5; // small spacing before totals row
+
+    // Background for totals row
+    doc.setFillColor(243, 244, 246);
+    doc.rect(20, yPos - 2, 170, 10, 'F');
+
+    // Bold text for "Totals"
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+    doc.text("TOTAL", 50, yPos + 5); // label under Description column
+
+    // Total Income (green)
+    doc.setTextColor(5, 150, 105);
+    doc.text(totalIncome.toLocaleString(), 125, yPos + 5);
+
+    // Total Expenses (red)
+    doc.setTextColor(220, 38, 38);
+    doc.text(totalExpenses.toLocaleString(), 145, yPos + 5);
+
+    // Final Balance (green if +, red if -)
+    doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
+    doc.text(finalBalance.toLocaleString(), 170, yPos + 5);
+
+    // Reset font
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(0, 0, 0);
     
+    // Final totals section
+    yPos += 15;
+    doc.setFillColor(243, 244, 246);
+    doc.rect(20, yPos, 170, 35, 'F');
+    doc.setDrawColor(107, 114, 128);
+    doc.rect(20, yPos, 170, 35, 'S');
+
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
     doc.text('FINAL SUMMARY', 25, yPos + 8);
@@ -223,10 +265,11 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     
     doc.setTextColor(220, 38, 38);
     doc.text(`Total Expenses: ₨ ${totalExpenses.toLocaleString()}`, 25, yPos + 21);
-    
+
+    const nextLine = yPos + 26; // adjust spacing here
     doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
     doc.setFontSize(12);
-    doc.text(`Net Balance: ₨ ${finalBalance.toLocaleString()}`, 120, yPos + 18);
+    doc.text(`Net Balance: ₨ ${finalBalance.toLocaleString()}`, 25, nextLine);
     
     // Footer
     const pageCount = doc.getNumberOfPages();
@@ -234,7 +277,16 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       doc.setPage(i);
       doc.setFontSize(8);
       doc.setTextColor(107, 114, 128);
-      doc.text(`CashPilot Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`, 105, 285, { align: 'center' });
+
+      const pageHeight = doc.internal.pageSize.getHeight(); // dynamic height
+      const footerY = pageHeight - 10; // 10 units from bottom
+
+      doc.text(
+        `CashPilot Ledger | Page ${i} of ${pageCount} | ${format(new Date(), 'PPp')}`,
+        doc.internal.pageSize.getWidth() / 2,
+        footerY,
+        { align: 'center' }
+      );
     }
     
     const blobUrl = doc.output('bloburl');
