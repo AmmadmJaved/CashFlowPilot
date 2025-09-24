@@ -34,10 +34,12 @@ import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql } from "drizzle-
 export interface IStorage {
   // Group operations
   createGroup(group: InsertGroup): Promise<Group>;
+  getGroupsByUserId(userId: string): Promise<GroupWithMembers[]>;
   getAllGroups(userEmail : string): Promise<GroupWithMembers[]>;
   getGroupById(id: string): Promise<GroupWithMembers | undefined>;
   addGroupMember(member: InsertGroupMember): Promise<GroupMember>;
   removeGroupMember(groupId: string, memberName: string): Promise<void>;
+  deleteGroup(groupId: string): Promise<void>;
   
   // Transaction operations
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
@@ -113,6 +115,38 @@ export class DatabaseStorage implements IStorage {
     const [newGroup] = await db.insert(groups).values(group).returning();
     return newGroup;
   }
+  // get groups for a user by their userId
+  async getGroupsByUserId(userId: string): Promise<GroupWithMembers[]> {
+    // First, get groups where the user is a member
+    const memberGroups = await db
+      .select({
+        group: groups,
+        memberCount: sql<number>`count(distinct ${groupMembers.id})`,
+      })
+      .from(groups)
+      .leftJoin(groupMembers, eq(groups.id, groupMembers.groupId))
+      .where(eq(groupMembers.email, userId)) // or use userId if you add that later
+      .groupBy(groups.id)
+      .orderBy(desc(groups.createdAt));
+
+    // For each group, fetch its members
+    const groupsWithMembers = await Promise.all(
+      memberGroups.map(async ({ group, memberCount }) => {
+        const members = await db
+          .select()
+          .from(groupMembers)
+          .where(eq(groupMembers.groupId, group.id));
+
+        return {
+          ...group,
+          members,
+          memberCount: Number(memberCount) || 0,
+        };
+      })
+    );
+
+    return groupsWithMembers;
+  }
 
   async getAllGroups(userEmail : string): Promise<GroupWithMembers[]> {
     const result = await db
@@ -170,6 +204,38 @@ export class DatabaseStorage implements IStorage {
       .delete(groupMembers)
       .where(and(eq(groupMembers.groupId, groupId), eq(groupMembers.name, memberName)));
   }
+  deleteGroup(groupId: string): Promise<void> {
+      return db.transaction(async (tx) => {
+        // Delete related transaction splits
+        await tx
+          .delete(transactionSplits)
+          .where(inArray(transactionSplits.transactionId, 
+            tx.select({ id: transactions.id })
+              .from(transactions)
+              .where(eq(transactions.groupId, groupId))
+          ));
+        
+        // Delete related transactions
+        await tx
+          .delete(transactions)
+          .where(eq(transactions.groupId, groupId));
+        
+        // Delete group members
+        await tx
+          .delete(groupMembers)
+          .where(eq(groupMembers.groupId, groupId));
+        
+        // Delete group invites
+        await tx
+          .delete(groupInvites)
+          .where(eq(groupInvites.groupId, groupId));      
+        
+        // Delete group
+        await tx
+          .delete(groups)
+          .where(eq(groups.id, groupId));
+      });
+    }
 
   // Transaction operations
   async createTransaction(transaction: InsertTransaction): Promise<Transaction> {

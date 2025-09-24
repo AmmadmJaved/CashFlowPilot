@@ -232,6 +232,36 @@ const deleteMutation = useMutation({
       default: return '💳';
     }
   };
+  // delete group function
+  const deleteGroup = async (groupId: string) => {
+    if (!token) return;
+    if (!window.confirm("Are you sure you want to delete this group? This action cannot be undone.")) return;
+
+    try {
+      const res = await fetch(`/api/groups/${groupId}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+      if (!res.ok) throw new Error('Failed to delete group');
+      toast({
+        title: "Success",
+        description: "Group deleted successfully",
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      // If the deleted group was selected in filters, reset to 'all'
+      if (filters.groupId === groupId) {
+        setFilters(prev => ({ ...prev, groupId: 'all' }));
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: (error as Error).message || "Failed to delete group",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -580,8 +610,7 @@ const deleteMutation = useMutation({
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
-                              <p className="text-sm text-gray-500">Total Shared</p>
-                              <p className="font-semibold">{formatCurrency(group.totalShared || 0)}</p>
+                              <Button size="sm" variant="outline" onClick={() => deleteGroup(group.id)}>Delete</Button>
                             </div>
                             <Button 
                               size="sm" 

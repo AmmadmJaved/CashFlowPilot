@@ -665,7 +665,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch groups" });
     }
   });
-
+// create group route
   app.post('/api/groups' , async (req, res) => {
     try {
       const userEmail = (req as any).user.claims.email;
@@ -687,6 +687,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // get group by Id route
+  app.get('/api/groups/:id' , async (req, res) => {
+    try {
+      const { id } = req.params;
+      console.error("Error fetching group:", id);
+      const group = await storage.getGroupById(id);
+      console.error("Error fetching group:", group);
+      res.json(group);
+    } catch (error) {
+      console.error("Error fetching group:", error);
+      res.status(500).json({ message: "Failed to fetch group" });
+    }
+  }); 
+
+  // add group member route
   app.post('/api/groups/:id/members' , async (req, res) => {
     try {
       const { id } = req.params;
@@ -706,57 +721,80 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to add group member" });
     }
   });
-  
- // Statistics routes
-// Statistics routes
-app.get('/api/stats/monthly', async (req, res) => {
-  try {
-    // Authenticated user
-    const userId = (req as any).user?.claims?.sub;
-    if (!userId) {
-      return res.status(401).json({ message: "Authentication required" });
+
+   // remove group member route
+  app.delete('/api/groups/:groupId/members/:memberId' , async (req, res) => {
+    try {
+      const { groupId, memberId } = req.params;
+      await storage.removeGroupMember(groupId, memberId);
+      res.json({ message: "Group member removed successfully" });
+    } catch (error) {
+      console.error("Error removing group member:", error);
+      res.status(500).json({ message: "Failed to remove group member" });
     }
+  });
 
-    // Query params
-    const {
-      startDate,
-      endDate,
-      groupId,
-      filterUser, // specific user filter
-    } = req.query;
-
-
-    // Get user profile (role + account info)
-    const profile = await storage.getUserProfileByUserId(userId);
-    if (!profile) {
-      return res.status(404).json({ message: "User profile not found" });
+  // delete group route
+  app.delete('/api/groups/:id' , async (req, res) => {
+    try {
+      const { id } = req.params;
+      await storage.deleteGroup(id);
+      res.json({ message: "Group deleted successfully" });
+    } catch (error) {
+      console.error("Error deleting group:", error);
+      res.status(500).json({ message: "Failed to delete group" });
     }
-
-    let stats;
-
-      // Account-specific stats
-      stats = await storage.getMonthlyStats({
-        year: startDate ? new Date(startDate as string).getFullYear() : new Date().getFullYear(),
-        month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
-        startDate: startDate ? new Date(startDate as string) : undefined,
-        endDate: endDate ? new Date(endDate as string) : undefined,
-        userId: groupId ? filterUser : userId,    
-        groupId: groupId as string | undefined,
-      });
-
-    // No-cache headers
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-
-    res.json(stats);
-  } catch (error) {
-    console.error("Error fetching monthly stats:", error);
-    res.status(500).json({ message: "Failed to fetch monthly stats" });
-  }
-});
-
+  });
   
+  // Statistics routes
+
+  app.get('/api/stats/monthly', async (req, res) => {
+    try {
+      // Authenticated user
+      const userId = (req as any).user?.claims?.sub;
+      if (!userId) {
+        return res.status(401).json({ message: "Authentication required" });
+      }
+
+      // Query params
+      const {
+        startDate,
+        endDate,
+        groupId,
+        filterUser, // specific user filter
+      } = req.query;
+
+
+      // Get user profile (role + account info)
+      const profile = await storage.getUserProfileByUserId(userId);
+      if (!profile) {
+        return res.status(404).json({ message: "User profile not found" });
+      }
+
+      let stats;
+
+        // Account-specific stats
+        stats = await storage.getMonthlyStats({
+          year: startDate ? new Date(startDate as string).getFullYear() : new Date().getFullYear(),
+          month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
+          startDate: startDate ? new Date(startDate as string) : undefined,
+          endDate: endDate ? new Date(endDate as string) : undefined,
+          userId: groupId ? filterUser : userId,    
+          groupId: groupId as string | undefined,
+        });
+
+      // No-cache headers
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+
+      res.json(stats);
+    } catch (error) {
+      console.error("Error fetching monthly stats:", error);
+      res.status(500).json({ message: "Failed to fetch monthly stats" });
+    }
+  });
+
 
   // Export routes
   app.post('/api/export/pdf' , async (req, res) => {

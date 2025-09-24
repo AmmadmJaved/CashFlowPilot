@@ -87,14 +87,14 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   const startDate = filters.startDate ? new Date(filters.startDate) : undefined;
   const endDate = filters.endDate ? new Date(filters.endDate) : undefined;
   const userId = profile?.id;
-  const groupId = filters.groupId !== "all" ? filters.groupId : undefined;
+  // const groupId = filters.groupId !== "all" ? filters.groupId : undefined;
 
 // Fetch monthly stats with token
   const { data: monthlyStats, isLoading: statsLoading } = useMonthlyStats(token ?? null, {
     startDate,
     endDate,
     userId,
-    groupId: accountId, // must be accountId to get stats for this account
+    groupId: accountId, // must be groupId to get stats for this account
   });
 
   const { data: transactions = [], isLoading: transactionsLoading } =
@@ -106,7 +106,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
 
       // First define the fetch functions
     async function fetchGroups(token: string) {
-      const res = await fetch('/api/groups', {
+      const res = await fetch(`/api/groups/${accountId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
           'Content-Type': 'application/json',
@@ -117,11 +117,10 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     }
     
     // Fetch groups with token
-    const { data: groups = [], isLoading: groupsLoading } = useQuery<GroupWithMembers[]>({
-      queryKey: ['/api/groups', token],
+    const { data: group , isLoading: groupLoading } = useQuery<GroupWithMembers>({
+      queryKey: [`/api/groups/${accountId}`, token],
       queryFn: () => fetchGroups(token!),
-      enabled: !!token,
-      retry: false,
+      enabled: !!token
     });
 
     const getTransactionIcon = (category: string, type: string) => {
@@ -179,7 +178,23 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
         <ArrowLeft className="mr-2 h-4 w-4" />
         Back
       </Button>
-     {/* Filters + Export */}
+      <div className="flex items-center justify-between mb-4">
+        <h1 className="text-2xl font-bold text-gray-900">{group?.name}</h1>
+        <div className="flex items-center">
+          <Button
+            variant="outline"
+            className="mr-2"
+            onClick={() => {
+              setSelectedGroup(group?group:null);
+              setInviteModalOpen(true);
+            }}
+          >
+            Invite Members
+          </Button>
+        </div>
+      </div>
+
+      {/* Filters + Export */}
       <ExportButtons filters={filters} />
       <Filters filters={filters} handleFilterChange={handleFilterChange} />
 
@@ -335,12 +350,12 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
                         <AddExpenseModal 
                           isOpen={isExpenseModalOpen} 
                           onClose={() => setIsExpenseModalOpen(false)} 
-                          groups={groups}
+                          groups={group ? [group] : []}
                         />
                         <AddIncomeModal 
                           isOpen={isIncomeModalOpen} 
                           onClose={() => setIsIncomeModalOpen(false)} 
-                          groups={groups}
+                          groups={group ? [group] : []}
                         />
                         <AddGroupModal 
                           isOpen={isGroupModalOpen} 
