@@ -24,6 +24,7 @@ import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
 import { SimpleInviteModal } from "@/components/SimpleInviteModal";
 import { useLocation  } from "wouter";
+import Footer from "@/components/Footer";
 
 type AccountDetailProps = {
   accountId: string;
@@ -54,6 +55,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     endDate: "",
   });
   const [, navigate] = useLocation();
+  const [activeTab, setActiveTab] = useState("personal");
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -337,6 +339,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
                 </div>
               )}
             </CardContent>
+            <Footer callabckSetActivetab={setActiveTab} activeTab={activeTab} groups={group ? [group] : []}/>
             {/* Add EditTransactionModal */}
                   {editingTransaction && (
                     <EditTransactionModal

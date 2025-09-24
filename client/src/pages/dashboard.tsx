@@ -40,6 +40,7 @@ import { EditTransactionModal } from "@/components/EditTransactionModal";
 import Filters from "@/components/Filters";
 import { Link } from "wouter";
 import { useMonthlyStats } from "@/hooks/useMonthlyStats";
+import Footer from "@/components/Footer";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -634,6 +635,8 @@ const deleteMutation = useMutation({
             </Card>
           </TabsContent>
         </Tabs>
+        <Footer callabckSetActivetab={setActiveTab} activeTab={activeTab} />
+
       </div>
 
       {/* Add EditTransactionModal */}
