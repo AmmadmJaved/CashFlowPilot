@@ -47,28 +47,28 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
     <div className="flex flex-wrap md:flex-nowrap items-end gap-2 mt-2 mb-2 overflow-x-auto">
       {/* Start Date */}
       <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
-        <Label htmlFor="startDate" className="ml-2">Start Date</Label>
+        <Label htmlFor="startDate" className="ml-2 pl-2">Start Date</Label>
         <Input
           id="startDate"
           type="date"
           value={filters.startDate || getFirstDayOfMonth()}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
-          className="w-[165px]"
+          className="w-[165px] h-[30px]"
           placeholder="Start Date"
         />
       </div>
 
       {/* End Date */}
       <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
-        <Label htmlFor="endDate" className="ml-2">End Date</Label>
+        <Label htmlFor="endDate" className="ml-2 pl-2">End Date</Label>
         <Input
           id="endDate"
           type="date"
           value={filters.endDate || getTodayDate()}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
-          className="w-[165px]"
+          className="w-[165px] h-[30px]"
           placeholder="End Date"
         />
       </div>

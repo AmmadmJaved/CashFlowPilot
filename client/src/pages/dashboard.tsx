@@ -300,38 +300,36 @@ const deleteMutation = useMutation({
                 <StatsSkeleton />
               ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <Card className="card-hover">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Card className="card-hover pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
                     <CardTitle className="text-sm font-medium">Total Income</CardTitle>
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0 pl-6 pr-6">
                     <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
                       {formatCurrency(monthlyStats?.totalIncome || 0)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Card className="card-hover pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6 ">
                     <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
                     <DollarSign className="h-4 w-4 text-red-500" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0 pl-6 pr-6">
                     <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
                       {formatCurrency(monthlyStats?.totalExpenses || 0)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover">
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <Card className="card-hover pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
                     <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
                     <Calendar className="h-4 w-4 text-blue-500" />
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0 pl-6 pr-6">
                     <div
                       className={`text-xl sm:text-2xl font-bold ${
                         parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
@@ -340,14 +338,14 @@ const deleteMutation = useMutation({
                     >
                       {formatCurrency(monthlyStats?.netBalance || 0)}
                     </div>
-                    <p className="text-xs sm:text-sm text-muted-foreground">This month</p>
                   </CardContent>
                 </Card>
               </div>
               )}
 
             {/* Recent Transactions */}
-            <CardHeader>
+             <div className="bg-white shadow rounded-lg p-2">
+              <CardHeader className="p-2">
               <CardTitle className="text-base sm:text-lg md:text-xl">
                 Recent Transactions
               </CardTitle>
@@ -375,7 +373,7 @@ const deleteMutation = useMutation({
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-start justify-between p-4 border rounded-lg gap-3"
+                      className="flex items-start justify-between p-2 border rounded-lg gap-3"
                       data-testid={`transaction-${transaction.id}`}
                     >
                       {/* Left section */}
@@ -392,35 +390,10 @@ const deleteMutation = useMutation({
                           </div>
                           <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
                         </div>
-                          <span className="whitespace-nowrap">
+                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-500">
                               {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
                               {transaction.paidBy}
-                          </span>
-                          <div className="flex space-x-2 mt-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingTransaction(transaction)}
-                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                              <span>Edit</span>
-                            </Button>
-
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                  deleteMutation.mutate(transaction.id);
-                                }
-                              }}
-                              className="flex items-center space-x-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span>Delete</span>
-                            </Button>
-                          </div>
+                          </span> 
                         </div>
                       </div>
 
@@ -434,13 +407,37 @@ const deleteMutation = useMutation({
                           {transaction.type === "income" ? "+" : "-"}
                           {formatCurrency(transaction.amount)}
                         </div> 
-                        
+                        <div className="flex space-x-2 mt-1">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setEditingTransaction(transaction)}
+                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                  deleteMutation.mutate(transaction.id);
+                                }
+                              }}
+                              className="flex items-center space-x-1"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
             </CardContent>
+             </div>
+            
           </Card>
         </TabsContent>
 
