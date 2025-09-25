@@ -57,56 +57,8 @@ const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Center - Quick Action Buttons */}
-          <div
-            className="hidden md:flex items-center space-x-3 animate-fade-in"
-            style={{ animationDelay: "200ms" } as React.CSSProperties}
-          >
-            <div className="flex bg-gray-50 rounded-2xl p-1 shadow-inner card-hover">
-              <AnimatedButton
-                onClick={() => setIsIncomeModalOpen(true)}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2"
-                size="sm"
-                pulseOnHover={true}
-                data-testid="button-add-income"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Income
-              </AnimatedButton>
-              <AnimatedButton
-                onClick={() => setIsExpenseModalOpen(true)}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2 ml-2"
-                size="sm"
-                pulseOnHover={true}
-                data-testid="button-add-expense"
-              >
-                <Minus className="w-4 h-4 mr-2" />
-                Expense
-              </AnimatedButton>
-            </div>
-          </div>
-
           {/* Right side - Profile menu */}
           <div className="flex items-center space-x-3">
-            {/* Mobile quick actions */}
-            <div className="flex md:hidden space-x-2">
-              <Button
-                onClick={() => setIsIncomeModalOpen(true)}
-                size="sm"
-                className="bg-green-500 hover:bg-green-600 rounded-full w-10 h-10 p-0"
-                data-testid="button-add-income-mobile"
-              >
-                <Plus className="w-4 h-4" />
-              </Button>
-              <Button
-                onClick={() => setIsExpenseModalOpen(true)}
-                size="sm"
-                className="bg-red-500 hover:bg-red-600 rounded-full w-10 h-10 p-0"
-                data-testid="button-add-expense-mobile"
-              >
-                <Minus className="w-4 h-4" />
-              </Button>
-            </div>
 
             {/* Profile dropdown */}
             <DropdownMenu>

@@ -1,15 +1,12 @@
 import React, { useState } from "react";
-import { Plus, User, Users } from "lucide-react";
+import { Home, Plus, Settings, User, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import TransactionModal from "./TransactionModal";
 // footer interface for properties if needed in the future
 interface FooterProps {
-  // Add any props if needed  
-  callabckSetActivetab?: React.Dispatch<React.SetStateAction<string>>;
-  activeTab?: string;
   groups?: any[];
 }
-export default function MobileFooter({callabckSetActivetab, activeTab, groups}: FooterProps) {
+export default function MobileFooter({ groups}: FooterProps) {
   const [isTransactionModalOpen, setTransactionModalOpen] = useState(false);
 
   return (
@@ -17,9 +14,9 @@ export default function MobileFooter({callabckSetActivetab, activeTab, groups}: 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t shadow-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between py-2">
           {/* Left - Personal Account */}
-          <button className={`flex flex-col items-center text-sm ${activeTab === "personal" ? "text-blue-600" : "text-gray-600"}`} onClick={() => callabckSetActivetab && callabckSetActivetab("personal")}>
-            <User className="w-5 h-5 mb-1" />
-            <span>Personal</span>
+          <button className={`flex flex-col items-center text-sm `} onClick={()=> null}>
+            <Home className="w-5 h-5 mb-1" />
+            <span>Home</span>
           </button>
 
           {/* Middle - Big Add Button */}
@@ -33,9 +30,9 @@ export default function MobileFooter({callabckSetActivetab, activeTab, groups}: 
           </div>
 
           {/* Right - Group Account */}
-          <button className={`flex flex-col items-center text-sm ${activeTab === "groups" ? "text-blue-600" : "text-gray-600"}`} onClick={() => callabckSetActivetab && callabckSetActivetab("groups")}>
-            <Users className="w-5 h-5 mb-1" />
-            <span>Group</span>
+          <button className={`flex flex-col items-center text-sm `} onClick={()=> null}>
+            <Settings className="w-5 h-5 mb-1" />
+            <span>Setting</span>
           </button>
         </div>
       </div>

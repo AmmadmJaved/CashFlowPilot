@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet, Download, Eye, TrendingUp } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Eye, TrendingUp, ChevronUp, ChevronDown } from "lucide-react";
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { useAuth } from "react-oidc-context";
@@ -36,6 +36,7 @@ interface Transaction {
 export default function ExportButtons({ filters }: ExportButtonsProps) {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [showOptions, setShowOptions] = useState(false);
   const { toast } = useToast();
   const auth = useAuth();
   const token = auth.user?.id_token;
@@ -384,23 +385,36 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     }
   };
 
-  return (
-    <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-6 rounded-2xl shadow-2xl mb-6">
+   return (
+   <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 p-4 rounded-2xl shadow-2xl mb-4">
       <div className="flex flex-col lg:flex-row items-center justify-between">
         {/* Left side - Title and description */}
         <div className="text-white mb-4 lg:mb-0">
-          <div className="flex items-center gap-3 mb-2">
+          <div className="flex items-center gap-3 mb-2" onClick={() => setShowOptions(!showOptions)}>
             <div className="p-2 bg-white/20 rounded-full">
               <TrendingUp className="h-6 w-6" />
             </div>
             <h2 className="text-2xl font-bold">Financial Reports</h2>
-          </div>
-          <p className="text-indigo-100 text-sm">
-            Export your financial data in professional ledger format
-          </p>
+             {showOptions ? (
+                <>
+                  <ChevronUp className="h-4 w-4" size={20} />
+  
+                </>
+              ) : (
+                <>
+                  <ChevronDown className="h-4 w-4" size={20}/>
+                </>
+              )}
+          </div>    
+            <p className="text-indigo-100 text-sm">
+               Export your financial data in professional ledger format
+            </p>
         </div>
 
-        {/* Right side - Export buttons */}
+      
+
+      {/* Collapsible export buttons */}
+      {showOptions && (
         <div className="flex flex-col sm:flex-row gap-3">
           <Button
             variant="secondary"
@@ -437,8 +451,8 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
               </Button>
             </div>
           )}
-          
-          <Button
+
+           <Button
             variant="secondary"
             className="bg-white/90 hover:bg-white text-green-700 font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             onClick={() => handleExport('excel')}
@@ -449,6 +463,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
             {isExporting === 'excel' ? 'Generating Excel...' : 'Ledger Excel'}
           </Button>
         </div>
+      )}
       </div>
     </div>
   );

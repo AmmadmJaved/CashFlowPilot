@@ -17,26 +17,34 @@ type FiltersProps = {
     user?: string;
     group?: string;
     category?: string;
+    paidBy?: string;
   };
   handleFilterChange: (field: string, value: string) => void;
 };
 
 export default function Filters({ filters, handleFilterChange }: FiltersProps) {
    const [open, setOpen] = useState(false);
-  const getFirstDayOfMonth = () => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth(), 2)
-      .toISOString()
-      .split("T")[0];
-  };
+    const getFirstDayOfMonth = () => {
+      const now = new Date();
+      return new Date(now.getFullYear(), now.getMonth(), 2)
+        .toISOString()
+        .split("T")[0];
+    };
 
-  const getTodayDate = () => {
-    const now = new Date();
-    return now.toISOString().split("T")[0]; // yyyy-mm-dd
-  };
+    const getTodayDate = () => {
+      const now = new Date();
+      return now.toISOString().split("T")[0]; // yyyy-mm-dd
+    };
+    
+    const users = [
+    { id: "all", name: "All Users" },
+    { id: "john", name: "John Doe" },
+    { id: "sara", name: "Sara Khan" },
+    { id: "ali", name: "Ali Raza" },
+  ];
 
   return (
-    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 mt-4 pt-4 mb-6 overflow-x-auto">
+    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 mt-2 mb-2 overflow-x-auto">
       {/* Start Date */}
       <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
         <Label htmlFor="startDate" className="ml-2">Start Date</Label>
@@ -75,6 +83,25 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-4 space-y-4">
+                  {/* Filter User */}
+                  <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover p-2">
+                    <Label htmlFor="paidBy" className="ml-1 text-sm">Users</Label>
+                    <Select
+                      value={filters.paidBy || "all"}
+                      onValueChange={(value) => handleFilterChange("paidBy", value)}
+                    >
+                      <SelectTrigger id="paidBy" className="w-[165px] mt-1">
+                        <SelectValue placeholder="Select user" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {users.map((user) => (
+                          <SelectItem key={user.id} value={user.id}>
+                            {user.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {/* Type Filter */}
                 <div>
                     <Label>Type</Label>
@@ -119,8 +146,7 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
                 </PopoverContent>
             </Popover>
 
-        </div>
-        
+        </div> 
 
     </div>
   );

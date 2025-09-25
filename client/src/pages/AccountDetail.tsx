@@ -25,7 +25,14 @@ import AddGroupModal from "@/components/AddGroupModal";
 import { SimpleInviteModal } from "@/components/SimpleInviteModal";
 import { useLocation  } from "wouter";
 import Footer from "@/components/Footer";
+import MembersBalanceModal from "@/components/MembersBalanceModal";
 
+
+interface Member {
+  id: string;
+  name: string;
+  openingBalance: number;
+} 
 type AccountDetailProps = {
   accountId: string;
 };
@@ -41,6 +48,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [ismembersBalanceModalOpen, setMemberBalanceModalOpen] = useState(false);
   // Add state for edit modal
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
   const token = auth.user?.id_token;
@@ -55,7 +63,6 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     endDate: "",
   });
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState("personal");
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -137,6 +144,19 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     }
   };
 
+  const [members, setMembers] = useState([
+  { id: "1", name: "Ali", openingBalance: 5055500 },
+  { id: "2", name: "Sara", openingBalance: 3855000 },
+  { id: "1", name: "Ali", openingBalance: 80005 },
+  { id: "2", name: "Sara", openingBalance: 1600000 },
+]);
+  
+const handleSaveBalances = (updatedMembers: Member[]) => {
+  setMembers(updatedMembers);
+  console.log("Updated Balances:", updatedMembers);
+  // TODO: call API to persist changes
+};
+
     // Add delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
@@ -176,22 +196,24 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
         setIsExpenseModalOpen={setIsExpenseModalOpen}
       />
      <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4">
-      <Button variant="outline" onClick={goBack} className="mb-4">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back
-      </Button>
+      
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-bold text-gray-900">{group?.name}</h1>
+        <div className="flex items-center">
+          <Button variant="outline" onClick={goBack}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+          </Button>
+        </div>    
+        <h1 className="text-xl font-bold text-gray-900">{group?.name}</h1>
         <div className="flex items-center">
           <Button
             variant="outline"
             className="mr-2"
             onClick={() => {
               setSelectedGroup(group?group:null);
-              setInviteModalOpen(true);
+              setMemberBalanceModalOpen(true);
             }}
           >
-            Invite Members
+            Members
           </Button>
         </div>
       </div>
@@ -245,12 +267,12 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       )}
 
       {/* Real-time Updates */}
-      <RealTimeNotifications isConnected={true} />
+      {/* <RealTimeNotifications isConnected={true} /> */}
 
       {/* Transactions */}
       <div className="bg-white shadow rounded-lg p-4">
         <h2 className="text-lg font-semibold mb-4">Transactions</h2>
-         <CardContent>
+         <CardContent className="p-0">
               {transactionsLoading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
@@ -339,7 +361,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
                 </div>
               )}
             </CardContent>
-            <Footer callabckSetActivetab={setActiveTab} activeTab={activeTab} groups={group ? [group] : []}/>
+            <Footer groups={group ? [group] : []}/>
             {/* Add EditTransactionModal */}
                   {editingTransaction && (
                     <EditTransactionModal
@@ -371,6 +393,13 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
                             group={selectedGroup}
                           />
                         )}
+                        <MembersBalanceModal
+                        isOpen={ismembersBalanceModalOpen}
+                        onClose={() => setMemberBalanceModalOpen(false)}
+                        groupName="Finance Team"
+                        members={members}
+                        onSave={handleSaveBalances}
+                      />;
       </div>
      </div>      
     </div>
