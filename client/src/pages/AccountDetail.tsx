@@ -28,7 +28,7 @@ import Footer from "@/components/Footer";
 import MembersBalanceModal from "@/components/MembersBalanceModal";
 
 
-interface Member {
+interface MemberWithBalance  {
   id: string;
   name: string;
   openingBalance: number;
@@ -132,6 +132,24 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       enabled: !!token
     });
 
+
+  // group members map and set with usestate 
+
+  const [members, setMembers] = useState<MemberWithBalance[]>([]);
+ useEffect(() => {
+  if (group?.members) {
+    setMembers(
+      group.members.map((m) => ({
+        id: m.id,
+        name: m.name,
+        openingBalance: 0, // or m.openingBalance if it exists in DB
+      }))
+    );
+  }
+}, [group]);
+
+
+
     const getTransactionIcon = (category: string, type: string) => {
     if (type === 'income') return '💰';
     
@@ -143,15 +161,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       default: return '💳';
     }
   };
-
-  const [members, setMembers] = useState([
-  { id: "1", name: "Ali", openingBalance: 5055500 },
-  { id: "2", name: "Sara", openingBalance: 3855000 },
-  { id: "1", name: "Ali", openingBalance: 80005 },
-  { id: "2", name: "Sara", openingBalance: 1600000 },
-]);
-
-const handleSaveBalances = (updatedMembers: Member[]) => {
+const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
   setMembers(updatedMembers);
   console.log("Updated Balances:", updatedMembers);
   // TODO: call API to persist changes

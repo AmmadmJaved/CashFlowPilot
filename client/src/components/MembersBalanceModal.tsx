@@ -62,36 +62,7 @@ export default function MembersBalanceModal({
           </DialogTitle>
         </DialogHeader>
 
-        {/* <div className="space-y-3 mt-2">
-          {editedMembers.length > 0 ? (
-            editedMembers.map((member) => (
-              <div
-                key={member.id}
-                className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
-              >
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <User className="h-4 w-4 text-blue-600" />
-                  </div>
-                  <span className="font-medium">{member.name}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <DollarSign className="h-4 w-4 text-green-700" />
-                  <Input
-                    type="number"
-                    className="w-24 h-8"
-                    value={member.openingBalance}
-                    onChange={(e) =>
-                      handleBalanceChange(member.id, e.target.value)
-                    }
-                  />
-                </div>
-              </div>
-            ))
-          ) : (
-            <p className="text-sm text-gray-500">No members found</p>
-          )}
-        </div> */}
+
         <div className="mt-2 border rounded-lg overflow-hidden">
         {/* Header Row */}
         <div className="grid grid-cols-2 bg-gray-100 sticky top-0 z-10">
