@@ -294,7 +294,7 @@ const deleteMutation = useMutation({
           <TabsContent value="personal" className="space-y-4">
           <Card className="p-2">
              {/* Date Range Filters */}
-              <Filters filters={filters} handleFilterChange={handleFilterChange} />
+              <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
               {/* Stats Cards */}
               {statsLoading ? (
                 <StatsSkeleton />

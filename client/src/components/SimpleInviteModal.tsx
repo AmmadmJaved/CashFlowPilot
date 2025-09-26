@@ -68,7 +68,7 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
   // Send email invitation
   const sendEmailMutation = useMutation({
     mutationFn: async (emailAddress: string) => {
-      const response = await fetch(`/api/groups/${group.id}/invite-email`, {
+      const response = await fetch(`/api/groups/${group.id}/add-member`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         credentials: 'include',

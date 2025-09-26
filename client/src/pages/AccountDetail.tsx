@@ -8,7 +8,7 @@ import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2, ArrowLeft } fr
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { GroupWithMembers, TransactionWithSplits } from "@shared/schema";
+import { GroupWithMembers, TransactionWithSplits,GroupMember } from "@shared/schema";
 import Filters from "@/components/Filters";
 
 import RealTimeNotifications from "@/components/RealTimeNotifications";
@@ -84,6 +84,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     if (filters.type && filters.type !== "all") params.append("type", filters.type);
     if (filters.startDate) params.append("startDate", filters.startDate);
     if (filters.endDate) params.append("endDate", filters.endDate);
+    if(filters.paidBy && filters.paidBy !== "all") params.append("filterUser", filters.paidBy);
 
     const res = await fetch(`/api/accounts/${accountId}/transactions?${params}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -230,7 +231,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
 
       {/* Filters + Export */}
       <ExportButtons filters={filters} />
-      <Filters filters={filters} handleFilterChange={handleFilterChange} />
+      <Filters filters={filters} handleFilterChange={handleFilterChange} members={members} />
 
       {/* Stats */}
       {statsLoading ? (

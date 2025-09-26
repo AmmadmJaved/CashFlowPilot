@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -10,8 +10,14 @@ import {
 } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
+interface Member {
+  id: string;
+  name: string;
+  openingBalance: number;
+}
 type FiltersProps = {
   filters: {
+    search: string;
     startDate: string;
     endDate: string;
     user?: string;
@@ -19,10 +25,11 @@ type FiltersProps = {
     category?: string;
     paidBy?: string;
   };
+  members: Member[];
   handleFilterChange: (field: string, value: string) => void;
 };
 
-export default function Filters({ filters, handleFilterChange }: FiltersProps) {
+export default function Filters({ filters, handleFilterChange,members }: FiltersProps) {
    const [open, setOpen] = useState(false);
     const getFirstDayOfMonth = () => {
       const now = new Date();
@@ -35,12 +42,11 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
       const now = new Date();
       return now.toISOString().split("T")[0]; // yyyy-mm-dd
     };
+
     
-    const users = [
+      const users = [
     { id: "all", name: "All Users" },
-    { id: "john", name: "John Doe" },
-    { id: "sara", name: "Sara Khan" },
-    { id: "ali", name: "Ali Raza" },
+    ...members.map((m) => ({ id: m.id, name: m.name }))
   ];
 
   return (
@@ -72,9 +78,21 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
           placeholder="End Date"
         />
       </div>
+      {/* Search */}
+      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover pb-2">
+        <Input
+          id="search"
+          type="text"
+          value={filters.search || ""}
+          onChange={(e) => handleFilterChange("search", e.target.value)}
+          data-testid="input-search"
+          className="w-[165px] h-[45px]"
+          placeholder="Search"
+        />
+      </div>
 
       {/* Filter Button */}
-        <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
+        <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover pb-2">
         <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
                 <Button variant="outline" className="flex items-center gap-2">
@@ -84,7 +102,10 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
                 </PopoverTrigger>
                 <PopoverContent className="w-64 p-4 space-y-4">
                   {/* Filter User */}
-                  <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover p-2">
+
+                {
+                  members && members.length > 1 && (
+                    <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover p-2">
                     <Label htmlFor="paidBy" className="ml-1 text-sm">Users</Label>
                     <Select
                       value={filters.paidBy || "all"}
@@ -101,8 +122,9 @@ export default function Filters({ filters, handleFilterChange }: FiltersProps) {
                         ))}
                       </SelectContent>
                     </Select>
-                  </div>
-                  {/* Type Filter */}
+                  </div>  
+                  )}     
+              {/* Type Filter */}
                 <div>
                     <Label>Type</Label>
                     <Select onValueChange={(v) => handleFilterChange("type", v)}>

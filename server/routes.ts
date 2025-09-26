@@ -436,6 +436,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (startDate) filters.startDate = new Date(startDate as string);
       if (endDate) filters.endDate = new Date(endDate as string);
       if (filterUser) filters.userId = filterUser;
+      if (search) filters.search = search;
 
       // Fetch all account transactions based on filters
       let transactions = await storage.getAllTransactions(filters);
