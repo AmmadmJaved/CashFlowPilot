@@ -160,7 +160,7 @@ const token = auth.user?.id_token;
               )}
             />
 
-            <div className="space-y-3">
+            {/* <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <Label>Group Members</Label>
                 <Button
@@ -173,9 +173,9 @@ const token = auth.user?.id_token;
                   <Plus className="w-4 h-4 mr-1" />
                   Add Member
                 </Button>
-              </div>
+              </div> */}
               
-              <div className="space-y-2 max-h-48 overflow-y-auto">
+              {/* <div className="space-y-2 max-h-48 overflow-y-auto">
                 {members.map((member, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     <Input
@@ -204,8 +204,8 @@ const token = auth.user?.id_token;
                     </Button>
                   </div>
                 ))}
-              </div>
-            </div>
+              </div> */}
+            {/* </div> */}
             
             <div className="flex space-x-3 pt-4">
               <Button 

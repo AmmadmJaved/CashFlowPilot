@@ -306,58 +306,38 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Transaction routes
-  app.get('/api/transactions', async (req, res) => {
-    try {
-      const { groupId, type, category, paidBy, startDate, endDate, search } = req.query;
+    app.get('/api/transactions', async (req, res) => {
+      try {
+        const { type, category, paidBy, startDate, endDate, search } = req.query;
 
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "Unauthorized" });
+        const userId = (req as any).user?.claims?.sub;
+        if (!userId) {
+          return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        // Build filters (only non-group transactions for the signed-in user)
+        const filters: any = {};
+        if (type) filters.type = type;
+        if (category) filters.category = category;
+        if (paidBy) filters.paidBy = paidBy;
+        if (startDate) filters.startDate = new Date(startDate as string);
+        if (endDate) filters.endDate = new Date(endDate as string);
+        if (search) filters.search = search;
+
+        // Fetch all possible transactions (filters may not include userId/groupId)
+        let transactions = await storage.getAllTransactions(filters);
+
+        // ✅ Explicitly enforce: only this user + no group
+        transactions = transactions.filter(
+          (tx: any) => tx.userId === userId && (tx.groupId === null || tx.groupId === undefined)
+        );
+
+        res.json(transactions);
+      } catch (error) {
+        console.error("Error fetching transactions:", error);
+        res.status(500).json({ message: "Failed to fetch transactions" });
       }
-
-      const userEmail = (req as any).user.claims.email;
-      if (!userEmail) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
-      const filters: any = {};
-      if (groupId) filters.groupId = groupId;
-      if (type) filters.type = type;
-      if (category) filters.category = category;
-      if (paidBy) filters.paidBy = paidBy;
-      if (startDate) filters.startDate = new Date(startDate as string);
-      if (endDate) filters.endDate = new Date(endDate as string);
-      if (search) filters.search = search;
-
-      // Fetch all transactions based on filters
-      let transactions = await storage.getAllTransactions(filters);
-
-      // Get user profile
-      const profile = await storage.getUserProfileByUserId(userId);
-      // Get user email from token claims
-      
-      // Get all groups and find which ones the user belongs to
-      const allGroups = await storage.getAllGroups(userEmail);
-      const userGroups = allGroups.filter(g =>
-        g.members?.some(m => m.id === userId || m.name === profile?.publicName)
-      );
-      const allowedGroupIds = new Set(userGroups.map(g => g.id));
-
-      // Apply visibility rules:
-      // - User can always see their own transactions
-      // - User can see others' transactions only if group is shared
-      transactions = transactions.filter(tx => {
-        if (tx.userId === userId) return true;
-        if (tx.groupId && allowedGroupIds.has(tx.groupId)) return true;
-        return false;
-      });
-
-      res.json(transactions);
-    } catch (error) {
-      console.error("Error fetching transactions:", error);
-      res.status(500).json({ message: "Failed to fetch transactions" });
-    }
-  });
+    });
 
     app.post('/api/transactions', async (req, res) => {
     try {
@@ -747,53 +727,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Statistics routes
+    app.get('/api/stats/monthly', async (req, res) => {
+      try {
+        const userId = (req as any).user?.claims?.sub;
+        if (!userId) {
+          return res.status(401).json({ message: "Authentication required" });
+        }
 
-  app.get('/api/stats/monthly', async (req, res) => {
-    try {
-      // Authenticated user
-      const userId = (req as any).user?.claims?.sub;
-      if (!userId) {
-        return res.status(401).json({ message: "Authentication required" });
-      }
+        const { startDate, endDate, groupId, filterUser } = req.query;
 
-      // Query params
-      const {
-        startDate,
-        endDate,
-        groupId,
-        filterUser, // specific user filter
-      } = req.query;
+        const profile = await storage.getUserProfileByUserId(userId);
+        if (!profile) {
+          return res.status(404).json({ message: "User profile not found" });
+        }
 
+        // Determine whether this is personal stats or group stats
+        const isGroupStats = !!groupId;
 
-      // Get user profile (role + account info)
-      const profile = await storage.getUserProfileByUserId(userId);
-      if (!profile) {
-        return res.status(404).json({ message: "User profile not found" });
-      }
-
-      let stats;
-
-        // Account-specific stats
-        stats = await storage.getMonthlyStats({
+        const stats = await storage.getMonthlyStats({
           year: startDate ? new Date(startDate as string).getFullYear() : new Date().getFullYear(),
           month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
           startDate: startDate ? new Date(startDate as string) : undefined,
           endDate: endDate ? new Date(endDate as string) : undefined,
-          userId: groupId ? filterUser : userId,    
-          groupId: groupId as string | undefined,
+
+          // ✅ If groupId is provided → group stats
+          // ✅ If groupId is not provided → only personal stats (force groupId null)
+          userId: isGroupStats ? (filterUser as string | undefined) : userId,
+          groupId: isGroupStats ? (groupId as string) : null,
         });
 
-      // No-cache headers
-      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-      res.setHeader("Pragma", "no-cache");
-      res.setHeader("Expires", "0");
+        // No-cache headers
+        res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+        res.setHeader("Expires", "0");
 
-      res.json(stats);
-    } catch (error) {
-      console.error("Error fetching monthly stats:", error);
-      res.status(500).json({ message: "Failed to fetch monthly stats" });
-    }
-  });
+        res.json(stats);
+      } catch (error) {
+        console.error("Error fetching monthly stats:", error);
+        res.status(500).json({ message: "Failed to fetch monthly stats" });
+      }
+    });
 
 
   // Export routes

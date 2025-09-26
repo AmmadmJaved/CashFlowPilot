@@ -29,7 +29,7 @@ import {
   type GroupWithMembers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql } from "drizzle-orm";
+import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Group operations
@@ -68,7 +68,7 @@ export interface IStorage {
   userId?: string;
   startDate?: Date;
   endDate?: Date;
-  groupId?: string;
+  groupId?: string | null;
 }): Promise<{
   totalIncome: string;
   totalExpenses: string;
@@ -349,7 +349,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   // Statistics
-  async getMonthlyStats({
+    async getMonthlyStats({
     year,
     month,
     userId,
@@ -359,10 +359,10 @@ export class DatabaseStorage implements IStorage {
   }: {
     year: number;
     month: number;
-    userId?: string;   // ✅ optional now
+    userId?: string;   // ✅ optional
     startDate?: Date;
     endDate?: Date;
-    groupId?: string;
+    groupId?: string | null;
   }): Promise<{
     totalIncome: string;
     totalExpenses: string;
@@ -380,9 +380,14 @@ export class DatabaseStorage implements IStorage {
       baseFilters.push(eq(transactions.userId, userId));
     }
 
-    if (groupId) {
+    if (groupId === null) {
+      // ✅ Personal-only (exclude group transactions)
+      baseFilters.push(isNull(transactions.groupId));
+    } else if (groupId !== undefined) {
+      // ✅ Group-only
       baseFilters.push(eq(transactions.groupId, groupId));
     }
+    // else (undefined): no group filter at all
 
     // Income
     const [incomeResult] = await db
@@ -412,6 +417,8 @@ export class DatabaseStorage implements IStorage {
       netBalance,
     };
   }
+
+  
 
 
 
