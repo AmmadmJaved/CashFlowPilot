@@ -11,6 +11,7 @@ import { apiRequest } from "@/lib/queryClient";
 
 export default function InvitePage() {
   const { inviteCode } = useParams<{ inviteCode: string }>();
+  const { groupId } = useParams<{ groupId: string }>();
   const [, setLocation] = useLocation();
   const [memberName, setMemberName] = useState("");
   const [memberEmail, setMemberEmail] = useState("");
@@ -27,7 +28,7 @@ export default function InvitePage() {
   // Join group mutation
   const joinGroupMutation = useMutation({
     mutationFn: async (data: { memberName: string; memberEmail?: string }) => {
-      const response = await apiRequest('POST', `/api/invites/${inviteCode}/join`, data);
+      const response = await apiRequest('POST', `/groups/${groupId}/invites/${inviteCode}/join`, data);
       return await response.json();
     },
     onSuccess: (result: any) => {

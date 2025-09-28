@@ -49,7 +49,7 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
       return response.json();
     },
     onSuccess: (data) => {
-      const inviteUrl = `${window.location.origin}/invite/${data.inviteCode}`;
+      const inviteUrl = `${window.location.origin}/group/${group.id}/invite/${data.inviteCode}`;
       setGeneratedLink(inviteUrl);
       toast({
         title: "Invite Link Created!",
@@ -88,13 +88,24 @@ export function SimpleInviteModal({ isOpen, onClose, group }: SimpleInviteModalP
       });
       setEmail("");
     },
-    onError: () => {
+    onError: async (response: Response) => {
+      let errorMessage = { message: "Failed to send email. Please try again." };
+
+      try {
+        if (response.status === 400) {
+          const data = await response.json();
+          errorMessage = { message: data?.message || errorMessage.message };
+        }
+      } catch {
+        // fallback stays as default message
+      }
+
       toast({
         title: "Error",
-        description: "Failed to send email. Please try again.",
+        description: errorMessage.message,
         variant: "destructive",
       });
-    },
+    }
   });
 
   const copyToClipboard = async (text: string) => {

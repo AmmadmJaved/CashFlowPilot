@@ -74,13 +74,13 @@ function Router() {
             path="/account/:id"
             component={({ params }) => <AccountDetail accountId={params.id} />}
           />
-          <Route path="/invite/:inviteCode" component={InvitePage} />
+          <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
           <Route path="/admin" component={AdminPanel} />
         </>
       ) : (
         <>
           <Route path="/" component={Landing} />
-          <Route path="/invite/:inviteCode" component={InvitePage} />
+          <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
         </>
       )}
 

@@ -1021,14 +1021,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/invites/:inviteCode/join', async (req, res) => {
+  app.post('/groups/:groupId/invites/:inviteCode/join', async (req, res) => {
     try {
-      const { inviteCode } = req.params;
+      const { inviteCode, groupId } = req.params;
       const { memberName, memberEmail } = req.body;
       
       if (!memberName) {
         return res.status(400).json({ message: "Member name is required" });
       }
+      
+    // Find user by email
+    const user = await storage.getUserByEmail(memberEmail);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // 3. Check if user is already a member of the group
+      const existingMember = await storage.getGroupById(groupId).then(g => g?.members || []);
+      if (existingMember.some(g => g.id === user.id || g.email === memberEmail)) {
+        return res.status(400).json({ message: "User is already a member of this group" });
+      } 
+      console.log("User is not already a member, proceeding to add.");
       
       const result = await storage.useGroupInvite(inviteCode, memberName, memberEmail);
       
