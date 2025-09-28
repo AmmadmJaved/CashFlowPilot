@@ -5,11 +5,9 @@ import { storage } from "./storage";
 import { db } from "./db";
 import { userProfiles } from "@shared/schema";
 import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, insertUserProfileSchema, type GroupInvite, type UserProfile } from "@shared/schema";
-import { z } from "zod";
-import jsPDF from "jspdf";
 import ExcelJS from "exceljs";
 import { verifyGoogleToken } from "./auth";
-import { use } from "passport";
+
 
 // Store connected WebSocket clients
 const connectedClients = new Set<WebSocket>();
@@ -686,9 +684,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/groups/:id/members' , async (req, res) => {
     try {
       const { id } = req.params;
+       const { email } = req.body;
+
+      // 1. Validate email format
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!email || !emailRegex.test(email)) {
+        return res.status(400).json({ message: "Invalid email address" });
+      }
+      console.log("Adding member with email:", email);
+       // 2. Check if user exists in the system
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(404).json({ message: "User not found in the system" });
+      }
+      console.log("Found user:", user);
+      // 3. Check if user is already a member of the group
+      const existingMember = await storage.getGroupById(id).then(g => g?.members || []);
+      if (existingMember.some(g => g.id === user.id || g.email === email)) {
+        return res.status(400).json({ message: "User is already a member of this group" });
+      } 
+      console.log("User is not already a member, proceeding to add.");
       const memberData = insertGroupMemberSchema.parse({
         groupId: id,
-        ...req.body,
+        userId: user.id,
+        email: user.email,
+      ...req.body,
       });
 
       const member = await storage.addGroupMember(memberData);
@@ -903,6 +923,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    // 3. Check if user is already a member of the group
+      const existingMember = await storage.getGroupById(groupId).then(g => g?.members || []);
+      if (existingMember.some(g => g.id === user.id || g.email === email)) {
+        return res.status(400).json({ message: "User is already a member of this group" });
+      } 
+      console.log("User is not already a member, proceeding to add.");
 
     // Add user as member
     const memberData = insertGroupMemberSchema.parse({
