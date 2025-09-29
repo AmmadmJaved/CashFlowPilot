@@ -90,13 +90,14 @@ export default function MembersBalanceModal({
                 <div className="flex items-center gap-1 px-4 py-2">
                     <DollarSign className="h-4 w-4 text-green-700" />
                     <Input
-                    type="number"
+                    inputMode="numeric"
+                    pattern="-?[0-9]*"
                     className="w-24 h-8"
                     value={member.openingBalance}
-                    onChange={(e) =>
-                        handleBalanceChange(member.id, e.target.value)
-                    }
-                    />
+                    onChange={(e) => {
+                      handleBalanceChange(member.id, e.target.value);
+                    }}
+                  />
                 </div>
                 </div>
             ))
