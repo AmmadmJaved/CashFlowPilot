@@ -10,6 +10,7 @@ import {
   decimal,
   boolean,
   integer,
+  numeric,
 } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
@@ -79,6 +80,13 @@ export const groupMembers = pgTable("group_members", {
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   joinedAt: timestamp("joined_at").defaultNow(),
+  // 💰 Balances
+  openingBalance: numeric("opening_balance", { precision: 12, scale: 2 })
+    .notNull()
+    .default("0"),
+  closingBalance: numeric("closing_balance", { precision: 12, scale: 2 })
+    .notNull()
+    .default("0"),
 });
 
 // Transactions (expenses and income)

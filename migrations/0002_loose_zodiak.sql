@@ -1,0 +1,2 @@
+ALTER TABLE "group_members" ADD COLUMN "opening_balance" numeric(12, 2) DEFAULT '0' NOT NULL;--> statement-breakpoint
+ALTER TABLE "group_members" ADD COLUMN "closing_balance" numeric(12, 2) DEFAULT '0' NOT NULL;

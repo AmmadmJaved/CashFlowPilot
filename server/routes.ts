@@ -666,6 +666,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // update group member balance route
+  app.put('/api/groups/:groupId/members/:memberId/balance', async (req, res) => {
+    try {
+      const { groupId, memberId } = req.params;
+
+      // validate input
+      const { openingBalance, closingBalance } = req.body;
+      if (openingBalance === undefined && closingBalance === undefined) {
+        return res.status(400).json({ message: "At least one balance value must be provided" });
+      }
+
+      // update member balances
+      const updatedMember = await storage.updateGroupMemberBalance(memberId, {
+        openingBalance,
+        closingBalance,
+      });
+
+      if (!updatedMember) {
+        return res.status(404).json({ message: "Group member not found" });
+      }
+
+      // 🔔 Broadcast update to clients
+      broadcastUpdate('group_member_balance_updated', {
+        groupId,
+        member: updatedMember,
+      });
+
+      res.json(updatedMember);
+    } catch (error) {
+      console.error("Error updating group member balance:", error);
+      res.status(500).json({ message: "Failed to update group member balance" });
+    }
+  });
+
   // get group by Id route
   app.get('/api/groups/:id' , async (req, res) => {
     try {

@@ -143,7 +143,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       group.members.map((m) => ({
         id: m.id,
         name: m.name,
-        openingBalance: 0, // or m.openingBalance if it exists in DB
+        openingBalance: Number(m.openingBalance),
       }))
     );
   }
@@ -182,6 +182,8 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/groups", accountId] });
+      queryClient.invalidateQueries({ queryKey: ["/api/group-members", accountId] });
       toast({
         title: "Success",
         description: "Transaction deleted successfully",
@@ -406,12 +408,13 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                           />
                         )}
                         <MembersBalanceModal
+                          groupId={accountId}
                         isOpen={ismembersBalanceModalOpen}
                         onClose={() => setMemberBalanceModalOpen(false)}
-                        groupName="Finance Team"
+                        groupName={group?.name || "" }
                         members={members}
                         onSave={handleSaveBalances}
-                      />;
+                      />
       </div>
      </div>      
     </div>

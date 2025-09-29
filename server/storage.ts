@@ -38,6 +38,10 @@ export interface IStorage {
   getAllGroups(userEmail : string): Promise<GroupWithMembers[]>;
   getGroupById(id: string): Promise<GroupWithMembers | undefined>;
   addGroupMember(member: InsertGroupMember): Promise<GroupMember>;
+  updateGroupMemberBalance(
+    memberId: string,
+    { openingBalance, closingBalance }: { openingBalance?: number; closingBalance?: number }
+  ): Promise<GroupMember | null>;
   removeGroupMember(groupId: string, memberName: string): Promise<void>;
   deleteGroup(groupId: string): Promise<void>;
   
@@ -197,6 +201,22 @@ export class DatabaseStorage implements IStorage {
   async addGroupMember(member: InsertGroupMember): Promise<GroupMember> {
     const [newMember] = await db.insert(groupMembers).values(member).returning();
     return newMember;
+  }
+  // ✅ Update group member balances
+  async updateGroupMemberBalance(
+    memberId: string,
+    { openingBalance, closingBalance }: { openingBalance?: number; closingBalance?: number }
+  ): Promise<GroupMember | null> {
+    const [updatedMember] = await db
+      .update(groupMembers)
+      .set({
+        ...(openingBalance !== undefined && { openingBalance: openingBalance.toString() }),
+        ...(closingBalance !== undefined && { closingBalance: closingBalance.toString() }),
+      })
+      .where(eq(groupMembers.id, memberId))
+      .returning();
+
+    return updatedMember ?? null;
   }
 
   async removeGroupMember(groupId: string, memberName: string): Promise<void> {
