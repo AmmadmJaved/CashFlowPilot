@@ -29,6 +29,7 @@ import { useAuth } from "react-oidc-context";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DollarSign, CreditCard, Calendar, User, Tag, Users, Minus, Plus } from "lucide-react";
 import AnimatedButton from "./AnimatedButton";
+import { use } from "passport";
 
 // ------------------- Schemas -------------------
 const baseSchema = {
@@ -229,9 +230,18 @@ function TransactionForm({
   color,
   onClose,
 }: any) {
+
   const type = form.getValues().type; // income | expense
   const isIncome = type === "income";
-
+  const auth = useAuth();
+  // Auto-fill "Paid By" if only 1 group exists
+  useEffect(() => {
+    if (groups.length === 1) {
+      form.setValue("paidBy", auth?.user?.profile?.name || "Unknown");
+      form.setValue("isShared", true);
+    }
+  }, [groups, form]);
+ 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
@@ -305,16 +315,21 @@ function TransactionForm({
             </FormItem>
           )}
         />
-
-        {/* paidBy / receivedBy */}
+        {/* Paid By / Received By */}
         <FormField
           control={form.control}
           name="paidBy"
+          defaultValue={auth?.user?.profile?.name || "Unknown"} // ✅ auto-fill on mount
           render={({ field }) => (
             <FormItem>
               <FormLabel>{isIncome ? "Received By" : "Paid By"}</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="Enter name..." />
+                <Input 
+                  {...field} 
+                  placeholder="Enter name..."
+                  value={field.value || auth.user?.profile?.name || "Unknown"} // ✅ keep user name if empty
+                  onChange={field.onChange} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
