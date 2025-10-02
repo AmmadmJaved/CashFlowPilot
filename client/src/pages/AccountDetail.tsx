@@ -182,8 +182,8 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/transactions'] });
-      queryClient.invalidateQueries({ queryKey: ["/api/groups", accountId] });
-      queryClient.invalidateQueries({ queryKey: ["/api/group-members", accountId] });
+      queryClient.invalidateQueries({ queryKey: [`/api/groups/${accountId}`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/group-members/${accountId}`] });
       toast({
         title: "Success",
         description: "Transaction deleted successfully",
@@ -346,7 +346,9 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                           {transaction.type === "income" ? "+" : "-"}
                           {formatCurrency(transaction.amount)}
                         </div> 
-                        <div className="flex space-x-2 mt-1">
+                        {
+                          transaction.paidBy === auth.user?.profile?.name  && (
+                          <div className="flex space-x-2 mt-1">
                             <Button
                               variant="outline"
                               size="sm"
@@ -369,6 +371,9 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
+                          )
+                        }
+                        
                       </div>
                     </div>
                   ))}

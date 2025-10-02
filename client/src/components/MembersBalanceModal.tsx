@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Users, DollarSign, User } from "lucide-react";
+import { Users, DollarSign, User, Plus, Minus } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
@@ -111,7 +111,7 @@ const updateOpeningBalanceMutation = useMutation({
   onSuccess: (_, variables) => {
    // update opening balance  create transaction as well
    createTransactionMutation.mutate({
-     type: "income",
+     type:  variables.openingBalance >= 0 ? "income" : "expense",
      amount: variables.openingBalance.toString(),
      description: `Opening balance adjusted for member ${auth.user?.profile?.name || "Unknown"}`,
      date: new Date().toISOString(),
@@ -227,24 +227,78 @@ const updateOpeningBalanceMutation = useMutation({
                     <span className="font-medium">{member.name}</span>
                 </div>
 
-                {/* Opening Balance column */}
-                <div className="flex items-center gap-1 px-4 py-2">
-                    <DollarSign className="h-4 w-4 text-green-700" />
-                    <Input
-                    type="text"
-                    // pattern="-?[0-9]*"
-                    className="w-24 h-8"
-                    value={member.openingBalance}
-                    onChange={(e) => handleBalanceChange(member.id, e.target.value)}
-                    onBlur={(e) => handleBalanceCommit(member.id, Number(e.target.value) || 0)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        handleBalanceCommit(member.id, Number(e.currentTarget.value) || 0);
-                      }
-                    }}
-                  />
-                </div>
+               {/* Opening Balance column */}
+                {(() => {
+                  const isDisabled = member.name !== auth.user?.profile?.name;
+
+                  return (
+                    <div
+                      className={`flex items-center gap-2 px-4 py-2 ${
+                        isDisabled ? "opacity-50 cursor-not-allowed" : ""
+                      }`}
+                    >
+                      {/* Sign buttons */}
+                      <div className="flex items-center border rounded-md overflow-hidden">
+                        <button
+                          type="button"
+                          disabled={isDisabled}
+                          className={`px-2 py-1 text-sm ${
+                            Number(member.openingBalance) >= 0
+                              ? "bg-green-100 text-green-700"
+                              : "hover:bg-gray-100"
+                          }`}
+                          onClick={() =>
+                            handleBalanceChange(
+                              member.id,
+                              Math.abs(Number(member.openingBalance)).toString()
+                            )
+                          }
+                        >
+                          <Plus className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          disabled={isDisabled}
+                          className={`px-2 py-1 text-sm ${
+                            Number(member.openingBalance) < 0
+                              ? "bg-red-100 text-red-700"
+                              : "hover:bg-gray-100"
+                          }`}
+                          onClick={() =>
+                            handleBalanceChange(
+                              member.id,
+                              (-Math.abs(Number(member.openingBalance))).toString()
+                            )
+                          }
+                        >
+                          <Minus className="h-4 w-4" />
+                        </button>
+                      </div>
+
+                      {/* Input field */}
+                      <Input
+                        type="text"
+                        className="w-24 h-8"
+                        value={member.openingBalance}
+                        onChange={(e) => handleBalanceChange(member.id, e.target.value)}
+                        onBlur={(e) =>
+                          handleBalanceCommit(member.id, Number(e.target.value) || 0)
+                        }
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleBalanceCommit(
+                              member.id,
+                              Number(e.currentTarget.value) || 0
+                            );
+                          }
+                        }}
+                        disabled={isDisabled}
+                        readOnly={isDisabled}
+                      />
+                    </div>
+                  );
+                })()}
                 </div>
             ))
             ) : (
@@ -257,7 +311,7 @@ const updateOpeningBalanceMutation = useMutation({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          {/* <Button onClick={handleSave}>Save</Button> */}
+          <Button onClick={() => null}>Save</Button>
         </div>
       </DialogContent>
     </Dialog>
