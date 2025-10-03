@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2, ArrowLeft } from "lucide-react";
+import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2, ArrowLeft, Eye } from "lucide-react";
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
@@ -26,6 +26,7 @@ import { SimpleInviteModal } from "@/components/SimpleInviteModal";
 import { useLocation  } from "wouter";
 import Footer from "@/components/Footer";
 import MembersBalanceModal from "@/components/MembersBalanceModal";
+import ViewTransactionModal from "@/components/ViewTransactionModal";
 
 
 interface MemberWithBalance  {
@@ -51,6 +52,7 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
   const [ismembersBalanceModalOpen, setMemberBalanceModalOpen] = useState(false);
   // Add state for edit modal
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
+  const [viewingTransaction, setViewingTransaction] = useState<any | null>(null);
   const token = auth.user?.id_token;
    const [filters, setFilters] = useState({
     search: "",
@@ -349,6 +351,15 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                         {
                           transaction.paidBy === auth.user?.profile?.name  && (
                           <div className="flex space-x-2 mt-1">
+                               {/* View Button */}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setViewingTransaction(transaction)}
+                              className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -370,6 +381,13 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                              {/* Example Modal for Viewing Transaction */}
+                            {viewingTransaction && (
+                              <ViewTransactionModal
+                              transaction={viewingTransaction}
+                              onClose={() => setViewingTransaction(null)}
+                            />
+                            )}
                           </div>
                           )
                         }

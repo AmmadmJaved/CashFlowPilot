@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrencyFormatter } from "@/hooks/useProfile";
-import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X, MoreVertical, Edit2, Trash2 } from "lucide-react";
+import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X, MoreVertical, Edit2, Trash2, Eye } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
 import AddGroupModal from "@/components/AddGroupModal";
@@ -60,6 +60,8 @@ export default function Dashboard() {
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
   // Add state for edit modal
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
+  const [viewingTransaction, setViewingTransaction] = useState<any | null>(null);
+
   const [filters, setFilters] = useState({
     search: "",
     groupId: "all",
@@ -408,6 +410,14 @@ const deleteMutation = useMutation({
                           {formatCurrency(transaction.amount)}
                         </div> 
                         <div className="flex space-x-2 mt-1">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setViewingTransaction(transaction)} // 👈 add your handler here
+                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                             <Button
                               variant="outline"
                               size="sm"
@@ -429,6 +439,28 @@ const deleteMutation = useMutation({
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
+                             {/* Example Modal for Viewing Transaction */}
+                            {viewingTransaction && (
+                              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+                                <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                                  <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
+                                  <p><strong>ID:</strong> {viewingTransaction.id}</p>
+                                  <p><strong>Amount:</strong> {viewingTransaction.amount}</p>
+                                  <p><strong>Type:</strong> {viewingTransaction.type}</p>
+                                  <p><strong>Date:</strong> {new Date(viewingTransaction.date).toLocaleString()}</p>
+                                  {/* add more fields as needed */}
+
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="mt-4"
+                                    onClick={() => setViewingTransaction(null)}
+                                  >
+                                    Close
+                                  </Button>
+                                </div>
+                              </div>
+                            )}
                           </div>
                       </div>
                     </div>
