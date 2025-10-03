@@ -66,11 +66,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Broadcast the member join
-      broadcastUpdate('member-joined', { 
-        group: result.group, 
-        member: result.member,
-        joinedViaInvite: true
-      });
+      // broadcastUpdate('member-joined', { 
+      //   group: result.group, 
+      //   member: result.member,
+      //   joinedViaInvite: true
+      // });
       
       res.json(result);
     } catch (error) {
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const transaction = await storage.createTransaction(data);
 
-      broadcastUpdate('transaction_created', transaction);
+      // broadcastUpdate('transaction_created', transaction);
 
       // If it's a shared expense, create splits
       if (data.isShared && data.groupId) {
@@ -657,7 +657,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const group = await storage.createGroup(data);
       await storage.addGroupMember({ groupId: group.id, name: username, email: userEmail });
       // Broadcast the new group to all connected clients
-      broadcastUpdate('group_created', group);
+      // broadcastUpdate('group_created', group);
       
       res.json(group);
     } catch (error) {
@@ -688,10 +688,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       // 🔔 Broadcast update to clients
-      broadcastUpdate('group_member_balance_updated', {
-        groupId,
-        member: updatedMember,
-      });
+      // broadcastUpdate('group_member_balance_updated', {
+      //   groupId,
+      //   member: updatedMember,
+      // });
 
       res.json(updatedMember);
     } catch (error) {
@@ -748,7 +748,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const member = await storage.addGroupMember(memberData);
       
       // Broadcast the new group member to all connected clients
-      broadcastUpdate('group_member_added', { groupId: id, member });
+      // broadcastUpdate('group_member_added', { groupId: id, member });
       
       res.json(member);
     } catch (error) {
@@ -802,7 +802,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const stats = await storage.getMonthlyStats({
           year: startDate ? new Date(startDate as string).getFullYear() : new Date().getFullYear(),
           month: startDate ? new Date(startDate as string).getMonth() + 1 : new Date().getMonth() + 1,
-          startDate: startDate ? new Date(startDate as string) : undefined,
+          startDate: startDate ? new Date(startDate as string) : null,
           endDate: endDate ? new Date(endDate as string) : undefined,
 
           // ✅ If groupId is provided → group stats
@@ -1030,7 +1030,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log("✅ Invite created successfully in database:", invite);
       
       // Broadcast the invite creation
-      broadcastUpdate('invite-created', { invite });
+      // broadcastUpdate('invite-created', { invite });
       console.log("📡 Broadcasted invite creation update");
       
       res.json(invite);
@@ -1103,7 +1103,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       await storage.deactivateGroupInvite(inviteId);
       
       // Broadcast the invite deactivation
-      broadcastUpdate('invite-deactivated', { inviteId });
+      // broadcastUpdate('invite-deactivated', { inviteId });
       
       res.json({ message: "Invite deactivated successfully" });
     } catch (error) {
@@ -1126,7 +1126,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profile = await storage.createUserProfile(profileData);
       
       // Broadcast profile creation
-      broadcastUpdate('profile-created', { profile });
+      // broadcastUpdate('profile-created', { profile });
       
       res.json(profile);
     } catch (error) {
@@ -1183,7 +1183,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const updatedProfile = await storage.updateUserProfile(id, updates);
       
       // Broadcast profile update
-      broadcastUpdate('profile-updated', { profile: updatedProfile });
+      // broadcastUpdate('profile-updated', { profile: updatedProfile });
       
       res.json(updatedProfile);
     } catch (error) {

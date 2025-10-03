@@ -380,6 +380,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                 </div>
               )}
             </CardContent>
+            {/* Footer */}
             <Footer groups={group ? [group] : []}/>
             {/* Add EditTransactionModal */}
                   {editingTransaction && (

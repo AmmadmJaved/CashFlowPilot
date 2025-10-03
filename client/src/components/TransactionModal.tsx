@@ -172,7 +172,7 @@ export default function TransactionModal({ isOpen, onClose, groups }: Transactio
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Transaction</DialogTitle>
+          <DialogTitle>Add {groups[0]?.name} Transaction</DialogTitle>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "expense" | "income")} className="w-full">

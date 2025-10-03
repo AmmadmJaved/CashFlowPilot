@@ -70,7 +70,7 @@ export interface IStorage {
   year: number;
   month: number;
   userId?: string;
-  startDate?: Date;
+  startDate?: Date | null;
   endDate?: Date;
   groupId?: string | null;
 }): Promise<{
@@ -380,7 +380,7 @@ export class DatabaseStorage implements IStorage {
     year: number;
     month: number;
     userId?: string;   // ✅ optional
-    startDate?: Date;
+    startDate?: Date | null;
     endDate?: Date;
     groupId?: string | null;
   }): Promise<{
@@ -388,13 +388,15 @@ export class DatabaseStorage implements IStorage {
     totalExpenses: string;
     netBalance: string;
   }> {
-    const from = startDate || new Date(year, month - 1, 1);
+     // ✅ If startDate exists → use it, otherwise fetch from "all time"
+    const from = startDate ?? null;
     const to = endDate || new Date(year, month, 0, 23, 59, 59);
 
-    const baseFilters = [
-      gte(transactions.date, from),
-      lte(transactions.date, to),
-    ];
+    const baseFilters = [lte(transactions.date, to)];
+
+    if (from) {
+      baseFilters.push(gte(transactions.date, from));
+    }
 
     if (userId) {
       baseFilters.push(eq(transactions.userId, userId));

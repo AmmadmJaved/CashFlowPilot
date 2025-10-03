@@ -52,7 +52,7 @@ export default function Dashboard() {
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("personal");
+  const [activeTab, setActiveTab] = useState("groups");
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
@@ -286,9 +286,9 @@ const deleteMutation = useMutation({
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2"> 
             <TabsTrigger value="groups" data-testid="tab-groups">Group Accounts</TabsTrigger>
+            <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
@@ -474,9 +474,9 @@ const deleteMutation = useMutation({
                     <p>No groups yet. Create an Accounts to share expenses with friends!</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-4 ">
                     {groups.map((group) => (
-                      <div key={group.id} className="p-4 border rounded-lg" data-testid={`group-${group.id}`}>
+                      <div key={group.id} className="p-4 border rounded-lg bg-gray-50 gradient-to-br from-gray-50 to-gray-100" data-testid={`group-${group.id}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             <Link href={`/account/${group.id}`}>
@@ -516,7 +516,7 @@ const deleteMutation = useMutation({
         </Tabs>
       </div>
       {/* Sticky Footer */}
-      <Footer />
+     <Footer />
       {/* Add EditTransactionModal */}
       {editingTransaction && (
         <EditTransactionModal
