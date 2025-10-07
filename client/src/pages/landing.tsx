@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, Users, BarChart3, Smartphone } from "lucide-react";
 import { useAuth } from "react-oidc-context";
+import { Link } from "wouter";
 
 export default function Landing() {
    const auth = useAuth();
@@ -143,6 +144,16 @@ export default function Landing() {
           >
             Get Started Now
           </Button>
+           {/* 👇 Added page navigation links near CTA */}
+            <Link to="/about" className="text-blue-600 hover:underline text-lg">
+              Learn More
+            </Link>
+            <Link to="/contact" className="text-blue-600 hover:underline text-lg">
+              Contact Us
+            </Link>
+            <Link to="/blog" className="text-blue-600 hover:underline text-lg">
+              Read 
+            </Link>
         </div>
       </div>
     </div>
