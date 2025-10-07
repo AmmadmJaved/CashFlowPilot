@@ -332,9 +332,11 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                           <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
                         </div>
                           <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-500">
-                              {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
+                           
+                              {new Date(transaction.date).toLocaleDateString()}
+                              {transaction.type === "income" ? " • Received by " : " • Paid by "}
                               {transaction.paidBy}
-                          </span> 
+                          </span>
                         </div>
                       </div>
 
