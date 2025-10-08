@@ -15,7 +15,7 @@ const oidcConfig: AuthProviderProps = {
     access_type: "offline",
     prompt: "consent"
   },
-  loadUserInfo: false,
+  loadUserInfo: true,
   automaticSilentRenew: true,
   monitorSession: true,
   // 👇 Persist login in localStorage
