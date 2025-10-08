@@ -237,7 +237,6 @@ function TransactionForm({
   // Auto-fill "Paid By" if only 1 group exists
   useEffect(() => {
     if (groups.length === 1) {
-      if(!auth?.user?.profile?.name) return;
       form.setValue("paidBy", auth?.user?.profile?.name || "Unknown");
       form.setValue("isShared", true);
     }
