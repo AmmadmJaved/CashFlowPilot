@@ -237,7 +237,8 @@ function TransactionForm({
   // Auto-fill "Paid By" if only 1 group exists
   useEffect(() => {
     if (groups.length === 1) {
-      form.setValue("paidBy", auth?.user?.profile?.name);
+      if(!auth?.user?.profile?.name) return;
+      form.setValue("paidBy", auth?.user?.profile?.name || "Unknown");
       form.setValue("isShared", true);
     }
   }, [groups, form]);
@@ -319,7 +320,7 @@ function TransactionForm({
         <FormField
           control={form.control}
           name="paidBy"
-          defaultValue={auth?.user?.profile?.name} // ✅ auto-fill on mount
+          defaultValue={auth?.user?.profile?.name || "Unknown"} // ✅ auto-fill on mount
           render={({ field }) => (
             <FormItem>
               <FormLabel>{isIncome ? "Received By" : "Paid By"}</FormLabel>
@@ -327,8 +328,8 @@ function TransactionForm({
                 <Input 
                   {...field} 
                   placeholder="Enter name..."
-                  value={field.value || auth?.user?.profile?.name}
-                  onChange={field.onChange}
+                  value={field.value || auth.user?.profile?.name || "Unknown"} // ✅ keep user name if empty
+                  onChange={field.onChange} 
                 />
               </FormControl>
               <FormMessage />
