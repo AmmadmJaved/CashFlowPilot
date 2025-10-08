@@ -14,6 +14,9 @@ import { useAuth } from "react-oidc-context";
 import { useEffect, useRef } from "react";
 import CallbackPage from "./pages/callback";
 import AccountDetail from "@/pages/AccountDetail";
+import About from "./pages/About";
+import Contact  from "./pages/Contact";
+import Blog from "./pages/Blog";
 
 function Router() {
   const auth = useAuth();
@@ -81,6 +84,9 @@ function Router() {
         <>
           <Route path="/" component={Landing} />
           <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
+          <Route path="/about" component={About} />
+          <Route path="/contact" component={Contact} />
+          <Route path="/blog" component={Blog} />
         </>
       )}
 
