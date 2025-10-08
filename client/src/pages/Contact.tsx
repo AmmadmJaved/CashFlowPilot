@@ -1,64 +1,28 @@
-import React, { useState } from "react";
-import Layout from "../components/Layout";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 
-const Contact: React.FC = () => {
-  const [form, setForm] = useState({ name: "", email: "", message: "" });
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Message sent! Thank you for contacting us.");
-    setForm({ name: "", email: "", message: "" });
-  };
-
+export default function Contact() {
   return (
-    <Layout>
-      <section className="max-w-2xl mx-auto text-center">
-        <h2 className="text-3xl font-bold mb-4">Contact Us</h2>
-        <p className="text-gray-600 mb-6">
-          Have a question or need support? Fill out the form below and we’ll get back to you soon.
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-16 px-6">
+      <div className="container mx-auto max-w-2xl">
+        <h1 className="text-5xl font-bold text-center text-blue-700 mb-10">Contact Us</h1>
+        <p className="text-center text-gray-700 dark:text-gray-300 mb-8">
+          Have questions or feedback? We’d love to hear from you! Fill out the form below
+          and we’ll get back to you as soon as possible.
         </p>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <input
-            type="text"
-            name="name"
-            placeholder="Your Name"
-            value={form.name}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
-          <input
-            type="email"
-            name="email"
-            placeholder="Your Email"
-            value={form.email}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded"
-          />
-          <textarea
-            name="message"
-            placeholder="Your Message"
-            value={form.message}
-            onChange={handleChange}
-            required
-            rows={4}
-            className="w-full border p-2 rounded"
-          ></textarea>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-          >
-            Send Message
-          </button>
-        </form>
-      </section>
-    </Layout>
-  );
-};
 
-export default Contact;
+        <form className="space-y-6">
+          <Input placeholder="Your Name" required />
+          <Input placeholder="Your Email" type="email" required />
+          <Textarea placeholder="Your Message" rows={5} required />
+          <div className="text-center">
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 text-lg">
+              Send Message
+            </Button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

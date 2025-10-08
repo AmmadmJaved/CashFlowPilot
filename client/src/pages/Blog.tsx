@@ -1,45 +1,46 @@
-import React from "react";
-import Layout from "../components/Layout";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
-interface BlogPost {
-  id: number;
-  title: string;
-  excerpt: string;
-  date: string;
-}
-
-const blogPosts: BlogPost[] = [
+const blogPosts = [
   {
-    id: 1,
-    title: "How to Analyze Website Earnings with CashPilot",
-    excerpt: "Learn how to monitor and grow your online income using CashPilot’s analytics dashboard.",
-    date: "October 7, 2025",
+    title: "5 Ways to Take Control of Your Finances in 2025",
+    summary:
+      "Simple yet powerful strategies to help you save money, manage expenses, and build financial discipline this year.",
   },
   {
-    id: 2,
-    title: "SEO Optimization: How to Rank Better in Google",
-    excerpt: "Step-by-step methods to improve your website ranking using Search Console and other tools.",
-    date: "October 5, 2025",
+    title: "Why Tracking Shared Expenses Matters",
+    summary:
+      "Learn how CashPilot simplifies group payments, making shared costs easy and transparent for everyone.",
+  },
+  {
+    title: "How Analytics Can Improve Your Budget",
+    summary:
+      "Discover how spending analytics can reveal patterns and help you make smarter money decisions.",
   },
 ];
 
-const Blog: React.FC = () => {
+export default function Blog() {
   return (
-    <Layout>
-      <section className="max-w-4xl mx-auto">
-        <h2 className="text-3xl font-bold mb-6 text-center">Latest Blog Posts</h2>
-        <div className="space-y-6">
-          {blogPosts.map((post) => (
-            <article key={post.id} className="border rounded-lg p-4 shadow-sm hover:shadow-md transition">
-              <h3 className="text-2xl font-semibold mb-2">{post.title}</h3>
-              <p className="text-gray-600 mb-2">{post.excerpt}</p>
-              <span className="text-sm text-gray-500">{post.date}</span>
-            </article>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 py-16 px-6">
+      <div className="container mx-auto max-w-5xl">
+        <h1 className="text-5xl font-bold text-center text-blue-700 mb-10">Our Blog</h1>
+        <p className="text-center text-gray-700 dark:text-gray-300 mb-12">
+          Tips, insights, and updates from the CashPilot team to help you stay financially
+          empowered.
+        </p>
+
+        <div className="grid md:grid-cols-3 gap-8">
+          {blogPosts.map((post, i) => (
+            <Card key={i} className="hover:shadow-lg transition-shadow">
+              <CardHeader>
+                <CardTitle>{post.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-600 dark:text-gray-300">{post.summary}</p>
+              </CardContent>
+            </Card>
           ))}
         </div>
-      </section>
-    </Layout>
+      </div>
+    </div>
   );
-};
-
-export default Blog;
+}

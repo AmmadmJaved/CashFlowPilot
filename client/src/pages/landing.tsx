@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DollarSign, Users, BarChart3, Smartphone } from "lucide-react";
 import { useAuth } from "react-oidc-context";
 import { Link } from "wouter";
+import { Helmet } from "react-helmet";
+import { useState } from "react";
 
 export default function Landing() {
    const auth = useAuth();
@@ -10,9 +12,41 @@ export default function Landing() {
     window.location.href = "/api/login";
   };
 
+  const [amount, setAmount] = useState<number | null>(null);
+  const [people, setPeople] = useState<number | null>(null);
+  const [result, setResult] = useState<string>("");
+
+    const handleCalculate = () => {
+      if (!amount || !people || people <= 0) {
+        setResult("Please enter valid values.");
+        return;
+      }
+      const split = amount / people;
+      setResult(`Each person pays: $${split.toFixed(2)}`);
+    };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       <div className="container mx-auto px-4 py-16">
+        <Helmet>
+          <title>CashPilot | Smart Expense Tracking and Group Budgeting</title>
+          <meta
+            name="description"
+            content="Manage your money effortlessly with CashPilot — track expenses, split bills, analyze spending, and stay in control of your finances with smart analytics."
+          />
+          <meta
+            name="keywords"
+            content="expense tracker, split bills app, finance management, budgeting tool, group expenses, cashpilot, personal finance app"
+          />
+          <meta name="author" content="CashPilot" />
+          <meta property="og:title" content="CashPilot | Simplify Your Finances" />
+          <meta
+            property="og:description"
+            content="Track, analyze, and share your expenses easily with CashPilot — the modern way to manage money with friends and family."
+          />
+          <meta property="og:url" content="https://cashpilot.live" />
+          <meta property="og:type" content="website" />
+        </Helmet>
         {/* Header */}
         <div className="text-center mb-16">
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
@@ -90,6 +124,81 @@ export default function Landing() {
             </CardContent>
           </Card>
         </div>
+        {/* How It Works Section */}
+        <section className="py-16 bg-gradient-to-r from-indigo-50 to-blue-50 dark:from-gray-900 dark:to-gray-800">
+          <h2 className="text-3xl font-bold text-center mb-12">How CashPilot Works</h2>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            {[
+              { step: "1", title: "Sign In", desc: "Join securely with Google in one click." },
+              { step: "2", title: "Add Expenses", desc: "Record your expenses, incomes, and group splits easily." },
+              { step: "3", title: "View Insights", desc: "Track your balance and spending trends instantly." }
+            ].map((item, i) => (
+              <div key={i} className="p-6 rounded-xl shadow hover:shadow-lg transition-all bg-white dark:bg-gray-800">
+                <h3 className="text-2xl font-semibold text-blue-600 mb-2">Step {item.step}</h3>
+                <p className="text-xl font-medium mb-2">{item.title}</p>
+                <p className="text-gray-600 dark:text-gray-300">{item.desc}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Simple Expense Split Demo */}
+        <section className="py-16 text-center bg-white dark:bg-gray-900">
+          <h2 className="text-3xl font-bold mb-8 text-indigo-600">Try a Quick Demo</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            See how easily you can split bills with friends.
+          </p>
+
+          <div className="max-w-md mx-auto flex flex-col items-center space-y-4">
+            <input
+              type="number"
+              placeholder="Enter total amount"
+              value={amount ?? ""}
+              onChange={(e) => setAmount(parseFloat(e.target.value))}
+              className="border p-2 rounded w-full focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+            <input
+              type="number"
+              placeholder="Number of people"
+              value={people ?? ""}
+              onChange={(e) => setPeople(parseInt(e.target.value))}
+              className="border p-2 rounded w-full focus:ring-2 focus:ring-indigo-500 outline-none"
+            />
+            <Button
+              className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 transition"
+              onClick={handleCalculate}
+            >
+              Calculate Split
+            </Button>
+
+            {result && (
+              <p
+                className={`mt-4 text-lg font-semibold ${
+                  result.includes("Each") ? "text-green-600" : "text-red-600"
+                }`}
+              >
+                {result}
+              </p>
+            )}
+          </div>
+        </section>
+
+        {/* Testimonials Section */}
+        <section className="py-16 bg-indigo-50 dark:bg-gray-800">
+          <h2 className="text-3xl font-bold text-center mb-10">Trusted by Smart Savers</h2>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            {[
+              { name: "Ayesha", text: "CashPilot made splitting rent so easy!" },
+              { name: "Usman", text: "Now I actually understand where my money goes." },
+              { name: "Sara", text: "Love the analytics — it keeps me disciplined." }
+            ].map((t, i) => (
+              <div key={i} className="p-6 bg-white dark:bg-gray-900 rounded-xl shadow hover:shadow-lg transition-all">
+                <p className="italic mb-4">“{t.text}”</p>
+                <p className="font-semibold text-blue-600">— {t.name}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
         {/* Features Highlight */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8 mb-16">
@@ -127,6 +236,9 @@ export default function Landing() {
           <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
             Join thousands of users who trust CashPilot to manage their money.
           </p>
+           <h2 className="text-3xl font-bold mb-6">Start Tracking Smarter with CashPilot</h2>
+           <p className="text-lg mb-8">Free forever for individuals — Sign in and take control today.</p>
+  
           <Button 
             onClick={() => {
                         console.log("✅ Button clicked");
@@ -145,15 +257,18 @@ export default function Landing() {
             Get Started Now
           </Button>
            {/* 👇 Added page navigation links near CTA */}
-            <Link to="/about" className="text-blue-600 hover:underline text-lg">
-              Learn More
+          <div className="mt-6 space-x-4">
+            <Link href="/about" className="text-blue-600 hover:underline">
+              About
             </Link>
-            <Link to="/contact" className="text-blue-600 hover:underline text-lg">
-              Contact Us
+            <Link href="/blog" className="text-blue-600 hover:underline">
+              Blog
             </Link>
-            <Link to="/blog" className="text-blue-600 hover:underline text-lg">
-              Read 
+            <Link href="/contact" className="text-blue-600 hover:underline">
+              Contact
             </Link>
+          </div>
+          {/* 👆 Added page navigation links near CTA */}
         </div>
       </div>
     </div>
