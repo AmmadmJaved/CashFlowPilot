@@ -144,44 +144,21 @@ export default function Landing() {
 
         {/* Simple Expense Split Demo */}
         <section className="py-16 text-center bg-white dark:bg-gray-900">
-          <h2 className="text-3xl font-bold mb-8 text-indigo-600">Try a Quick Demo</h2>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">
-            See how easily you can split bills with friends.
-          </p>
+        <h2 className="text-3xl font-bold mb-6 text-indigo-600">Watch the Demo</h2>
+        <p className="text-gray-600 dark:text-gray-300 mb-8">
+          See how CashPilot helps you split expenses and manage your finances with ease.
+        </p>
 
-          <div className="max-w-md mx-auto flex flex-col items-center space-y-4">
-            <input
-              type="number"
-              placeholder="Enter total amount"
-              value={amount ?? ""}
-              onChange={(e) => setAmount(parseFloat(e.target.value))}
-              className="border p-2 rounded w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-            <input
-              type="number"
-              placeholder="Number of people"
-              value={people ?? ""}
-              onChange={(e) => setPeople(parseInt(e.target.value))}
-              className="border p-2 rounded w-full focus:ring-2 focus:ring-indigo-500 outline-none"
-            />
-            <Button
-              className="bg-blue-600 text-white px-6 py-2 hover:bg-blue-700 transition"
-              onClick={handleCalculate}
-            >
-              Calculate Split
-            </Button>
-
-            {result && (
-              <p
-                className={`mt-4 text-lg font-semibold ${
-                  result.includes("Each") ? "text-green-600" : "text-red-600"
-                }`}
-              >
-                {result}
-              </p>
-            )}
+        <div className="max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-lg relative">
+          <div className="aspect-w-16 aspect-h-9">
+            <iframe height="315" className="w-full" src="https://www.youtube-nocookie.com/embed/a8pPuQ8Ytqk?si=hvKw7Ot97OUQCfEI&amp;start=32" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
           </div>
-        </section>
+        </div>
+
+        <p className="mt-6 text-gray-500 dark:text-gray-400 text-sm">
+          Learn how to take control of your shared expenses in just a few minutes.
+        </p>
+      </section>
 
         {/* Testimonials Section */}
         <section className="py-16 bg-indigo-50 dark:bg-gray-800">
