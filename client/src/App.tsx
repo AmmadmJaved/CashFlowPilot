@@ -4,19 +4,32 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import PWAInstallBanner from "@/components/PWAInstallBanner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/not-found";
-import Dashboard from "@/pages/dashboard";
-import InvitePage from "@/pages/invite";
-import Landing from "@/pages/landing";
-import AdminPanel from "@/pages/admin";
+// import NotFound from "@/pages/not-found";
+// import Dashboard from "@/pages/dashboard";
+// import InvitePage from "@/pages/invite";
+// import Landing from "@/pages/landing";
+// import AdminPanel from "@/pages/admin";
 import { ProfileInitializer } from "@/components/ProfileInitializer";
 import { useAuth } from "react-oidc-context";
-import { useEffect, useRef } from "react";
-import CallbackPage from "./pages/callback";
-import AccountDetail from "@/pages/AccountDetail";
-import About from "./pages/About";
-import Contact  from "./pages/Contact";
-import Blog from "./pages/Blog";
+// import CallbackPage from "./pages/callback";
+// import AccountDetail from "@/pages/AccountDetail";
+// import About from "./pages/About";
+// import Contact  from "./pages/Contact";
+// import Blog from "./pages/Blog";
+
+import { lazy, Suspense, useEffect, useRef } from "react";
+
+
+const Dashboard = lazy(() => import("@/pages/dashboard"));
+const Landing = lazy(() => import("@/pages/landing"));
+const About = lazy(() => import("@/pages/About"));
+const Contact = lazy(() => import("@/pages/Contact"));
+const Blog = lazy(() => import("@/pages/Blog"));
+const AdminPanel = lazy(() => import("@/pages/admin"));
+const InvitePage = lazy(() => import("@/pages/invite"));
+const AccountDetail = lazy(() => import("@/pages/AccountDetail"));
+const CallbackPage = lazy(() => import("@/pages/callback"));
+const NotFound = lazy(() => import("@/pages/not-found"));
 
 function Router() {
   const auth = useAuth();
@@ -67,32 +80,34 @@ function Router() {
   }
 
   return (
-    <Switch>
-      <Route path="/auth/google/callback" component={CallbackPage} />
+    <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
+      <Switch>
+            <Route path="/auth/google/callback" component={CallbackPage} />
 
-      {isAuthenticated ? (
-        <>
-          <Route path="/" component={Dashboard} />
-          <Route
-            path="/account/:id"
-            component={({ params }) => <AccountDetail accountId={params.id} />}
-          />
-          <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
-          <Route path="/admin" component={AdminPanel} />
-        </>
-      ) : (
-        <>
-          <Route path="/" component={Landing} />
-          <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
-          <Route path="/about" component={About} />
-          <Route path="/contact" component={Contact} />
-          <Route path="/blog" component={Blog} />
-        </>
-      )}
+            {isAuthenticated ? (
+              <>
+                <Route path="/" component={Dashboard} />
+                <Route
+                  path="/account/:id"
+                  component={({ params }) => <AccountDetail accountId={params.id} />}
+                />
+                <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
+                <Route path="/admin" component={AdminPanel} />
+              </>
+            ) : (
+              <>
+                <Route path="/" component={Landing} />
+                <Route path="/group/:groupId/invite/:inviteCode" component={InvitePage} />
+                <Route path="/about" component={About} />
+                <Route path="/contact" component={Contact} />
+                <Route path="/blog" component={Blog} />
+              </>
+            )}
 
-      <Route component={NotFound} />
-    </Switch>
-  );
+            <Route component={NotFound} />
+          </Switch>
+    </Suspense>
+  ); 
 }
 
 function App() {

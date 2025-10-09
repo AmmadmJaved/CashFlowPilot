@@ -6,24 +6,39 @@ import { Link } from "wouter";
 import { Helmet } from "react-helmet";
 import { useState } from "react";
 
+    function LazyYouTube() {
+      const [loaded, setLoaded] = useState(false);
+
+      return (
+        <div className="relative aspect-video max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-lg">
+          {!loaded && (
+            <button
+              className="absolute inset-0 flex items-center justify-center bg-black/40 text-white text-xl font-semibold"
+              onClick={() => setLoaded(true)}
+            >
+              ▶ Watch Demo
+            </button>
+          )}
+          {loaded && (
+            <iframe
+              className="w-full h-full"
+              src="https://www.youtube-nocookie.com/embed/a8pPuQ8Ytqk?si=hvKw7Ot97OUQCfEI&amp;start=32"
+              title="YouTube demo"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+            />
+          )}
+        </div>
+      );
+    }
+
 export default function Landing() {
    const auth = useAuth();
   const handleLogin = () => {
     window.location.href = "/api/login";
   };
-
-  const [amount, setAmount] = useState<number | null>(null);
-  const [people, setPeople] = useState<number | null>(null);
-  const [result, setResult] = useState<string>("");
-
-    const handleCalculate = () => {
-      if (!amount || !people || people <= 0) {
-        setResult("Please enter valid values.");
-        return;
-      }
-      const split = amount / people;
-      setResult(`Each person pays: $${split.toFixed(2)}`);
-    };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
@@ -144,22 +159,13 @@ export default function Landing() {
         </section>
 
         {/* Simple Expense Split Demo */}
-        <section className="py-16 text-center bg-white dark:bg-gray-900">
-        <h2 className="text-3xl font-bold mb-6 text-indigo-600">Watch the Demo</h2>
-        <p className="text-gray-600 dark:text-gray-300 mb-8">
-          See how CashPilot helps you split expenses and manage your finances with ease.
-        </p>
-
-        <div className="max-w-3xl mx-auto rounded-2xl overflow-hidden shadow-lg relative">
-          <div className="aspect-w-16 aspect-h-9">
-            <iframe height="315" className="w-full" src="https://www.youtube-nocookie.com/embed/a8pPuQ8Ytqk?si=hvKw7Ot97OUQCfEI&amp;start=32" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-          </div>
-        </div>
-
-        <p className="mt-6 text-gray-500 dark:text-gray-400 text-sm">
-          Learn how to take control of your shared expenses in just a few minutes.
-        </p>
-      </section>
+       <section>
+          <h2 className="text-3xl font-bold mb-6 text-indigo-600">Watch the Demo</h2>
+          <p className="text-gray-600 dark:text-gray-300 mb-8">
+            See how CashPilot helps you split expenses and manage your finances with ease.
+          </p>
+          <LazyYouTube />
+        </section>
 
         {/* Testimonials Section */}
         <section className="py-16 bg-indigo-50 dark:bg-gray-800">
