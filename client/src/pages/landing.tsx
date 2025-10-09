@@ -49,6 +49,7 @@ export default function Landing() {
         </Helmet>
         {/* Header */}
         <div className="text-center mb-16">
+          <img src="/icon-72x72.png" alt="CashPilot Logo" loading="lazy" className="mx-auto mb-4 w-24 h-24" />
           <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
             CashPilot
           </h1>
