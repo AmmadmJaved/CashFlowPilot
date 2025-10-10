@@ -81,10 +81,22 @@ export function SettingsModal({ children }: SettingsModalProps) {
 const token = auth.user?.id_token;
 
   // Fetch current profile
-  const { data: currentProfile, isLoading } = useQuery({
-    queryKey: ['/api/profile', token],
-    enabled: isOpen,
-  });
+  // const { data: currentProfile, isLoading } = useQuery({
+  //   queryKey: ['/api/profile', token],
+  //   enabled: isOpen,
+  // });
+
+const { data: currentProfile, isLoading } = useQuery({
+  queryKey: ['/api/profile'],
+  enabled: isOpen && !!token,
+  queryFn: async () => {
+    const response = await apiRequest('GET', '/api/profile', undefined, token);
+    if (response && typeof response.json === "function") {
+      return await response.json();
+    }
+    return response;
+  },
+});
 
   // Update profile when data is loaded
   useEffect(() => {
@@ -190,6 +202,7 @@ const token = auth.user?.id_token;
                     value={profile.publicName || ""}
                     onChange={(e) => updateProfile("publicName", e.target.value)}
                     data-testid="input-public-name"
+                    disabled={profile.publicName ? true : false}
                   />
                   <p className="text-sm text-muted-foreground">
                     This name will be visible to other group members

@@ -159,11 +159,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const userId = req.user.claims.sub;
       const profileId = req.params.id;
       const profileData = req.body;
-
+      console.log("Updating profile:", profileId, "with data:", profileData,"userId:", userId);
       // Verify the profile belongs to the authenticated user
       const existingProfile = await storage.getUserProfileByUserId(userId);
       if (!existingProfile || existingProfile.id !== profileId) {
         return res.status(404).json({ message: "Profile not found" });
+      }
+      if (profileData.createdAt) {
+          profileData.createdAt = new Date(profileData.createdAt);
+      }
+      if (profileData.updatedAt) {
+         profileData.updatedAt = new Date(profileData.updatedAt);
       }
 
       const updatedProfile = await storage.updateUserProfile(profileId, profileData);
