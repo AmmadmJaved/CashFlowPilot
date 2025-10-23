@@ -30,6 +30,8 @@ const InvitePage = lazy(() => import("@/pages/invite"));
 const AccountDetail = lazy(() => import("@/pages/AccountDetail"));
 const CallbackPage = lazy(() => import("@/pages/callback"));
 const NotFound = lazy(() => import("@/pages/not-found"));
+import Career from "./pages/careers";
+
 
 function Router() {
   const auth = useAuth();
@@ -101,7 +103,8 @@ function Router() {
                 <Route path="/about" component={About} />
                 <Route path="/contact" component={Contact} />
                 <Route path="/blog" component={Blog} />
-              </>
+                <Route path="/careers" component={Career} />
+        </>
             )}
 
             <Route component={NotFound} />
