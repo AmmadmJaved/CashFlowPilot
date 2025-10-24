@@ -4,6 +4,7 @@ import App from "./App";
 import { OidcProvider } from "./AuthProvider";
 import "./index.css";
 
+
 // Register service worker for PWA
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', async () => {
