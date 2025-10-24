@@ -76,19 +76,19 @@ export default function Landing() {
       </Helmet>
 
       {/* 🧭 Header (from PDF) */}
-      <header className="bg-white dark:bg-gray-900 shadow-md">
+      <header className=" bg-gray-900 text-gray-300 mt-1 dark:bg-gray-900 shadow-md">
         <div className="container mx-auto px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-blue-600">CashPilot</h1>
-          <nav className="hidden md:flex space-x-8 text-sm font-medium">
-            <Link href="/">Home</Link>
-            <Link href="/about">About</Link>
-            <Link href="/blog">Blog</Link>
-            <Link href="/contact">Contact Us</Link>
-            <Link href="/Careers">Careers</Link>
+          <nav className="hidden md:flex space-x-8 text-sm font-medium text-gray-300 bg-gray-900 border-gray-900 dark:bg-gray-900">
+            <Link className="hover:text-white transition duration-300 ease-in-out text-gray-300 border-radius" href="/">Home</Link>
+            <Link  className="hover:text-white transition duration-300 ease-in-out text-gray-300" href="/about">About</Link>
+            <Link className="hover:text-white transition duration-300 ease-in-out text-gray-300" href="/blog">Blog</Link>
+            <Link className="hover:text-white transition duration-300 ease-in-out text-gray-300" href="/contact">Contact Us</Link>
+            <Link className="hover:text-white transition duration-300 ease-in-out text-gray-300" href="/Careers">Careers</Link>
           </nav>
           <a
             href="/get-app"
-            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
+            className="bg-blue-600 text-green-50 px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition"
           >
             Get App
           </a>
@@ -143,7 +143,7 @@ export default function Landing() {
         </div>
 
         {/* 📱 Mobile Preview Section */}
-        <section className="py-20 bg-white dark:bg-gray-900">
+        <section className="py-20 bg-white dark:bg-gray-900 border-t border-b border-gray-200 dark:border-gray-700 border-radius-lg mb-16">
         <div className="text-center mb-10 px-4">
           <h2 className="text-3xl font-bold mb-4 text-blue-700">
             Your Finances — Visualized
