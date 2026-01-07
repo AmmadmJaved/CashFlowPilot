@@ -121,9 +121,8 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     doc.setFont('helvetica', 'bold');
     doc.text('Date', 25, yPos + 8);
     doc.text('Description', 50, yPos + 8);
-    doc.text('Person', 100, yPos + 8);
-    doc.text('Income', 125, yPos + 8);
-    doc.text('Expense', 145, yPos + 8);
+    doc.text('Income', 115, yPos + 8);
+    doc.text('Expense', 135, yPos + 8);
     doc.text('Balance', 170, yPos + 8);
     
     yPos += 15;
@@ -148,9 +147,8 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
         doc.setFontSize(10);
         doc.text('Date', 25, yPos + 8);
         doc.text('Description', 50, yPos + 8);
-        doc.text('Person', 100, yPos + 8);
-        doc.text('Income', 125, yPos + 8);
-        doc.text('Expense', 145, yPos + 8);
+        doc.text('Income', 115, yPos + 8);
+        doc.text('Expense', 135, yPos + 8);
         doc.text('Balance', 170, yPos + 8);
         yPos += 15;
         doc.setTextColor(0, 0, 0);
@@ -175,23 +173,27 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       // Date
       doc.text(format(new Date(transaction.date), 'MMM dd'), 25, yPos + 5);
       
-      // Description (truncated)
-      doc.text(transaction.description.substring(0, 20), 50, yPos + 5);
+      // Description (full text with word wrapping)
+      const descriptionLines = doc.splitTextToSize(transaction.description, 60);
+      doc.text(descriptionLines, 50, yPos + 5);
       
-      // Person (truncated)
-      doc.text(transaction.paidBy.substring(0, 10), 100, yPos + 5);
+      // Adjust yPos based on number of lines in description
+      const descriptionHeight = descriptionLines.length * 4;
+      if (descriptionHeight > 10) {
+        yPos += (descriptionHeight - 10);
+      }
       
       // Income amount (green)
       if (transaction.type === 'income') {
         doc.setTextColor(5, 150, 105);
-        doc.text(amount.toLocaleString(), 125, yPos + 5);
+        doc.text(amount.toLocaleString(), 115, yPos + 5);
         doc.setTextColor(0, 0, 0);
       }
       
       // Expense amount (red)
       if (transaction.type === 'expense') {
         doc.setTextColor(220, 38, 38);
-        doc.text(amount.toLocaleString(), 145, yPos + 5);
+        doc.text(amount.toLocaleString(), 135, yPos + 5);
         doc.setTextColor(0, 0, 0);
       }
       
@@ -202,7 +204,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
         doc.setTextColor(220, 38, 38);
       }
       doc.setFont('helvetica', 'bold');
-      doc.text(runningBalance.toLocaleString(), 170, yPos + 5);
+      doc.text(runningBalance.toLocaleString(), 165, yPos + 5);
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
 
@@ -235,15 +237,15 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
 
     // Total Income (green)
     doc.setTextColor(5, 150, 105);
-    doc.text(totalIncome.toLocaleString(), 125, yPos + 5);
+    doc.text(totalIncome.toLocaleString(), 115, yPos + 5);
 
     // Total Expenses (red)
     doc.setTextColor(220, 38, 38);
-    doc.text(totalExpenses.toLocaleString(), 145, yPos + 5);
+    doc.text(totalExpenses.toLocaleString(), 135, yPos + 5);
 
     // Final Balance (green if +, red if -)
     doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
-    doc.text(finalBalance.toLocaleString(), 170, yPos + 5);
+    doc.text(finalBalance.toLocaleString(), 165, yPos + 5);
 
     // Reset font
     doc.setFont('helvetica', 'normal');

@@ -349,50 +349,53 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                         >
                           {transaction.type === "income" ? "+" : "-"}
                           {formatCurrency(transaction.amount)}
-                        </div> 
-                        {
-                          transaction.paidBy === auth.user?.profile?.name  && (
-                          <div className="flex space-x-2 mt-1">
-                               {/* View Button */}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setViewingTransaction(transaction)}
-                              className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingTransaction(transaction)}
-                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
+                        </div>
+                        <div className="flex space-x-2 mt-1">
+                          {/* View Button - Available to all users */}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setViewingTransaction(transaction)}
+                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
 
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                  deleteMutation.mutate(transaction.id);
-                                }
-                              }}
-                              className="flex items-center space-x-1"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                              {/* Example Modal for Viewing Transaction */}
-                            {viewingTransaction && (
-                              <ViewTransactionModal
-                              transaction={viewingTransaction}
-                              onClose={() => setViewingTransaction(null)}
-                            />
-                            )}
-                          </div>
-                          )
-                        }
+                          {/* Edit and Delete - Restricted to transaction owner */}
+                          {transaction.paidBy === auth.user?.profile?.name && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setEditingTransaction(transaction)}
+                                className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                    deleteMutation.mutate(transaction.id);
+                                  }
+                                }}
+                                className="flex items-center space-x-1"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
+
+                        {/* Example Modal for Viewing Transaction */}
+                        {viewingTransaction && (
+                          <ViewTransactionModal
+                            transaction={viewingTransaction}
+                            onClose={() => setViewingTransaction(null)}
+                          />
+                        )}
                         
                       </div>
                     </div>
