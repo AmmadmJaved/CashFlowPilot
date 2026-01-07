@@ -873,45 +873,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/export/excel', async (req, res) => {
-    try {
-      const { filters } = req.body;
-      const transactions = await storage.getAllTransactions(filters);
-      
-      const workbook = new ExcelJS.Workbook();
-      const worksheet = workbook.addWorksheet('Expenses');
-
-      worksheet.columns = [
-        { header: 'Date', key: 'date', width: 15 },
-        { header: 'Description', key: 'description', width: 30 },
-        { header: 'Type', key: 'type', width: 10 },
-        { header: 'Amount', key: 'amount', width: 15 },
-        { header: 'Category', key: 'category', width: 20 },
-        { header: 'Paid By', key: 'paidBy', width: 20 },
-      ];
-
-      transactions.forEach(transaction => {
-        worksheet.addRow({
-          date: transaction.date,
-          description: transaction.description,
-          type: transaction.type,
-          amount: transaction.amount,
-          category: transaction.category || '',
-          paidBy: transaction.paidBy,
-        });
-      });
-
-      const buffer = await workbook.xlsx.writeBuffer();
-      
-      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-      res.setHeader('Content-Disposition', 'attachment; filename=expense-report.xlsx');
-      res.send(buffer);
-    } catch (error) {
-      console.error("Error generating Excel:", error);
-      res.status(500).json({ message: "Failed to generate Excel file" });
-    }
-  });
-
   // Simple invite link generation
   app.post('/api/groups/:groupId/simple-invite' , async (req, res) => {
     try {

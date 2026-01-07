@@ -164,40 +164,38 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
         runningBalance -= amount;
       }
       
-      // Alternating row background
+      // Calculate description lines first
+      const descriptionLines = doc.splitTextToSize(transaction.description, 60);
+      const descriptionHeight = descriptionLines.length * 4;
+      const rowHeight = Math.max(descriptionHeight + 2, 10);
+      
+      // Alternating row background (expanded for wrapped text)
       if (rowCount % 2 === 0) {
         doc.setFillColor(248, 250, 252);
-        doc.rect(20, yPos - 2, 170, 10, 'F');
+        doc.rect(20, yPos - 2, 170, rowHeight, 'F');
       }
       
       // Date
-      doc.text(format(new Date(transaction.date), 'MMM dd'), 25, yPos + 5);
+      doc.text(format(new Date(transaction.date), 'MMM dd, yyyy'), 25, yPos + 5);
       
       // Description (full text with word wrapping)
-      const descriptionLines = doc.splitTextToSize(transaction.description, 60);
       doc.text(descriptionLines, 50, yPos + 5);
       
-      // Adjust yPos based on number of lines in description
-      const descriptionHeight = descriptionLines.length * 4;
-      if (descriptionHeight > 10) {
-        yPos += (descriptionHeight - 10);
-      }
-      
-      // Income amount (green)
+      // Income amount (green) - positioned at baseline
       if (transaction.type === 'income') {
         doc.setTextColor(5, 150, 105);
         doc.text(amount.toLocaleString(), 115, yPos + 5);
         doc.setTextColor(0, 0, 0);
       }
       
-      // Expense amount (red)
+      // Expense amount (red) - positioned at baseline
       if (transaction.type === 'expense') {
         doc.setTextColor(220, 38, 38);
         doc.text(amount.toLocaleString(), 135, yPos + 5);
         doc.setTextColor(0, 0, 0);
       }
       
-      // Running balance (green if positive, red if negative)
+      // Running balance (green if positive, red if negative) - positioned at baseline
       if (runningBalance >= 0) {
         doc.setTextColor(5, 150, 105);
       } else {
@@ -208,7 +206,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       doc.setFont('helvetica', 'normal');
       doc.setTextColor(0, 0, 0);
 
-      yPos += 10;
+      yPos += rowHeight + 2;
       rowCount++;
     });
 
