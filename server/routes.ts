@@ -3,8 +3,9 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { userProfiles } from "@shared/schema";
+import { userProfiles, groups } from "@shared/schema";
 import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, insertUserProfileSchema, type GroupInvite, type UserProfile } from "@shared/schema";
+import { eq } from 'drizzle-orm';
 import ExcelJS from "exceljs";
 import { verifyGoogleToken } from "./auth";
 
@@ -719,6 +720,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to fetch group" });
     }
   }); 
+
+  // update group name (and optional description)
+  app.put('/api/groups/:id', async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { name, description } = req.body;
+      if (!name || typeof name !== 'string') {
+        return res.status(400).json({ message: 'Name is required' });
+      }
+
+      const [updated] = await db.update(groups).set({ name, ...(description !== undefined ? { description } : {}) }).where(eq(groups.id, id)).returning();
+      if (!updated) return res.status(404).json({ message: 'Group not found' });
+
+      // Broadcast group update to connected clients
+      broadcastUpdate('group_updated', { id: updated.id, name: updated.name, description: updated.description });
+
+      res.json(updated);
+    } catch (error) {
+      console.error('Error updating group:', error);
+      res.status(500).json({ message: 'Failed to update group' });
+    }
+  });
 
   // add group member route
   app.post('/api/groups/:id/members' , async (req, res) => {

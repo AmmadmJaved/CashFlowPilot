@@ -58,6 +58,8 @@ export default function Dashboard() {
   const [isGroupModalOpen, setIsGroupModalOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<GroupWithMembers | null>(null);
   const [inviteModalOpen, setInviteModalOpen] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null);
+  const [editingGroupName, setEditingGroupName] = useState<string>("");
   // Add state for edit modal
   const [editingTransaction, setEditingTransaction] = useState<TransactionWithSplits | null>(null);
   const [viewingTransaction, setViewingTransaction] = useState<any | null>(null);
@@ -158,6 +160,31 @@ const { data: monthlyStats, isLoading: statsLoading } = useMonthlyStats(token ??
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
     setFilters(prev => ({ ...prev, [key]: value }));
   };
+
+  // update group name mutation
+  const updateGroupMutation = useMutation({
+    mutationFn: async ({ id, name }: { id: string; name: string }) => {
+      if (!token) throw new Error('Not authenticated');
+      const res = await fetch(`/api/groups/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ name }),
+      });
+      if (!res.ok) throw new Error('Failed to update group');
+      return res.json();
+    },
+    onSuccess: (data) => {
+      toast({ title: 'Group updated', description: 'Group name updated successfully' });
+      queryClient.invalidateQueries({ queryKey: ['/api/groups'] });
+      setEditingGroupId(null);
+    },
+    onError: (err: any) => {
+      toast({ title: 'Error', description: err?.message || 'Failed to update group', variant: 'destructive' });
+    }
+  });
 
   // Add delete mutation
 const deleteMutation = useMutation({
@@ -511,13 +538,65 @@ const deleteMutation = useMutation({
                       <div key={group.id} className="p-4 border rounded-lg bg-gray-50 gradient-to-br from-gray-50 to-gray-100" data-testid={`group-${group.id}`}>
                         <div className="flex items-center justify-between">
                           <div>
-                            <Link href={`/account/${group.id}`}>
-                              <h3 className="font-medium">{group.name}</h3>
-                              <p className="text-sm text-gray-500">
-                                {group.memberCount} members
-                                {group.description && ` • ${group.description}`}
-                              </p>
-                            </Link>
+                            {editingGroupId === group.id ? (
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  value={editingGroupName}
+                                  onChange={(e) => setEditingGroupName(e.target.value)}
+                                  className="w-72"
+                                  autoFocus
+                                />
+                                <Button
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (!editingGroupName.trim()) {
+                                      toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' });
+                                      return;
+                                    }
+                                    updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() });
+                                  }}
+                                  disabled={updateGroupMutation.isPending}
+                                >
+                                  {updateGroupMutation.isPending ? 'Saving...' : 'Save'}
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingGroupId(null);
+                                  }}
+                                  disabled={updateGroupMutation.isPending}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            ) : (
+                              <Link href={`/account/${group.id}`}>
+                                <div className="flex items-center">
+                                  <h3 className="font-medium">{group.name}</h3>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      setEditingGroupId(group.id);
+                                      setEditingGroupName(group.name || '');
+                                    }}
+                                    className="ml-2"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+
+                                <p className="text-sm text-gray-500">
+                                  {group.memberCount} members
+                                  {group.description && ` • ${group.description}`}
+                                </p>
+                              </Link>
+                            )}
                           </div>
                           <div className="flex items-center gap-3">
                             <div className="text-right">
