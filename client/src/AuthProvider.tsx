@@ -120,8 +120,8 @@ export function OidcProvider({ children }: { children: React.ReactNode }) {
       access_type: "offline",
       prompt: "consent",
     },
-    // Disable built-in code exchange (we handle it server-side in callback page)
-    // by not providing client_secret, oidc-client-ts won't attempt exchange itself.
+    // Prevent oidc-client-ts from auto-processing the callback (we handle it in callback.tsx)
+    skipSigninCallback: window.location.pathname.includes("/callback"),
     loadUserInfo: false,
     automaticSilentRenew: false,
     monitorSession: false,
