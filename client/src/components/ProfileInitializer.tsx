@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthProvider } from "@/hooks/useAuth";
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
+import { queryClient } from "@/lib/queryClient";
 import {
   Dialog,
   DialogContent,
@@ -72,6 +73,27 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
       }));
     }
   }, [isLoading, isAuthenticated, user]);
+
+  // Seed profile cache from auth/user response & prefetch dashboard data
+  useEffect(() => {
+    if (!isLoading && isAuthenticated && user?.profile && token) {
+      // Seed /api/profile cache so useProfile() never makes a separate request
+      queryClient.setQueryData(['/api/profile'], user.profile);
+
+      // Prefetch dashboard queries in parallel
+      const headers = { Authorization: `Bearer ${token}` };
+      queryClient.prefetchQuery({
+        queryKey: ['/api/groups', token],
+        queryFn: () => fetch('/api/groups', { headers }).then(r => r.json()),
+        staleTime: 5 * 60 * 1000,
+      });
+      queryClient.prefetchQuery({
+        queryKey: ['/api/stats/monthly'],
+        queryFn: () => fetch('/api/stats/monthly', { headers }).then(r => r.json()),
+        staleTime: 5 * 60 * 1000,
+      });
+    }
+  }, [isLoading, isAuthenticated, user, token]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,8 +1,9 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
 
 export function useAuthProvider() {
   const auth = useAuth();
+  const queryClient = useQueryClient();
 
   async function fetchUser() {
     if (!auth.user) {
@@ -29,7 +30,14 @@ export function useAuthProvider() {
         throw new Error(error.message || "Authentication failed");
       }
 
-      return res.json();
+      const data = await res.json();
+
+      // Seed the profile cache so useProfile() doesn't fire a separate request
+      if (data.profile) {
+        queryClient.setQueryData(['/api/profile'], data.profile);
+      }
+
+      return data;
     } catch (error) {
       console.error("Auth error:", error);
       throw error;
@@ -41,6 +49,8 @@ export function useAuthProvider() {
     queryFn: fetchUser,
     retry: false,
     enabled: !!auth.user?.id_token,
+    staleTime: 10 * 60 * 1000, // 10 min — avoid re-fetching on every component mount
+    gcTime: 15 * 60 * 1000,
   });
 
   return {

@@ -17,6 +17,8 @@ const token = auth.user?.id_token;
       return res.json() as Promise<UserProfile>;
     },
     retry: false,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 15 * 60 * 1000,
   });
 
   // Create profile mutation

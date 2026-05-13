@@ -19,12 +19,33 @@ const getAllowedGoogleClientIds = () => {
 const allowedGoogleClientIds = getAllowedGoogleClientIds();
 const client = new OAuth2Client();
 
+// In-memory token cache: token hash → { claims, expiresAt }
+// Avoids repeated Google verification + DB writes for the same token.
+const tokenCache = new Map<string, { claims: Record<string, any>; expiresAt: number }>();
+const TOKEN_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const TOKEN_CACHE_MAX = 500;
+
+function getTokenHash(token: string): string {
+  // Use last 32 chars of token as a fast cache key (unique per token)
+  return token.slice(-32);
+}
+
+function pruneTokenCache() {
+  if (tokenCache.size <= TOKEN_CACHE_MAX) return;
+  const now = Date.now();
+  for (const [key, entry] of tokenCache) {
+    if (entry.expiresAt < now) tokenCache.delete(key);
+  }
+  // If still too large, drop oldest half
+  if (tokenCache.size > TOKEN_CACHE_MAX) {
+    const keys = Array.from(tokenCache.keys());
+    for (let i = 0; i < keys.length / 2; i++) tokenCache.delete(keys[i]);
+  }
+}
+
 export async function verifyGoogleToken(req: any, res: any, next: any) {
   try {
     const authHeader = req.headers.authorization;
-    
-    // Debug logging
-    console.log("Auth header:", authHeader?.substring(0, 50) + "...");
     
     if (!authHeader?.startsWith("Bearer ")) {
       return res.status(401).json({ 
@@ -35,9 +56,6 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
 
     const token = authHeader.split(" ")[1];
     
-    // Debug logging
-    console.log("Token parts:", token?.split('.').length);
-    
     if (!token) {
       return res.status(401).json({ 
         message: "No token provided",
@@ -45,7 +63,14 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
       });
     }
 
-    // Check if it's an id_token
+    // Fast path: check in-memory cache first
+    const cacheKey = getTokenHash(token);
+    const cached = tokenCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      req.user = { claims: cached.claims };
+      return next();
+    }
+
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
@@ -64,15 +89,16 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
         return res.status(401).json({ message: "Invalid token payload: missing subject" });
       }
 
-      const [userBySubject] = await db
-        .select()
-        .from(users)
-        .where(eq(users.id, tokenSubject))
-        .limit(1);
+      // Run both lookups in parallel
+      const [subjectResult, emailResult] = await Promise.all([
+        db.select().from(users).where(eq(users.id, tokenSubject)).limit(1),
+        tokenEmail
+          ? db.select().from(users).where(eq(users.email, tokenEmail)).limit(1)
+          : Promise.resolve([]),
+      ]);
 
-      const [userByEmail] = tokenEmail
-        ? await db.select().from(users).where(eq(users.email, tokenEmail)).limit(1)
-        : [];
+      const userBySubject = subjectResult[0];
+      const userByEmail = emailResult[0];
 
       const profileUpdate = {
         email: tokenEmail || null,
@@ -87,17 +113,17 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
 
       if (userBySubject) {
         canonicalUserId = userBySubject.id;
-        await db
-          .update(users)
-          .set(profileUpdate)
-          .where(eq(users.id, canonicalUserId));
+        // Only write to DB if last login was >5 minutes ago
+        const lastLogin = userBySubject.lastLoginAt ? new Date(userBySubject.lastLoginAt).getTime() : 0;
+        if (Date.now() - lastLogin > 5 * 60 * 1000) {
+          await db.update(users).set(profileUpdate).where(eq(users.id, canonicalUserId));
+        }
       } else if (userByEmail) {
-        // Keep the existing database user ID so historical personal data remains linked.
         canonicalUserId = userByEmail.id;
-        await db
-          .update(users)
-          .set(profileUpdate)
-          .where(eq(users.id, canonicalUserId));
+        const lastLogin = userByEmail.lastLoginAt ? new Date(userByEmail.lastLoginAt).getTime() : 0;
+        if (Date.now() - lastLogin > 5 * 60 * 1000) {
+          await db.update(users).set(profileUpdate).where(eq(users.id, canonicalUserId));
+        }
       } else {
         await db.insert(users).values({
           id: tokenSubject,
@@ -111,15 +137,20 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
         });
       }
 
-      // Attach normalized claims to request so all routes use canonical user ID.
-      req.user = {
-        claims: {
-          ...payload,
-          sub: canonicalUserId,
-          originalSub: tokenSubject,
-        },
+      const claims = {
+        ...payload,
+        sub: canonicalUserId,
+        originalSub: tokenSubject,
       };
 
+      // Cache the verified result
+      pruneTokenCache();
+      tokenCache.set(cacheKey, {
+        claims,
+        expiresAt: Date.now() + TOKEN_CACHE_TTL,
+      });
+
+      req.user = { claims };
       next();
     } catch (tokenError) {
       console.error("Token verification failed:", tokenError);

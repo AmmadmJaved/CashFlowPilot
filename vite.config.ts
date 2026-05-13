@@ -31,10 +31,13 @@ export default defineConfig(({ mode }) => {
       // 2. Expose each VITE_* variable for use in your code
       "import.meta.env.VITE_AUTH_AUTHORITY": JSON.stringify(env.VITE_AUTH_AUTHORITY),
       "import.meta.env.VITE_GOOGLE_CLIENT_ID": JSON.stringify(env.VITE_GOOGLE_CLIENT_ID),
-      "import.meta.env.VITE_GOOGLE_CLIENT_SECRET": JSON.stringify(env.VITE_GOOGLE_CLIENT_SECRET),
+      "import.meta.env.VITE_GOOGLE_ANDROID_CLIENT_ID": JSON.stringify(env.VITE_GOOGLE_ANDROID_CLIENT_ID),
       "import.meta.env.VITE_GOOGLE_REDIRECT_URI": JSON.stringify(env.VITE_GOOGLE_REDIRECT_URI),
+      "import.meta.env.VITE_GOOGLE_NATIVE_REDIRECT_BRIDGE": JSON.stringify(env.VITE_GOOGLE_NATIVE_REDIRECT_BRIDGE),
       "import.meta.env.VITE_GOOGLE_RESPONSE_TYPE": JSON.stringify(env.VITE_GOOGLE_RESPONSE_TYPE),
       "import.meta.env.VITE_GOOGLE_SCOPE": JSON.stringify(env.VITE_GOOGLE_SCOPE),
+      "import.meta.env.VITE_API_BASE_URL": JSON.stringify(env.VITE_API_BASE_URL),
+      "import.meta.env.VITE_WS_URL": JSON.stringify(env.VITE_WS_URL),
     },
   };
 });
