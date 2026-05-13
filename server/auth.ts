@@ -89,61 +89,13 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
         return res.status(401).json({ message: "Invalid token payload: missing subject" });
       }
 
-      // Run both lookups in parallel
-      const [subjectResult, emailResult] = await Promise.all([
-        db.select().from(users).where(eq(users.id, tokenSubject)).limit(1),
-        tokenEmail
-          ? db.select().from(users).where(eq(users.email, tokenEmail)).limit(1)
-          : Promise.resolve([]),
-      ]);
-
-      const userBySubject = subjectResult[0];
-      const userByEmail = emailResult[0];
-
-      const profileUpdate = {
-        email: tokenEmail || null,
-        firstName: payload.given_name ?? "",
-        lastName: payload.family_name ?? "",
-        profileImageUrl: payload.picture ?? "",
-        lastLoginAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      let canonicalUserId = tokenSubject;
-
-      if (userBySubject) {
-        canonicalUserId = userBySubject.id;
-        // Only write to DB if last login was >5 minutes ago
-        const lastLogin = userBySubject.lastLoginAt ? new Date(userBySubject.lastLoginAt).getTime() : 0;
-        if (Date.now() - lastLogin > 5 * 60 * 1000) {
-          await db.update(users).set(profileUpdate).where(eq(users.id, canonicalUserId));
-        }
-      } else if (userByEmail) {
-        canonicalUserId = userByEmail.id;
-        const lastLogin = userByEmail.lastLoginAt ? new Date(userByEmail.lastLoginAt).getTime() : 0;
-        if (Date.now() - lastLogin > 5 * 60 * 1000) {
-          await db.update(users).set(profileUpdate).where(eq(users.id, canonicalUserId));
-        }
-      } else {
-        await db.insert(users).values({
-          id: tokenSubject,
-          email: tokenEmail || null,
-          firstName: payload.given_name ?? "",
-          lastName: payload.family_name ?? "",
-          profileImageUrl: payload.picture ?? "",
-          role: "user",
-          status: "active",
-          lastLoginAt: new Date(),
-        });
-      }
-
       const claims = {
         ...payload,
-        sub: canonicalUserId,
+        sub: tokenSubject,
         originalSub: tokenSubject,
       };
 
-      // Cache the verified result
+      // Cache the verified result immediately
       pruneTokenCache();
       tokenCache.set(cacheKey, {
         claims,
@@ -152,6 +104,40 @@ export async function verifyGoogleToken(req: any, res: any, next: any) {
 
       req.user = { claims };
       next();
+
+      // Fire-and-forget: ensure user exists in DB (don't block the response)
+      setImmediate(async () => {
+        try {
+          const [existing] = await db.select().from(users).where(eq(users.id, tokenSubject)).limit(1);
+          if (existing) {
+            // Only update lastLoginAt if stale (>30 min)
+            const lastLogin = existing.lastLoginAt ? new Date(existing.lastLoginAt).getTime() : 0;
+            if (Date.now() - lastLogin > 30 * 60 * 1000) {
+              await db.update(users).set({
+                email: tokenEmail || null,
+                firstName: payload.given_name ?? "",
+                lastName: payload.family_name ?? "",
+                profileImageUrl: payload.picture ?? "",
+                lastLoginAt: new Date(),
+                updatedAt: new Date(),
+              }).where(eq(users.id, tokenSubject));
+            }
+          } else {
+            await db.insert(users).values({
+              id: tokenSubject,
+              email: tokenEmail || null,
+              firstName: payload.given_name ?? "",
+              lastName: payload.family_name ?? "",
+              profileImageUrl: payload.picture ?? "",
+              role: "user",
+              status: "active",
+              lastLoginAt: new Date(),
+            }).onConflictDoNothing();
+          }
+        } catch (e) {
+          console.error("Background user sync error:", e);
+        }
+      });
     } catch (tokenError) {
       console.error("Token verification failed:", tokenError);
       return res.status(401).json({ 

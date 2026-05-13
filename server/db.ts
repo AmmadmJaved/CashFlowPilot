@@ -13,7 +13,20 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const pool = new Pool({ 
+  connectionString: process.env.DATABASE_URL,
+  max: 10, // keep connections warm
+  idleTimeoutMillis: 60000, // keep idle connections for 60s (prevents cold starts)
+  connectionTimeoutMillis: 5000,
+});
+
+// Keep the pool warm — prevents Neon serverless cold start latency
+setInterval(async () => {
+  try {
+    await pool.query('SELECT 1');
+  } catch {}
+}, 30000); // ping every 30 seconds
+
 // Optional: Test DB connection (without ending pool)
 async function testDbConnection() {
   try {

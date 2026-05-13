@@ -13,6 +13,25 @@ import { verifyGoogleToken } from "./auth";
 // Store connected WebSocket clients
 const connectedClients = new Set<WebSocket>();
 
+// In-memory profile cache to avoid DB hit on every /api/auth/user call
+const profileCache = new Map<string, { data: any; expiresAt: number }>();
+const PROFILE_CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+function getCachedProfile(userId: string) {
+  const entry = profileCache.get(userId);
+  if (entry && entry.expiresAt > Date.now()) return entry.data;
+  if (entry) profileCache.delete(userId);
+  return null;
+}
+
+function setCachedProfile(userId: string, data: any) {
+  profileCache.set(userId, { data, expiresAt: Date.now() + PROFILE_CACHE_TTL });
+}
+
+function invalidateProfileCache(userId: string) {
+  profileCache.delete(userId);
+}
+
 // Broadcast function to send updates to all connected clients
 function broadcastUpdate(event: string, data: any) {
   const message = JSON.stringify({ event, data, timestamp: new Date().toISOString() });
@@ -139,7 +158,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const claims = req.user.claims;
       const userId = claims.sub;
 
-      // Build user response directly from verified claims (already validated in middleware)
+      // Check in-memory cache first (avoids DB entirely for repeat calls)
+      const cached = getCachedProfile(userId);
+      if (cached) {
+        return res.json(cached);
+      }
+
       // Only fetch profile from DB (lightweight single query)
       let profile = await storage.getUserProfileByUserId(userId);
       if (!profile) {
@@ -153,14 +177,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      res.json({
+      const response = {
         id: userId,
         email: claims.email || '',
         firstName: claims.given_name || '',
         lastName: claims.family_name || '',
         profileImageUrl: claims.picture || '',
         profile,
-      });
+      };
+
+      // Cache the response
+      setCachedProfile(userId, response);
+
+      res.json(response);
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -177,6 +206,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       };
       
       const profile = await storage.createUserProfile(profileData);
+      invalidateProfileCache(userId);
       res.json(profile);
     } catch (error) {
       console.error("Error creating profile:", error);
@@ -203,6 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const profileData = req.body;
       console.log("Updating profile:", profileId, "with data:", profileData,"userId:", userId);
       // Verify the profile belongs to the authenticated user
+      invalidateProfileCache(userId);
       const existingProfile = await storage.getUserProfileByUserId(userId);
       if (!existingProfile || existingProfile.id !== profileId) {
         return res.status(404).json({ message: "Profile not found" });
