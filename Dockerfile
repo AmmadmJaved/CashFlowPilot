@@ -15,6 +15,7 @@ COPY vite.config.ts ./
 
 # Install ALL deps (including dev)
 RUN npm install
+RUN npm rebuild
 
 # Copy rest of the code
 COPY . .
