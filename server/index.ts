@@ -8,6 +8,7 @@ app.use(express.urlencoded({ extended: false }));
 
 const allowedOrigins = new Set([
   "capacitor://localhost",
+  "https://localhost",
   "http://localhost",
   "http://localhost:3000",
   "http://localhost:5000",

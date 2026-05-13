@@ -5,8 +5,8 @@ const config: CapacitorConfig = {
   appName: "CashFlowPilot",
   webDir: "dist/public",
   server: {
-    url: "https://cashpilot.live",
     androidScheme: "https",
+    allowNavigation: ["cashpilot.live", "accounts.google.com"],
   },
 };
 
