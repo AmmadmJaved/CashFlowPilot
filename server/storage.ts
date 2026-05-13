@@ -265,6 +265,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllTransactions(
     filters: {
+      userId?: string;
       groupId?: string;
       type?: 'expense' | 'income';
       category?: string;
@@ -277,6 +278,10 @@ export class DatabaseStorage implements IStorage {
     } = {}
   ): Promise<TransactionWithSplits[]> {
     const conditions = [];
+
+    if (filters.userId) {
+      conditions.push(eq(transactions.userId, filters.userId));
+    }
 
     if (filters.groupId) {
       conditions.push(eq(transactions.groupId, filters.groupId));
@@ -317,22 +322,29 @@ export class DatabaseStorage implements IStorage {
       ? db.select().from(transactions).where(and(...conditions))
       : db.select().from(transactions);
 
-    const result = await query.orderBy(desc(transactions.date));
+    const result = await query.orderBy(desc(transactions.date)).limit(200);
 
-    // Get splits for each transaction
-    const transactionsWithSplits = await Promise.all(
-      result.map(async (transaction) => {
-        const splits = await db
-          .select()
-          .from(transactionSplits)
-          .where(eq(transactionSplits.transactionId, transaction.id));
+    if (result.length === 0) return [];
 
-        return {
-          ...transaction,
-          splits,
-        };
-      })
-    );
+    // Batch-fetch all splits in one query instead of N+1
+    const txIds = result.map(t => t.id);
+    const allSplits = await db
+      .select()
+      .from(transactionSplits)
+      .where(inArray(transactionSplits.transactionId, txIds));
+
+    // Group splits by transactionId
+    const splitsByTxId = new Map<string, typeof allSplits>();
+    for (const split of allSplits) {
+      const existing = splitsByTxId.get(split.transactionId) || [];
+      existing.push(split);
+      splitsByTxId.set(split.transactionId, existing);
+    }
+
+    const transactionsWithSplits = result.map(transaction => ({
+      ...transaction,
+      splits: splitsByTxId.get(transaction.id) || [],
+    }));
 
     return transactionsWithSplits;
   }

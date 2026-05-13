@@ -392,8 +392,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return res.status(401).json({ message: "Unauthorized" });
         }
 
-        // Build filters (only non-group transactions for the signed-in user)
-        const filters: any = {};
+        // Build filters with userId to avoid fetching all users' data
+        const filters: any = { userId };
         if (type) filters.type = type;
         if (category) filters.category = category;
         if (paidBy) filters.paidBy = paidBy;
@@ -401,15 +401,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (endDate) filters.endDate = new Date(endDate as string);
         if (search) filters.search = search;
 
-        // Fetch all possible transactions (filters may not include userId/groupId)
-        let transactions = await storage.getAllTransactions(filters);
+        const transactions = await storage.getAllTransactions(filters);
 
-        // ✅ Explicitly enforce: only this user + no group
-        transactions = transactions.filter(
-          (tx: any) => tx.userId === userId && (tx.groupId === null || tx.groupId === undefined)
+        // Only personal (non-group) transactions
+        const result = transactions.filter(
+          (tx: any) => tx.groupId === null || tx.groupId === undefined
         );
 
-        res.json(transactions);
+        res.json(result);
       } catch (error) {
         console.error("Error fetching transactions:", error);
         res.status(500).json({ message: "Failed to fetch transactions" });
