@@ -18,6 +18,7 @@ import { useAuth } from "react-oidc-context";
 // import Blog from "./pages/Blog";
 
 import { lazy, Suspense, useEffect, useRef } from "react";
+import { App as CapacitorApp } from '@capacitor/app';
 
 
 const Dashboard = lazy(() => import("@/pages/dashboard"));
@@ -70,6 +71,55 @@ function Router() {
     return () => window.removeEventListener("popstate", handler);
   }, [isAuthenticated]);
 
+  // Handle OAuth redirect in Capacitor
+  useEffect(() => {
+    const processDeepLink = (rawUrl?: string) => {
+      if (!rawUrl) {
+        return;
+      }
+
+      try {
+        const url = new URL(rawUrl);
+        if (url.protocol === 'cashpilot:' && url.hostname === 'callback') {
+          const query = url.search;
+          const hash = url.hash;
+          window.location.replace(`/auth/google/callback${query}${hash}`);
+        }
+      } catch (error) {
+        console.error('Failed to parse deep link URL', error);
+      }
+    };
+
+    let isMounted = true;
+    let cleanup: (() => Promise<void>) | undefined;
+
+    void CapacitorApp.getLaunchUrl().then((launchData) => {
+      if (!isMounted) {
+        return;
+      }
+      processDeepLink(launchData?.url);
+    }).catch((error) => {
+      console.error('Failed to read launch URL', error);
+    });
+
+    CapacitorApp.addListener('appUrlOpen', (event) => {
+      processDeepLink(event.url);
+    }).then((listenerHandle) => {
+      if (!isMounted) {
+        void listenerHandle.remove();
+        return;
+      }
+      cleanup = () => listenerHandle.remove();
+    });
+
+    return () => {
+      isMounted = false;
+      if (cleanup) {
+        void cleanup();
+      }
+    };
+  }, []);
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -85,6 +135,7 @@ function Router() {
     <Suspense fallback={<div className="text-center py-10">Loading...</div>}>
       <Switch>
             <Route path="/auth/google/callback" component={CallbackPage} />
+            <Route path="/auth/google/mobile-callback" component={CallbackPage} />
 
             {isAuthenticated ? (
               <>

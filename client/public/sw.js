@@ -66,6 +66,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Skip unsupported schemes (e.g., chrome-extension://) to avoid cache.put errors
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
+
   // Handle navigation requests
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -97,7 +102,7 @@ async function networkFirstStrategy(request) {
     const networkResponse = await fetch(request);
     
     // Cache successful GET requests
-    if (networkResponse.ok && request.method === 'GET') {
+    if (networkResponse.ok && request.method === 'GET' && request.url.startsWith('http')) {
       const cache = await caches.open(DYNAMIC_CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
@@ -127,6 +132,10 @@ async function networkFirstStrategy(request) {
 
 // Cache-first strategy for static assets
 async function cacheFirstStrategy(request) {
+  if (!request.url.startsWith('http')) {
+    return fetch(request);
+  }
+
   const cachedResponse = await caches.match(request);
   
   if (cachedResponse) {
@@ -136,7 +145,7 @@ async function cacheFirstStrategy(request) {
   try {
     const networkResponse = await fetch(request);
     
-    if (networkResponse.ok) {
+    if (networkResponse.ok && request.url.startsWith('http')) {
       const cache = await caches.open(STATIC_CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
