@@ -74,10 +74,17 @@ export default function Landing() {
       return;
     }
 
-    if (!auth || !auth.signinRedirect) {
-      return;
-    }
-    auth.signinRedirect().catch((err: any) => console.error(err));
+    // Web: build Google OAuth URL directly (no PKCE) since server handles code exchange with client_secret
+    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    const params = new URLSearchParams({
+      client_id: webClientId,
+      redirect_uri: redirectUri,
+      response_type: "code",
+      scope: scope,
+      access_type: "offline",
+      prompt: "consent",
+    });
+    window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
 
   return (

@@ -29,45 +29,10 @@ export default function CallbackPage() {
       setExchanging(true);
       const redirectUri = `${window.location.origin}${window.location.pathname}`;
 
-      // Retrieve PKCE code_verifier stored by oidc-client-ts during signinRedirect
-      let codeVerifier: string | null = null;
-      try {
-        // oidc-client-ts stores state under the state value as key in sessionStorage
-        if (state) {
-          const stateData = sessionStorage.getItem(state);
-          if (stateData) {
-            const parsed = JSON.parse(stateData);
-            codeVerifier = parsed.code_verifier || null;
-            sessionStorage.removeItem(state);
-          }
-        }
-        // Fallback: search all sessionStorage for code_verifier
-        if (!codeVerifier) {
-          for (let i = 0; i < sessionStorage.length; i++) {
-            const key = sessionStorage.key(i);
-            if (key) {
-              const raw = sessionStorage.getItem(key);
-              if (raw) {
-                try {
-                  const parsed = JSON.parse(raw);
-                  if (parsed.code_verifier) {
-                    codeVerifier = parsed.code_verifier;
-                    sessionStorage.removeItem(key);
-                    break;
-                  }
-                } catch {}
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.warn("Could not retrieve code_verifier from storage", e);
-      }
-
       fetch("/api/auth/exchange", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: codeVerifier }),
+        body: JSON.stringify({ code, redirect_uri: redirectUri }),
       })
         .then((res) => {
           if (!res.ok) return res.json().then((d) => Promise.reject(d));
