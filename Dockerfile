@@ -14,7 +14,8 @@ COPY package*.json ./
 COPY vite.config.ts ./
 
 # Install ALL deps (including dev)
-RUN npm install
+RUN npm install --ignore-scripts
+RUN npm install @rollup/rollup-linux-x64-musl --no-save
 RUN npm rebuild
 
 # Copy rest of the code
