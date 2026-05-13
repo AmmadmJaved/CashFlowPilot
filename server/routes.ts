@@ -87,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // allowing the browser SPA to use response_type=code without exposing the secret.
   app.post('/api/auth/exchange', async (req, res) => {
     try {
-      const { code, redirect_uri } = req.body;
+      const { code, redirect_uri, code_verifier } = req.body;
       if (!code || !redirect_uri) {
         return res.status(400).json({ message: "code and redirect_uri are required" });
       }
@@ -98,16 +98,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ message: "Server OAuth credentials not configured" });
       }
 
+      const params: Record<string, string> = {
+        code,
+        client_id: clientId,
+        client_secret: clientSecret,
+        redirect_uri,
+        grant_type: "authorization_code",
+      };
+      // Include PKCE code_verifier if the client sent one
+      if (code_verifier) {
+        params.code_verifier = code_verifier;
+      }
+
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
         method: "POST",
         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
-          code,
-          client_id: clientId,
-          client_secret: clientSecret,
-          redirect_uri,
-          grant_type: "authorization_code",
-        }),
+        body: new URLSearchParams(params),
       });
 
       const tokenData = await tokenResponse.json();

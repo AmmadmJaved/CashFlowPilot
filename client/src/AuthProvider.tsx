@@ -120,8 +120,8 @@ export function OidcProvider({ children }: { children: React.ReactNode }) {
       access_type: "offline",
       prompt: "consent",
     },
-    // Prevent oidc-client-ts from auto-processing the callback (we handle it in callback.tsx)
-    skipSigninCallback: window.location.pathname.includes("/callback"),
+    // Always prevent oidc-client-ts from auto-processing callback (we handle it in callback.tsx)
+    skipSigninCallback: true,
     loadUserInfo: false,
     automaticSilentRenew: false,
     monitorSession: false,

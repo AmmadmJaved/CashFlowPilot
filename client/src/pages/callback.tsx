@@ -29,10 +29,31 @@ export default function CallbackPage() {
       setExchanging(true);
       const redirectUri = `${window.location.origin}${window.location.pathname}`;
 
+      // Retrieve PKCE code_verifier stored by oidc-client-ts during signinRedirect
+      let codeVerifier: string | null = null;
+      try {
+        for (let i = 0; i < sessionStorage.length; i++) {
+          const key = sessionStorage.key(i);
+          if (key && key.startsWith("oidc.")) {
+            const raw = sessionStorage.getItem(key);
+            if (raw) {
+              const parsed = JSON.parse(raw);
+              if (parsed.code_verifier) {
+                codeVerifier = parsed.code_verifier;
+                sessionStorage.removeItem(key); // clean up
+                break;
+              }
+            }
+          }
+        }
+      } catch (e) {
+        console.warn("Could not retrieve code_verifier from storage", e);
+      }
+
       fetch("/api/auth/exchange", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code, redirect_uri: redirectUri }),
+        body: JSON.stringify({ code, redirect_uri: redirectUri, code_verifier: codeVerifier }),
       })
         .then((res) => {
           if (!res.ok) return res.json().then((d) => Promise.reject(d));
