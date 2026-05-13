@@ -107,17 +107,7 @@ const getRedirectUri = (nativeApp: boolean) => {
 
 export function OidcProvider({ children }: { children: React.ReactNode }) {
   const nativeApp = isNativeRuntime();
-  // Google implicit flow is required for this SPA setup to avoid server-side code exchange.
-  // Normalize env value to handle accidental quotes in hosted variable UIs.
-  const responseType = (import.meta.env.VITE_GOOGLE_RESPONSE_TYPE || "id_token")
-    .trim()
-    .replace(/^"|"$/g, "")
-    .replace(/^'|'$/g, "");
-  const extraQueryParams = {
-    prompt: "select_account",
-  };
-  const normalizedResponseType = responseType.replace(/\s+/g, " ").trim();
-  const shouldLoadUserInfo = normalizedResponseType !== "id_token";
+  const responseType = "code";
 
   const oidcConfig: AuthProviderProps = {
     authority: getAuthority(),
@@ -126,10 +116,15 @@ export function OidcProvider({ children }: { children: React.ReactNode }) {
     silent_redirect_uri: nativeApp ? undefined : `${window.location.origin}/silent-callback.html`,
     response_type: responseType,
     scope: import.meta.env.VITE_GOOGLE_SCOPE || "openid profile email",
-    extraQueryParams,
-    loadUserInfo: shouldLoadUserInfo,
-    automaticSilentRenew: !nativeApp,
-    monitorSession: true,
+    extraQueryParams: {
+      access_type: "offline",
+      prompt: "consent",
+    },
+    // Disable built-in code exchange (we handle it server-side in callback page)
+    // by not providing client_secret, oidc-client-ts won't attempt exchange itself.
+    loadUserInfo: false,
+    automaticSilentRenew: false,
+    monitorSession: false,
     // Persist login in localStorage
     userStore: new WebStorageStateStore({ store: window.localStorage }),
   };

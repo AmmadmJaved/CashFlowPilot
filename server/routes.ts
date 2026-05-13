@@ -82,6 +82,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
 
 
+  // Public token exchange endpoint for SPA code flow
+  // This endpoint exchanges an authorization code for tokens using the server's client_secret,
+  // allowing the browser SPA to use response_type=code without exposing the secret.
+  app.post('/api/auth/exchange', async (req, res) => {
+    try {
+      const { code, redirect_uri } = req.body;
+      if (!code || !redirect_uri) {
+        return res.status(400).json({ message: "code and redirect_uri are required" });
+      }
+
+      const clientId = process.env.GOOGLE_CLIENT_ID;
+      const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        return res.status(500).json({ message: "Server OAuth credentials not configured" });
+      }
+
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code,
+          client_id: clientId,
+          client_secret: clientSecret,
+          redirect_uri,
+          grant_type: "authorization_code",
+        }),
+      });
+
+      const tokenData = await tokenResponse.json();
+
+      if (!tokenResponse.ok) {
+        console.error("Token exchange failed:", tokenData);
+        return res.status(400).json({ message: tokenData.error_description || "Token exchange failed" });
+      }
+
+      res.json(tokenData);
+    } catch (error) {
+      console.error("Error in token exchange:", error);
+      res.status(500).json({ message: "Token exchange failed" });
+    }
+  });
+
   // Auth middleware (applies to routes below)
    // protect everything else
   app.use("/api", verifyGoogleToken);
