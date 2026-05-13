@@ -32,16 +32,30 @@ export default function CallbackPage() {
       // Retrieve PKCE code_verifier stored by oidc-client-ts during signinRedirect
       let codeVerifier: string | null = null;
       try {
-        for (let i = 0; i < sessionStorage.length; i++) {
-          const key = sessionStorage.key(i);
-          if (key && key.startsWith("oidc.")) {
-            const raw = sessionStorage.getItem(key);
-            if (raw) {
-              const parsed = JSON.parse(raw);
-              if (parsed.code_verifier) {
-                codeVerifier = parsed.code_verifier;
-                sessionStorage.removeItem(key); // clean up
-                break;
+        // oidc-client-ts stores state under the state value as key in sessionStorage
+        if (state) {
+          const stateData = sessionStorage.getItem(state);
+          if (stateData) {
+            const parsed = JSON.parse(stateData);
+            codeVerifier = parsed.code_verifier || null;
+            sessionStorage.removeItem(state);
+          }
+        }
+        // Fallback: search all sessionStorage for code_verifier
+        if (!codeVerifier) {
+          for (let i = 0; i < sessionStorage.length; i++) {
+            const key = sessionStorage.key(i);
+            if (key) {
+              const raw = sessionStorage.getItem(key);
+              if (raw) {
+                try {
+                  const parsed = JSON.parse(raw);
+                  if (parsed.code_verifier) {
+                    codeVerifier = parsed.code_verifier;
+                    sessionStorage.removeItem(key);
+                    break;
+                  }
+                } catch {}
               }
             }
           }
