@@ -107,20 +107,25 @@ const getRedirectUri = (nativeApp: boolean) => {
 
 export function OidcProvider({ children }: { children: React.ReactNode }) {
   const nativeApp = isNativeRuntime();
+  const responseType = import.meta.env.VITE_GOOGLE_RESPONSE_TYPE || "id_token";
+  const extraQueryParams =
+    responseType === "code"
+      ? {
+          access_type: "offline",
+          prompt: "consent",
+        }
+      : {
+          prompt: "select_account",
+        };
 
   const oidcConfig: AuthProviderProps = {
     authority: getAuthority(),
     client_id: getClientId(),
     redirect_uri: getRedirectUri(nativeApp),
     silent_redirect_uri: nativeApp ? undefined : `${window.location.origin}/silent-callback.html`,
-    response_type: import.meta.env.VITE_GOOGLE_RESPONSE_TYPE || "code",
+    response_type: responseType,
     scope: import.meta.env.VITE_GOOGLE_SCOPE || "openid profile email",
-    // Ask Google for a refresh token
-    // (passed on the authorization request)
-    extraQueryParams: {
-      access_type: "offline",
-      prompt: "consent"
-    },
+    extraQueryParams,
     loadUserInfo: true,
     automaticSilentRenew: !nativeApp,
     monitorSession: true,
