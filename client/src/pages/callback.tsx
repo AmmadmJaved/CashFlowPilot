@@ -10,6 +10,17 @@ export default function CallbackPage() {
   const { isAuthenticated, isLoading, error } = auth;
   const [exchangeError, setExchangeError] = useState<string | null>(null);
   const [exchanging, setExchanging] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
+
+  useEffect(() => {
+    if (!exchanging && !isLoading) return;
+
+    const timer = window.setInterval(() => {
+      setLoadingStep((prev) => (prev + 1) % 3);
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [exchanging, isLoading]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -109,9 +120,42 @@ export default function CallbackPage() {
     }
   }, []);
 
-  if (exchanging) return <div className="min-h-screen flex items-center justify-center"><p>Signing you in...</p></div>;
+  if (exchanging || isLoading) {
+    const loadingMessages = [
+      "Verifying Google sign-in...",
+      "Creating secure session...",
+      "Syncing profile and dashboard...",
+    ];
+
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center px-6">
+        <div className="w-full max-w-md rounded-2xl border border-cyan-500/30 bg-slate-900/90 p-6 shadow-2xl shadow-cyan-900/20">
+          <div className="mb-4 flex items-center gap-3">
+            <div className="h-11 w-11 animate-spin rounded-full border-2 border-cyan-400/40 border-t-cyan-300" />
+            <div>
+              <p className="text-lg font-semibold text-cyan-200">Getting your account ready</p>
+              <p className="text-sm text-slate-300">You will be redirected automatically.</p>
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+            {loadingMessages[loadingStep]}
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            {[0, 1, 2].map((step) => (
+              <div
+                key={step}
+                className={`h-1.5 rounded-full ${step <= loadingStep ? "bg-cyan-400" : "bg-slate-700"}`}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (exchangeError) return <div className="min-h-screen flex items-center justify-center"><p>Login error: {exchangeError}</p></div>;
-  if (isLoading) return <div className="min-h-screen flex items-center justify-center"><p>Processing login...</p></div>;
   if (error) return <div className="min-h-screen flex items-center justify-center"><p>Login error: {error.message}</p></div>;
 
   if (isAuthenticated) {

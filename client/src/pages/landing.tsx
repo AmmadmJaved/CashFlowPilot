@@ -7,14 +7,26 @@ import { Helmet } from "react-helmet";
 import { Capacitor } from "@capacitor/core";
 import { GoogleSignIn } from "@capawesome/capacitor-google-sign-in";
 import { User } from "oidc-client-ts";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 export default function Landing() {
   const auth = useAuth();
+  const [isSigningIn, setIsSigningIn] = useState(false);
+  const [loadingStep, setLoadingStep] = useState(0);
 
   const webClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
   const authority = import.meta.env.VITE_AUTH_AUTHORITY || "https://accounts.google.com";
   const scope = import.meta.env.VITE_GOOGLE_SCOPE || "openid profile email";
+
+  useEffect(() => {
+    if (!isSigningIn) return;
+
+    const timer = window.setInterval(() => {
+      setLoadingStep((prev) => (prev + 1) % 3);
+    }, 1300);
+
+    return () => window.clearInterval(timer);
+  }, [isSigningIn]);
 
   const storeNativeSession = (
     idToken: string,
@@ -57,6 +69,7 @@ export default function Landing() {
   };
 
   const handleLogin = async () => {
+    setIsSigningIn(true);
     const isNative = Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios";
 
     if (isNative) {
@@ -70,6 +83,7 @@ export default function Landing() {
         window.location.replace("/");
       } catch (err) {
         console.error("Native Google Sign-In failed", err);
+        setIsSigningIn(false);
       }
       return;
     }
@@ -86,6 +100,12 @@ export default function Landing() {
     });
     window.location.href = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   };
+
+  const loadingMessages = [
+    "Preparing secure sign-in...",
+    "Opening Google account chooser...",
+    "Getting dashboard ready...",
+  ];
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -124,7 +144,7 @@ export default function Landing() {
           </nav>
 
           <Button onClick={handleLogin} className="bg-cyan-500 px-5 text-slate-950 hover:bg-cyan-400">
-            Sign In
+            {isSigningIn ? "Connecting..." : "Sign In"}
           </Button>
         </div>
       </header>
@@ -150,9 +170,10 @@ export default function Landing() {
               <Button
                 onClick={handleLogin}
                 size="lg"
+                disabled={isSigningIn}
                 className="group bg-cyan-500 text-slate-950 hover:bg-cyan-400"
               >
-                Sign in with Google
+                {isSigningIn ? "Connecting to Google..." : "Sign in with Google"}
                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
               </Button>
               <a
@@ -265,6 +286,33 @@ export default function Landing() {
           </div>
         </div>
       </footer>
+
+      {isSigningIn && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl border border-cyan-500/30 bg-slate-900/90 p-6 shadow-2xl shadow-cyan-900/30">
+            <div className="mb-5 flex items-center gap-3">
+              <div className="h-10 w-10 animate-spin rounded-full border-2 border-cyan-400/40 border-t-cyan-300" />
+              <div>
+                <p className="text-base font-semibold text-cyan-200">Signing you in</p>
+                <p className="text-sm text-slate-300">This usually takes 2-5 seconds.</p>
+              </div>
+            </div>
+
+            <div className="rounded-xl border border-slate-700 bg-slate-950/70 px-4 py-3 text-sm text-slate-200">
+              {loadingMessages[loadingStep]}
+            </div>
+
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              {[0, 1, 2].map((step) => (
+                <div
+                  key={step}
+                  className={`h-1.5 rounded-full ${step <= loadingStep ? "bg-cyan-400" : "bg-slate-700"}`}
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
