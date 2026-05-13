@@ -11,7 +11,7 @@ export default function CallbackPage() {
     const code = params.get("code");
     const state = params.get("state");
     const isMobileBridgePath = window.location.pathname === "/auth/google/mobile-callback";
-    const inNativeShell = Capacitor.isNativePlatform() || (window as any).Capacitor !== undefined;
+    const inNativeShell = Capacitor.getPlatform() === "android" || Capacitor.getPlatform() === "ios";
 
     // If callback lands in external browser, bounce back into app first.
     if (!inNativeShell && isMobileBridgePath && code && state) {

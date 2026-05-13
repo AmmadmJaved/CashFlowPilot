@@ -11,11 +11,7 @@ export const isNativeRuntime = () => {
   const platform = Capacitor.getPlatform?.();
   return (
     platform === "android" ||
-    platform === "ios" ||
-    Capacitor.isNativePlatform() ||
-    window.location.protocol === "capacitor:" ||
-    navigator.userAgent.includes("Capacitor") ||
-    (window as any).Capacitor !== undefined
+    platform === "ios"
   );
 };
 
