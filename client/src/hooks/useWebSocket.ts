@@ -8,6 +8,27 @@ interface WebSocketMessage {
   timestamp: string;
 }
 
+function resolveWebSocketUrl() {
+  const configuredWsUrl = (import.meta.env.VITE_WS_URL || '').trim();
+  if (configuredWsUrl) {
+    return configuredWsUrl;
+  }
+
+  const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '').trim();
+  if (apiBaseUrl) {
+    try {
+      const apiUrl = new URL(apiBaseUrl);
+      const protocol = apiUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+      return `${protocol}//${apiUrl.host}/ws`;
+    } catch (error) {
+      console.warn('Invalid VITE_API_BASE_URL for WebSocket resolution', error);
+    }
+  }
+
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  return `${protocol}//${window.location.host}/ws`;
+}
+
 export function useWebSocket() {
   const wsRef = useRef<WebSocket | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -17,8 +38,7 @@ export function useWebSocket() {
   
   const connect = () => {
     try {
-      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-      const wsUrl = `${protocol}//${window.location.host}/ws`;
+      const wsUrl = resolveWebSocketUrl();
       
       wsRef.current = new WebSocket(wsUrl);
       

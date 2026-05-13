@@ -820,9 +820,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
         const { startDate, endDate, groupId, filterUser } = req.query;
 
-        const profile = await storage.getUserProfileByUserId(userId);
+        let profile = await storage.getUserProfileByUserId(userId);
         if (!profile) {
-          return res.status(404).json({ message: "User profile not found" });
+          const authClaims = (req as any).user?.claims || {};
+          const displayName =
+            authClaims.name ||
+            [authClaims.given_name, authClaims.family_name].filter(Boolean).join(" ") ||
+            (authClaims.email ? String(authClaims.email).split("@")[0] : "User");
+
+          profile = await storage.createUserProfile({
+            userId,
+            publicName: displayName,
+          });
         }
 
         // Determine whether this is personal stats or group stats

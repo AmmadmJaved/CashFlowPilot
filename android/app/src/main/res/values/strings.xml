@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CashFlowPilot</string>
+    <string name="title_activity_main">CashFlowPilot</string>
+    <string name="package_name">com.cashpilot.app</string>
+    <string name="custom_url_scheme">com.cashpilot.app</string>
+</resources>

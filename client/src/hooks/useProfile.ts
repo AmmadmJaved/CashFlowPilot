@@ -12,7 +12,7 @@ const token = auth.user?.id_token;
     queryKey: ['/api/profile'],
     enabled: !!token,
     queryFn: async () => {
-      const res = await apiRequest('/api/profile', 'GET', null, token);
+      const res = await apiRequest('GET', '/api/profile', undefined, token);
       if (!res.ok) throw new Error('Failed to fetch profile');
       return res.json() as Promise<UserProfile>;
     },
@@ -22,7 +22,7 @@ const token = auth.user?.id_token;
   // Create profile mutation
   const createProfile = useMutation({
     mutationFn: async (data: InsertUserProfile) => {
-      return await apiRequest('/api/profile', 'POST', data, token);
+      return await apiRequest('POST', '/api/profile', data, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });
@@ -32,7 +32,7 @@ const token = auth.user?.id_token;
   // Update profile mutation
   const updateProfile = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: Partial<InsertUserProfile> }) => {
-      return await apiRequest(`/api/profile/${id}`, 'PATCH', data, token);
+      return await apiRequest('PATCH', `/api/profile/${id}`, data, token);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['/api/profile'] });

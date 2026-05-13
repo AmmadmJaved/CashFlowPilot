@@ -6,6 +6,34 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+const allowedOrigins = new Set([
+  "capacitor://localhost",
+  "http://localhost",
+  "http://localhost:3000",
+  "http://localhost:5000",
+  "https://cashpilot.live",
+  "https://www.cashpilot.live",
+]);
+
+app.use((req, res, next) => {
+  const originHeader = req.headers.origin;
+  const origin = typeof originHeader === "string" ? originHeader : undefined;
+
+  if (origin && allowedOrigins.has(origin)) {
+    res.header("Access-Control-Allow-Origin", origin);
+    res.header("Vary", "Origin");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Headers", "Authorization, Content-Type, X-Requested-With");
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
+  }
+
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(204);
+  }
+
+  next();
+});
+
 // Simple logger middleware
 app.use((req, res, next) => {
   const start = Date.now();

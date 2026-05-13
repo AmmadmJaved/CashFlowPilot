@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuthProvider } from "@/hooks/useAuth";
+import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
 import {
   Dialog,
@@ -50,6 +51,8 @@ interface ProfileInitializerProps {
 
 export function ProfileInitializer({ children }: ProfileInitializerProps) {
   const { user, isLoading, isAuthenticated } = useAuthProvider();
+  const auth = useAuth();
+  const token = auth.user?.id_token;
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<Partial<InsertUserProfile>>({
     publicName: "",
@@ -85,7 +88,10 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
     try {
       const response = await fetch('/api/profile', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify(formData),
       });
       
