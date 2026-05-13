@@ -7,6 +7,16 @@ export function useProfile() {
   const queryClient = useQueryClient();
 const auth = useAuth();
 const token = auth.user?.id_token;
+
+  // Read optimistic profile from localStorage as placeholder
+  const getOptimisticProfile = () => {
+    try {
+      const raw = localStorage.getItem('cashpilot_optimistic_profile');
+      if (raw) return JSON.parse(raw) as UserProfile;
+    } catch {}
+    return undefined;
+  };
+
   // Get current profile
   const { data: profile, isLoading, error } = useQuery({
     queryKey: ['/api/profile'],
@@ -14,11 +24,15 @@ const token = auth.user?.id_token;
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/profile', undefined, token);
       if (!res.ok) throw new Error('Failed to fetch profile');
-      return res.json() as Promise<UserProfile>;
+      const data = await res.json() as UserProfile;
+      // Clear optimistic once real data arrives
+      localStorage.removeItem('cashpilot_optimistic_profile');
+      return data;
     },
     retry: false,
     staleTime: 10 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
+    placeholderData: getOptimisticProfile,
   });
 
   // Create profile mutation

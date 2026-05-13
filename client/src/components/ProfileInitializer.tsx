@@ -140,29 +140,24 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
     setFormData(prev => ({ ...prev, [key]: value }));
   };
 
-  // Show children only when authenticated and profile exists
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading your profile...</p>
-        </div>
-      </div>
-    );
+  // Never block children — show dashboard immediately while profile loads in background
+  if (!isAuthenticated && !isLoading) {
+    return <>{children}</>;
   }
 
-  // Don't render profile setup for non-authenticated users
-  if (!isAuthenticated) {
+  // Still loading auth — show children (dashboard will show its own skeletons)
+  if (isLoading) {
     return <>{children}</>;
   }
 
   // Show profile setup if authenticated but no profile
   if (isAuthenticated && user && !user.profile) {
     return (
-      <Dialog open={isOpen} onOpenChange={() => {}}>
-        <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()}>
-          <DialogHeader>
+      <>
+        {children}
+        <Dialog open={isOpen} onOpenChange={() => {}}>
+          <DialogContent className="max-w-2xl" onPointerDownOutside={(e) => e.preventDefault()}>
+            <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <User className="w-5 h-5" />
               Welcome to CashPilot
@@ -279,6 +274,7 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
           </form>
         </DialogContent>
       </Dialog>
+      </>
     );
   }
 

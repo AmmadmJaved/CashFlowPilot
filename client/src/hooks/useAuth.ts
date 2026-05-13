@@ -1,6 +1,15 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "react-oidc-context";
 
+// Read optimistic user data cached during login callback for instant UI
+function getOptimisticUser() {
+  try {
+    const raw = localStorage.getItem('cashpilot_optimistic_user');
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return undefined;
+}
+
 export function useAuthProvider() {
   const auth = useAuth();
   const queryClient = useQueryClient();
@@ -10,7 +19,6 @@ export function useAuthProvider() {
       throw new Error("No authenticated user");
     }
 
-    // Always use id_token for authentication
     const token = auth.user.id_token;
     
     if (!token) {
@@ -35,6 +43,9 @@ export function useAuthProvider() {
       // Seed the profile cache so useProfile() doesn't fire a separate request
       if (data.profile) {
         queryClient.setQueryData(['/api/profile'], data.profile);
+        // Clear optimistic data now that real data is loaded
+        localStorage.removeItem('cashpilot_optimistic_user');
+        localStorage.removeItem('cashpilot_optimistic_profile');
       }
 
       return data;
@@ -49,13 +60,15 @@ export function useAuthProvider() {
     queryFn: fetchUser,
     retry: false,
     enabled: !!auth.user?.id_token,
-    staleTime: 10 * 60 * 1000, // 10 min — avoid re-fetching on every component mount
+    staleTime: 10 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
+    // Use optimistic data as placeholder so UI renders instantly
+    placeholderData: () => getOptimisticUser(),
   });
 
   return {
     user,
-    isLoading,
+    isLoading: isLoading && !user, // Not loading if we have placeholder data
     error,
     isAuthenticated: !!user,
   };

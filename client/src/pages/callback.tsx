@@ -74,6 +74,30 @@ export default function CallbackPage() {
           const key = `oidc.user:${authority}:${clientId}`;
           window.localStorage.setItem(key, user.toStorageString());
 
+          // Pre-seed optimistic profile in localStorage so dashboard renders instantly
+          const optimisticProfile = {
+            userId: claims.sub,
+            publicName: claims.name || claims.email?.split('@')[0] || 'User',
+            email: claims.email,
+            currency: 'PKR',
+            language: 'en',
+            timezone: 'Asia/Karachi',
+            dateFormat: 'DD/MM/YYYY',
+            numberFormat: 'en-PK',
+            theme: 'light',
+            notifications: true,
+            emailNotifications: false,
+          };
+          localStorage.setItem('cashpilot_optimistic_profile', JSON.stringify(optimisticProfile));
+          localStorage.setItem('cashpilot_optimistic_user', JSON.stringify({
+            id: claims.sub,
+            email: claims.email,
+            firstName: claims.given_name || '',
+            lastName: claims.family_name || '',
+            profileImageUrl: claims.picture || '',
+            profile: optimisticProfile,
+          }));
+
           // Navigate to home — full reload picks up stored user
           window.location.href = "/";
         })

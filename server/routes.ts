@@ -136,38 +136,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Auth routes
   app.get('/api/auth/user',  async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
-      const userEmail = req.user.claims.email;
-      
-      console.log('Fetching user with ID:', userId, 'Email:', userEmail);
-      
-      // Try to get user by ID first, then by email
-      let user = await storage.getUser(userId);
-      if (!user && userEmail) {
-        // Try to find by email
-        const userByEmail = await storage.getUserByEmail(userEmail);
-        if (userByEmail) {
-          // Update the user ID to match the Replit user ID
-          user = await storage.updateUserId(userByEmail.id, userId);
-        }
-      }
-      
-      if (!user) {
-        return res.status(404).json({ message: "User not found" });
-      }
-      
-      // Get or create user profile
-      let profile = await storage.getUserProfileByUserId(user.id);
+      const claims = req.user.claims;
+      const userId = claims.sub;
+
+      // Build user response directly from verified claims (already validated in middleware)
+      // Only fetch profile from DB (lightweight single query)
+      let profile = await storage.getUserProfileByUserId(userId);
       if (!profile) {
-        // Create default profile for new user
-        const displayName = user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user.email?.split('@')[0] || 'User';
+        // Auto-create profile for new users using token claims
+        const displayName = claims.given_name 
+          ? `${claims.given_name} ${claims.family_name || ''}`.trim() 
+          : claims.email?.split('@')[0] || 'User';
         profile = await storage.createUserProfile({
-          userId: user.id,
+          userId,
           publicName: displayName,
         });
       }
-      
-      res.json({ ...user, profile });
+
+      res.json({
+        id: userId,
+        email: claims.email || '',
+        firstName: claims.given_name || '',
+        lastName: claims.family_name || '',
+        profileImageUrl: claims.picture || '',
+        profile,
+      });
     } catch (error) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
