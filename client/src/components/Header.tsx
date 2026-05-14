@@ -40,17 +40,17 @@ const Header: React.FC<HeaderProps> = ({
   const avatarInitial = resolvedName.charAt(0).toUpperCase() || "U";
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200 animate-slide-in">
+    <header className="animate-slide-in border-b border-border/70 bg-background/80 shadow-sm backdrop-blur">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo and status */}
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg animate-pulse-custom hover:scale-110 transition-transform duration-300">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-900/25 animate-pulse-custom hover:scale-110 transition-transform duration-300">
                 <Share2 className="text-white w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900 tracking-tight animate-fade-in">
+                <h1 className="text-xl font-bold text-foreground tracking-tight animate-fade-in">
                   CashPilot
                 </h1>
                 <div className="flex items-center space-x-1">
@@ -61,7 +61,7 @@ const Header: React.FC<HeaderProps> = ({
                         : "bg-red-500"
                     }`}
                   ></div>
-                  <span className="text-xs text-gray-500 font-medium">
+                  <span className="text-xs text-muted-foreground font-medium">
                     {isConnected ? "Live" : "Offline"}
                   </span>
                 </div>
@@ -77,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="relative flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-gray-100 transition-colors"
+                  className="relative flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-accent transition-colors"
                   data-testid="button-profile-menu"
                 >
                   <Avatar className="w-8 h-8">
@@ -86,15 +86,15 @@ const Header: React.FC<HeaderProps> = ({
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:block text-left">
-                    <div className="text-sm font-medium text-gray-900">
+                    <div className="text-sm font-medium text-foreground">
                       {resolvedName}
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-muted-foreground">
                       {profile?.currency || "PKR"} •{" "}
                       {profile?.language?.toUpperCase() || "EN"}
                     </div>
                   </div>
-                  <ChevronDown className="w-4 h-4 text-gray-400" />
+                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
@@ -102,7 +102,7 @@ const Header: React.FC<HeaderProps> = ({
                   <p className="text-sm font-medium">
                     {resolvedName}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-muted-foreground">
                     {profile?.email || "No email set"}
                   </p>
                 </div>
@@ -144,7 +144,7 @@ const Header: React.FC<HeaderProps> = ({
                     Sign Out
                   </Button>
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-gray-500" disabled>
+                <DropdownMenuItem className="text-muted-foreground" disabled>
                   <User className="w-4 h-4 mr-2" />
                   Profile ID: {profile?.id?.slice(0, 8) || "Loading..."}
                 </DropdownMenuItem>

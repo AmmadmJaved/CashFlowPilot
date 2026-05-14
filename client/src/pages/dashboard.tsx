@@ -40,6 +40,7 @@ import { Link } from "wouter";
 import { useMonthlyStats } from "@/hooks/useMonthlyStats";
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { applyThemeMode, getStoredThemeMode, type ThemeMode } from "@/lib/themeMode";
 
 export default function Dashboard() {
   const { toast } = useToast();
@@ -60,6 +61,11 @@ export default function Dashboard() {
     email: storedProfile?.email || authProfile?.email || "",
     id: storedProfile?.id || authProfile?.sub,
   };
+
+  useEffect(() => {
+    const mode = (storedProfile?.theme as ThemeMode | undefined) || getStoredThemeMode();
+    applyThemeMode(mode);
+  }, [storedProfile?.theme]);
 
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();
@@ -307,7 +313,7 @@ const deleteMutation = useMutation({
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="internal-theme-bg flex flex-col min-h-screen text-foreground">
       {/* Header */}
        <Header
               isConnected={isConnected}
@@ -385,7 +391,7 @@ const deleteMutation = useMutation({
               )}
 
             {/* Recent Transactions */}
-             <div className="bg-white shadow rounded-lg p-2">
+             <div className="internal-panel p-2">
               <CardHeader className="p-2">
               <CardTitle className="text-base sm:text-lg md:text-xl">
                 Recent Transactions
@@ -405,8 +411,8 @@ const deleteMutation = useMutation({
                   ))}
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <DollarSign className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p>No transactions found. Add your first expense or income!</p>
                 </div>
               ) : (
@@ -424,14 +430,14 @@ const deleteMutation = useMutation({
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{transaction.description}</h3>
-                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center ">
+                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center ">
                             {transaction.category && (
                               <Badge variant="secondary">{transaction.category}</Badge>
                             )} 
                           </div>
-                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
+                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center">
                         </div>
-                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-500">
+                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-muted-foreground">
                               {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
                               {transaction.paidBy}
                           </span> 
@@ -481,7 +487,7 @@ const deleteMutation = useMutation({
                              {/* Example Modal for Viewing Transaction */}
                             {viewingTransaction && (
                               <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                                <div className="bg-white rounded-lg shadow-lg p-6 w-96">
+                                <div className="rounded-lg border border-border bg-card p-6 w-96 text-card-foreground">
                                   <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
                                   <p><strong>ID:</strong> {viewingTransaction.id}</p>
                                   <p><strong>Amount:</strong> {viewingTransaction.amount}</p>

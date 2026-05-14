@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { TrendingUp, DollarSign, Calendar, Share2, Edit2, Trash2, ArrowLeft, Eye } from "lucide-react";
 import { useAuth } from "react-oidc-context";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrencyFormatter } from "@/hooks/useProfile";
+import { useCurrencyFormatter, useProfile } from "@/hooks/useProfile";
 import { GroupWithMembers, TransactionWithSplits,GroupMember } from "@shared/schema";
 import Filters from "@/components/Filters";
 
@@ -27,6 +27,7 @@ import { useLocation  } from "wouter";
 import Footer from "@/components/Footer";
 import MembersBalanceModal from "@/components/MembersBalanceModal";
 import ViewTransactionModal from "@/components/ViewTransactionModal";
+import { applyThemeMode, getStoredThemeMode, type ThemeMode } from "@/lib/themeMode";
 
 
 interface MemberWithBalance  {
@@ -40,8 +41,13 @@ type AccountDetailProps = {
 export default function AccountDetail({ accountId }: AccountDetailProps) {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
+  const { profile: storedProfile } = useProfile();
   const auth = useAuth();
-  const profile = (auth.user as any)?.profile;
+  const authProfile = (auth.user as any)?.profile || {};
+  const profile = {
+    ...authProfile,
+    ...(storedProfile || {}),
+  };
   const queryClient = useQueryClient();
  const { isConnected } = useWebSocket();
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
@@ -65,6 +71,11 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     endDate: "",
   });
   const [, navigate] = useLocation();
+
+  useEffect(() => {
+    const mode = (storedProfile?.theme as ThemeMode | undefined) || getStoredThemeMode();
+    applyThemeMode(mode);
+  }, [storedProfile?.theme]);
 
   const goBack = () => {
     if (window.history.length > 1) {
@@ -201,7 +212,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="internal-theme-bg min-h-screen text-foreground">
       {/* Header */}
       <Header
         isConnected={isConnected}
@@ -218,7 +229,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
             <ArrowLeft className="mr-2 h-4 w-4" />
           </Button>
         </div>    
-        <h1 className="text-xl font-bold text-gray-900">{group?.name}</h1>
+        <h1 className="text-xl font-bold text-foreground">{group?.name}</h1>
         <div className="flex items-center">
           <Button
             variant="outline"
@@ -289,7 +300,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
       {/* <RealTimeNotifications isConnected={true} /> */}
 
       {/* Transactions */}
-      <div className="bg-white shadow rounded-lg p-2">
+      <div className="internal-panel p-2">
         <h2 className="text-lg font-semibold mb-4">Transactions</h2>
          <CardContent className="p-2">
               {transactionsLoading ? (
@@ -305,8 +316,8 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                   ))}
                 </div>
               ) : transactions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                <div className="text-center py-8 text-muted-foreground">
+                  <DollarSign className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                   <p>No transactions found. Add your first expense or income!</p>
                 </div>
               ) : (
@@ -324,14 +335,14 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{transaction.description}</h3>
-                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center ">
+                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center ">
                             {transaction.category && (
                               <Badge variant="secondary">{transaction.category}</Badge>
                             )} 
                           </div>
-                          <div className="mt-1 text-xs sm:text-sm text-gray-500 flex flex-wrap items-center">
+                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center">
                         </div>
-                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-gray-500">
+                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-muted-foreground">
                            
                               {new Date(transaction.date).toLocaleDateString()}
                               {transaction.type === "income" ? " • Received by " : " • Paid by "}

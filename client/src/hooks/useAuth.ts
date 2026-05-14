@@ -35,14 +35,34 @@ export function useAuthProvider() {
 
       if (!res.ok) {
         const error = await res.json().catch(() => ({}));
+        if (res.status === 401) {
+          localStorage.removeItem('cashpilot_optimistic_user');
+          localStorage.removeItem('cashpilot_optimistic_profile');
+
+          try {
+            const keyPrefix = 'oidc.user:';
+            for (let i = localStorage.length - 1; i >= 0; i--) {
+              const key = localStorage.key(i);
+              if (key && key.startsWith(keyPrefix)) {
+                localStorage.removeItem(key);
+              }
+            }
+          } catch {
+            // no-op
+          }
+
+          return null;
+        }
+
         throw new Error(error.message || "Authentication failed");
       }
 
       const data = await res.json();
 
       // Seed the profile cache so useProfile() doesn't fire a separate request
-      if (data.profile) {
-        queryClient.setQueryData(['/api/profile'], data.profile);
+      if (data?.profile) {
+        const authUserId = auth.user?.profile?.sub || data.id;
+        queryClient.setQueryData(['/api/profile', authUserId], data.profile);
         // Clear optimistic data now that real data is loaded
         localStorage.removeItem('cashpilot_optimistic_user');
         localStorage.removeItem('cashpilot_optimistic_profile');

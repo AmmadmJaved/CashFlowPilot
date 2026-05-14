@@ -204,6 +204,24 @@
 
 /* Micro-interaction utility classes */
 @layer utilities {
+  .internal-theme-bg {
+    background:
+      radial-gradient(circle at 18% 10%, rgba(34, 211, 238, 0.18), transparent 36%),
+      radial-gradient(circle at 84% 22%, rgba(59, 130, 246, 0.16), transparent 40%),
+      linear-gradient(180deg, #f4fbff 0%, #eef6ff 45%, #f8fbff 100%);
+  }
+
+  .dark .internal-theme-bg {
+    background:
+      radial-gradient(circle at 18% 10%, rgba(34, 211, 238, 0.2), transparent 36%),
+      radial-gradient(circle at 84% 22%, rgba(59, 130, 246, 0.16), transparent 40%),
+      linear-gradient(180deg, #020617 0%, #020b20 45%, #020617 100%);
+  }
+
+  .internal-panel {
+    @apply rounded-xl border border-border/70 bg-card/90 backdrop-blur-sm shadow-sm;
+  }
+
   /* Card hover effects */
   .card-hover {
     @apply transition-all duration-300 ease-out;

@@ -78,7 +78,8 @@ export function ProfileInitializer({ children }: ProfileInitializerProps) {
   useEffect(() => {
     if (!isLoading && isAuthenticated && user?.profile && token) {
       // Seed /api/profile cache so useProfile() never makes a separate request
-      queryClient.setQueryData(['/api/profile'], user.profile);
+      const authUserId = auth.user?.profile?.sub || user.id;
+      queryClient.setQueryData(['/api/profile', authUserId], user.profile);
 
       // Prefetch dashboard queries in parallel
       const headers = { Authorization: `Bearer ${token}` };

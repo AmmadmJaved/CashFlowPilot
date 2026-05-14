@@ -18,6 +18,7 @@ import { Settings, User, Globe, Bell, Palette, Save } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { applyThemeMode, type ThemeMode } from "@/lib/themeMode";
 import type { UserProfile, InsertUserProfile } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
 
@@ -117,6 +118,7 @@ const { data: currentProfile, isLoading } = useQuery({
       }
     },
     onSuccess: () => {
+      applyThemeMode((profile.theme as ThemeMode) || "light");
       toast({
         title: "Settings Saved",
         description: "Your preferences have been updated successfully!",
@@ -381,7 +383,10 @@ const { data: currentProfile, isLoading } = useQuery({
                   <Label htmlFor="theme">Theme</Label>
                   <Select
                     value={profile.theme || "light"}
-                    onValueChange={(value) => updateProfile("theme", value)}
+                    onValueChange={(value) => {
+                      updateProfile("theme", value);
+                      applyThemeMode(value as ThemeMode);
+                    }}
                   >
                     <SelectTrigger data-testid="select-theme">
                       <SelectValue />

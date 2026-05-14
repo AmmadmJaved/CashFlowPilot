@@ -3,6 +3,9 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import { OidcProvider } from "./AuthProvider";
 import "./index.css";
+import { initThemeMode } from "./lib/themeMode";
+
+initThemeMode();
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || "").trim().replace(/\/+$/, "");
 
