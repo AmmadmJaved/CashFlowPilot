@@ -33,7 +33,7 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
    const [open, setOpen] = useState(false);
     const getFirstDayOfMonth = () => {
       const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), 2)
+      return new Date(now.getFullYear(), now.getMonth(), 1)
         .toISOString()
         .split("T")[0];
     };

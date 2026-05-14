@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
-import { useCurrencyFormatter } from "@/hooks/useProfile";
+import { useCurrencyFormatter, useProfile } from "@/hooks/useProfile";
 import { Share2, Plus, Minus, Users, Calendar, DollarSign, TrendingUp, Download, Settings, User, ChevronDown, Filter, FileText, X, MoreVertical, Edit2, Trash2, Eye } from "lucide-react";
 import AddExpenseModal from "@/components/AddExpenseModal";
 import AddIncomeModal from "@/components/AddIncomeModal";
@@ -34,8 +34,6 @@ import {
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import type { TransactionWithSplits, GroupWithMembers } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
-import { get } from "http";
-import { group } from "console";
 import { EditTransactionModal } from "@/components/EditTransactionModal";
 import Filters from "@/components/Filters";
 import { Link } from "wouter";
@@ -46,8 +44,22 @@ import Header from "@/components/Header";
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
+  const { profile: storedProfile } = useProfile();
   const auth = useAuth();
-  const profile = (auth.user as any)?.profile;
+  const authProfile = (auth.user as any)?.profile || {};
+  const resolvedPublicName =
+    storedProfile?.publicName?.trim() ||
+    authProfile?.name?.trim() ||
+    [authProfile?.given_name, authProfile?.family_name].filter(Boolean).join(" ").trim() ||
+    (storedProfile?.email || authProfile?.email || "").split("@")[0] ||
+    "User";
+  const profile = {
+    ...authProfile,
+    ...(storedProfile || {}),
+    publicName: resolvedPublicName,
+    email: storedProfile?.email || authProfile?.email || "",
+    id: storedProfile?.id || authProfile?.sub,
+  };
 
   // Initialize WebSocket connection for real-time updates
   const { isConnected } = useWebSocket();

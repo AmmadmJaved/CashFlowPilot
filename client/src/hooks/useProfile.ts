@@ -5,8 +5,10 @@ import { useAuth } from "react-oidc-context";
 
 export function useProfile() {
   const queryClient = useQueryClient();
-const auth = useAuth();
-const token = auth.user?.id_token;
+  const auth = useAuth();
+  const token = auth.user?.id_token;
+  const authUserId = auth.user?.profile?.sub || "anonymous";
+  const profileQueryKey = ['/api/profile', authUserId];
 
   // Read optimistic profile from localStorage as placeholder
   const getOptimisticProfile = () => {
@@ -19,7 +21,7 @@ const token = auth.user?.id_token;
 
   // Get current profile
   const { data: profile, isLoading, error } = useQuery({
-    queryKey: ['/api/profile'],
+    queryKey: profileQueryKey,
     enabled: !!token,
     queryFn: async () => {
       const res = await apiRequest('GET', '/api/profile', undefined, token);

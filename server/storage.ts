@@ -29,7 +29,7 @@ import {
   type GroupWithMembers,
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, and, desc, gte, lte, like, ilike, or, inArray, sql, isNull } from "drizzle-orm";
+import { eq, and, desc, gte, lt, lte, like, ilike, or, inArray, sql, isNull } from "drizzle-orm";
 
 export interface IStorage {
   // Group operations
@@ -77,6 +77,8 @@ export interface IStorage {
   totalIncome: string;
   totalExpenses: string;
   netBalance: string;
+  openingBalance: string;
+  closingBalance: string;
 }>;
 
   
@@ -304,7 +306,9 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters.endDate) {
-      conditions.push(lte(transactions.date, filters.endDate));
+      const endOfDay = new Date(filters.endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      conditions.push(lte(transactions.date, endOfDay));
     }
 
     if (filters.search) {
@@ -399,29 +403,61 @@ export class DatabaseStorage implements IStorage {
     totalIncome: string;
     totalExpenses: string;
     netBalance: string;
+    openingBalance: string;
+    closingBalance: string;
   }> {
-     // ✅ If startDate exists → use it, otherwise fetch from "all time"
-    const from = startDate ?? null;
-    const to = endDate || new Date(year, month, 0, 23, 59, 59);
-
-    const baseFilters = [lte(transactions.date, to)];
-
+    // If startDate exists, compute opening balance from all transactions before it.
+    const from = startDate ? new Date(startDate) : null;
     if (from) {
-      baseFilters.push(gte(transactions.date, from));
+      from.setHours(0, 0, 0, 0);
     }
 
+    const to = endDate ? new Date(endDate) : new Date(year, month, 0, 23, 59, 59, 999);
+    to.setHours(23, 59, 59, 999);
+
+    const scopeFilters = [];
+
     if (userId) {
-      baseFilters.push(eq(transactions.userId, userId));
+      scopeFilters.push(eq(transactions.userId, userId));
     }
 
     if (groupId === null) {
-      // ✅ Personal-only (exclude group transactions)
-      baseFilters.push(isNull(transactions.groupId));
+      // Personal-only (exclude group transactions)
+      scopeFilters.push(isNull(transactions.groupId));
     } else if (groupId !== undefined) {
-      // ✅ Group-only
-      baseFilters.push(eq(transactions.groupId, groupId));
+      // Group-only
+      scopeFilters.push(eq(transactions.groupId, groupId));
     }
-    // else (undefined): no group filter at all
+
+    const rangeFilters = [lte(transactions.date, to), ...scopeFilters];
+
+    if (from) {
+      rangeFilters.push(gte(transactions.date, from));
+    }
+
+    let openingIncome = "0";
+    let openingExpenses = "0";
+
+    if (from) {
+      const [openingIncomeResult] = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+        })
+        .from(transactions)
+        .where(and(eq(transactions.type, "income"), lt(transactions.date, from), ...scopeFilters));
+
+      const [openingExpenseResult] = await db
+        .select({
+          total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
+        })
+        .from(transactions)
+        .where(and(eq(transactions.type, "expense"), lt(transactions.date, from), ...scopeFilters));
+
+      openingIncome = openingIncomeResult?.total || "0";
+      openingExpenses = openingExpenseResult?.total || "0";
+    }
+
+    const openingBalanceValue = parseFloat(openingIncome) - parseFloat(openingExpenses);
 
     // Income
     const [incomeResult] = await db
@@ -429,7 +465,7 @@ export class DatabaseStorage implements IStorage {
         total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
       })
       .from(transactions)
-      .where(and(eq(transactions.type, "income"), ...baseFilters));
+      .where(and(eq(transactions.type, "income"), ...rangeFilters));
 
     // Expenses
     const [expenseResult] = await db
@@ -437,18 +473,19 @@ export class DatabaseStorage implements IStorage {
         total: sql<string>`COALESCE(SUM(${transactions.amount}), 0)`,
       })
       .from(transactions)
-      .where(and(eq(transactions.type, "expense"), ...baseFilters));
+      .where(and(eq(transactions.type, "expense"), ...rangeFilters));
 
     const totalIncome = incomeResult?.total || "0";
     const totalExpenses = expenseResult?.total || "0";
-    const netBalance = (
-      parseFloat(totalIncome) - parseFloat(totalExpenses)
-    ).toFixed(2);
+    const periodNet = parseFloat(totalIncome) - parseFloat(totalExpenses);
+    const closingBalanceValue = openingBalanceValue + periodNet;
 
     return {
       totalIncome,
       totalExpenses,
-      netBalance,
+      netBalance: periodNet.toFixed(2),
+      openingBalance: openingBalanceValue.toFixed(2),
+      closingBalance: closingBalanceValue.toFixed(2),
     };
   }
 

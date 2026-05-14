@@ -3,8 +3,8 @@ import { createServer, type Server } from "http";
 import { WebSocketServer, WebSocket } from "ws";
 import { storage } from "./storage";
 import { db } from "./db";
-import { userProfiles, groups } from "@shared/schema";
-import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, insertUserProfileSchema, type GroupInvite, type UserProfile } from "@shared/schema";
+import { groups } from "@shared/schema";
+import { insertTransactionSchema, insertGroupSchema, insertGroupMemberSchema, insertGroupInviteSchema, type GroupInvite, type UserProfile } from "@shared/schema";
 import { eq } from 'drizzle-orm';
 import ExcelJS from "exceljs";
 import { verifyGoogleToken } from "./auth";
@@ -546,7 +546,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Export routes  
   app.post('/api/export/excel' , async (req, res) => {
     try {
-      const { transactions, filters, summary } = req.body;
+      const { transactions, filters, summary, openingBalance } = req.body;
       const ExcelJS = await import('exceljs');
       
       const workbook = new ExcelJS.default.Workbook();
@@ -597,7 +597,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
       currentRow++;
       
       // Calculate running balance and add ledger entries
-      let runningBalance = 0;
+      let runningBalance = Number(openingBalance || 0);
+
+      if (runningBalance !== 0) {
+        worksheet.getCell(currentRow, 2).value = 'Opening Balance';
+        const openingBalanceCell = worksheet.getCell(currentRow, 6);
+        openingBalanceCell.value = runningBalance;
+        openingBalanceCell.font = {
+          color: { argb: runningBalance >= 0 ? '059669' : 'DC2626' },
+          bold: true,
+        };
+        openingBalanceCell.numFmt = '#,##0.00';
+
+        for (let col = 1; col <= 6; col++) {
+          const cell = worksheet.getCell(currentRow, col);
+          cell.border = {
+            top: {style: 'thin'},
+            left: {style: 'thin'},
+            bottom: {style: 'thin'},
+            right: {style: 'thin'}
+          };
+        }
+
+        currentRow++;
+      }
       
       sortedTransactions.forEach((transaction: any) => {
         const amount = parseFloat(transaction.amount);
@@ -669,9 +692,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       worksheet.getCell(currentRow, 5).font = { color: { argb: 'DC2626' }, bold: true };
       worksheet.getCell(currentRow, 5).numFmt = '#,##0.00';
       
-      worksheet.getCell(currentRow, 6).value = summary.totalIncome - summary.totalExpenses;
+      const finalBalance = runningBalance;
+      worksheet.getCell(currentRow, 6).value = finalBalance;
       worksheet.getCell(currentRow, 6).font = { 
-        color: { argb: (summary.totalIncome - summary.totalExpenses) >= 0 ? '059669' : 'DC2626' },
+        color: { argb: finalBalance >= 0 ? '059669' : 'DC2626' },
         bold: true,
         size: 12
       };
@@ -1179,86 +1203,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error deactivating invite:", error);
       res.status(500).json({ message: "Failed to deactivate invite" });
-    }
-  });
-
-  // User profile routes
-  app.post('/api/profile', async (req, res) => {
-    try {
-      const profileData = insertUserProfileSchema.parse(req.body);
-      
-      // Check if public name already exists
-      const existingProfile = await storage.getUserProfileByName(profileData.publicName);
-      if (existingProfile) {
-        return res.status(400).json({ message: "Public name already taken" });
-      }
-      
-      const profile = await storage.createUserProfile(profileData);
-      
-      // Broadcast profile creation
-      // broadcastUpdate('profile-created', { profile });
-      
-      res.json(profile);
-    } catch (error) {
-      console.error("Error creating profile:", error);
-      res.status(500).json({ message: "Failed to create profile" });
-    }
-  });
-
-  app.get('/api/profile', async (req, res) => {
-    try {
-      // For now, return the first profile (since we're not using authentication)
-      // In a real app, this would use the authenticated user's ID
-      const profiles = await db.select().from(userProfiles).limit(1);
-      if (profiles.length > 0) {
-        res.json(profiles[0]);
-      } else {
-        res.status(404).json({ message: "No profile found" });
-      }
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      res.status(500).json({ message: "Failed to fetch profile" });
-    }
-  });
-
-  app.get('/api/profile/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const profile = await storage.getUserProfile(id);
-      
-      if (!profile) {
-        return res.status(404).json({ message: "Profile not found" });
-      }
-      
-      res.json(profile);
-    } catch (error) {
-      console.error("Error fetching profile:", error);
-      res.status(500).json({ message: "Failed to fetch profile" });
-    }
-  });
-
-  app.patch('/api/profile/:id', async (req, res) => {
-    try {
-      const { id } = req.params;
-      const updates = req.body;
-      
-      // Check if updating public name and it's already taken by another profile
-      if (updates.publicName) {
-        const existingProfile = await storage.getUserProfileByName(updates.publicName);
-        if (existingProfile && existingProfile.id !== id) {
-          return res.status(400).json({ message: "Public name already taken" });
-        }
-      }
-      
-      const updatedProfile = await storage.updateUserProfile(id, updates);
-      
-      // Broadcast profile update
-      // broadcastUpdate('profile-updated', { profile: updatedProfile });
-      
-      res.json(updatedProfile);
-    } catch (error) {
-      console.error("Error updating profile:", error);
-      res.status(500).json({ message: "Failed to update profile" });
     }
   });
 

@@ -10,6 +10,9 @@ interface HeaderProps {
   isConnected: boolean;
   profile?: {
     publicName?: string;
+    name?: string;
+    given_name?: string;
+    family_name?: string;
     email?: string;
     currency?: string;
     language?: string;
@@ -27,6 +30,15 @@ const Header: React.FC<HeaderProps> = ({
   setIsIncomeModalOpen,
   setIsExpenseModalOpen,
 }) => {
+  const emailPrefix = profile?.email?.split("@")[0] || "";
+  const resolvedName =
+    profile?.publicName?.trim() ||
+    profile?.name?.trim() ||
+    [profile?.given_name, profile?.family_name].filter(Boolean).join(" ").trim() ||
+    emailPrefix ||
+    "User";
+  const avatarInitial = resolvedName.charAt(0).toUpperCase() || "U";
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 animate-slide-in">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -70,12 +82,12 @@ const Header: React.FC<HeaderProps> = ({
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold">
-                      {profile?.publicName?.charAt(0).toUpperCase() || "U"}
+                      {avatarInitial}
                     </AvatarFallback>
                   </Avatar>
                   <div className="hidden sm:block text-left">
                     <div className="text-sm font-medium text-gray-900">
-                      {profile?.publicName || "User"}
+                      {resolvedName}
                     </div>
                     <div className="text-xs text-gray-500">
                       {profile?.currency || "PKR"} •{" "}
@@ -88,7 +100,7 @@ const Header: React.FC<HeaderProps> = ({
               <DropdownMenuContent align="end" className="w-56">
                 <div className="px-3 py-2 border-b">
                   <p className="text-sm font-medium">
-                    {profile?.publicName || "User"}
+                    {resolvedName}
                   </p>
                   <p className="text-xs text-gray-500">
                     {profile?.email || "No email set"}

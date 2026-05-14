@@ -78,7 +78,9 @@ export function SettingsModal({ children }: SettingsModalProps) {
   const queryClient = useQueryClient();
 
   const auth = useAuth();
-const token = auth.user?.id_token;
+  const token = auth.user?.id_token;
+  const authUserId = auth.user?.profile?.sub || "anonymous";
+  const profileQueryKey = ['/api/profile', authUserId];
 
   // Fetch current profile
   // const { data: currentProfile, isLoading } = useQuery({
@@ -87,7 +89,7 @@ const token = auth.user?.id_token;
   // });
 
 const { data: currentProfile, isLoading } = useQuery({
-  queryKey: ['/api/profile'],
+  queryKey: profileQueryKey,
   enabled: isOpen && !!token,
   queryFn: async () => {
     const response = await apiRequest('GET', '/api/profile', undefined, token);

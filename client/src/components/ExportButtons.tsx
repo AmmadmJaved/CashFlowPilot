@@ -33,6 +33,11 @@ interface Transaction {
   showPreview: boolean;
 }
 
+type ReportBalances = {
+  openingBalance: number;
+  closingBalance: number;
+};
+
 export default function ExportButtons({ filters }: ExportButtonsProps) {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
@@ -73,7 +78,31 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     }
   };
 
-  const generateLedgerPDF = async (transactions: Transaction[]): Promise<string> => {
+  const fetchReportBalances = async (): Promise<ReportBalances> => {
+    const params = new URLSearchParams();
+    if (filters.startDate) params.append('startDate', new Date(filters.startDate).toISOString());
+    if (filters.endDate) params.append('endDate', new Date(filters.endDate).toISOString());
+    if (accountId) params.append('groupId', accountId);
+
+    const response = await fetch(`/api/stats/monthly?${params.toString()}`, {
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      return { openingBalance: 0, closingBalance: 0 };
+    }
+
+    const data = await response.json();
+    return {
+      openingBalance: Number.parseFloat(data?.openingBalance || '0'),
+      closingBalance: Number.parseFloat(data?.closingBalance || '0'),
+    };
+  };
+
+  const generateLedgerPDF = async (transactions: Transaction[], openingBalance = 0): Promise<string> => {
     const doc = new jsPDF();
     
     // Sort transactions by date for ledger format
@@ -131,7 +160,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     doc.setFontSize(9);
     
     // Calculate running balance and create ledger entries
-    let runningBalance = 0;
+    let runningBalance = openingBalance;
     let rowCount = 0;
     
     sortedTransactions.forEach((transaction) => {
@@ -219,7 +248,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     const totalExpenses = sortedTransactions
       .filter(t => t.type === 'expense')
       .reduce((sum, t) => sum + parseFloat(t.amount), 0);
-    const finalBalance = totalIncome - totalExpenses;
+    const finalBalance = openingBalance + totalIncome - totalExpenses;
     // ---------------------------------------
     yPos += 5; // small spacing before totals row
 
@@ -261,13 +290,16 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     doc.text('FINAL SUMMARY', 25, yPos + 8);
     
     doc.setFontSize(10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Opening Balance: ₨ ${openingBalance.toLocaleString()}`, 25, yPos + 14);
+
     doc.setTextColor(5, 150, 105);
-    doc.text(`Total Income: ₨ ${totalIncome.toLocaleString()}`, 25, yPos + 16);
+    doc.text(`Total Income: ₨ ${totalIncome.toLocaleString()}`, 25, yPos + 20);
     
     doc.setTextColor(220, 38, 38);
-    doc.text(`Total Expenses: ₨ ${totalExpenses.toLocaleString()}`, 25, yPos + 21);
+    doc.text(`Total Expenses: ₨ ${totalExpenses.toLocaleString()}`, 25, yPos + 25);
 
-    const nextLine = yPos + 26; // adjust spacing here
+    const nextLine = yPos + 30; // adjust spacing here
     doc.setTextColor(finalBalance >= 0 ? 5 : 220, finalBalance >= 0 ? 150 : 38, finalBalance >= 0 ? 105 : 38);
     doc.setFontSize(12);
     doc.text(`Net Balance: ₨ ${finalBalance.toLocaleString()}`, 25, nextLine);
@@ -294,7 +326,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     return typeof blobUrl === 'string' ? blobUrl : URL.createObjectURL(new Blob([doc.output('blob')], { type: 'application/pdf' }));
   };
 
-  const generateExcel = async (transactions: Transaction[]) => {
+  const generateExcel = async (transactions: Transaction[], openingBalance = 0) => {
     const response = await fetch('/api/export/excel', {
       method: 'POST',
       headers: {
@@ -304,6 +336,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       body: JSON.stringify({ 
         transactions,
         filters,
+        openingBalance,
         summary: {
           totalIncome: transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + parseFloat(t.amount), 0),
           totalExpenses: transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + parseFloat(t.amount), 0),
@@ -332,6 +365,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     
     try {
       const transactions = await fetchFilteredTransactions();
+      const { openingBalance } = await fetchReportBalances();
       
       if (transactions.length === 0) {
         toast({
@@ -343,7 +377,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       }
 
       if (format === 'pdf') {
-        const pdfUrl = await generateLedgerPDF(transactions);
+        const pdfUrl = await generateLedgerPDF(transactions, openingBalance);
         setPdfUrl(pdfUrl);
         
         toast({
@@ -351,7 +385,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
           description: "Your financial ledger is ready to download or preview",
         });
       } else {
-        await generateExcel(transactions);
+        await generateExcel(transactions, openingBalance);
         
         toast({
           title: "Excel Downloaded",

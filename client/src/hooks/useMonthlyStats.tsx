@@ -5,6 +5,8 @@ type StatsResponse = {
   totalIncome: string;
   totalExpenses: string;
   netBalance: string;
+  openingBalance: string;
+  closingBalance: string;
 };
 
 type StatsFilters = {
