@@ -219,7 +219,7 @@
   }
 
   .internal-panel {
-    @apply rounded-xl border border-border/70 bg-card/90 backdrop-blur-sm shadow-sm;
+    @apply rounded-xl border border-border bg-card backdrop-blur-sm shadow-sm;
   }
 
   /* Card hover effects */
