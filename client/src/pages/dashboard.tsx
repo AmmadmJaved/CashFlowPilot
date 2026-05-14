@@ -42,6 +42,22 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import { applyThemeMode, getStoredThemeMode, type ThemeMode } from "@/lib/themeMode";
 
+function toLocalDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getDefaultDateRange() {
+  const today = new Date();
+  const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  return {
+    startDate: toLocalDateInputValue(firstDay),
+    endDate: toLocalDateInputValue(today),
+  };
+}
+
 export default function Dashboard() {
   const { toast } = useToast();
   const { formatCurrency } = useCurrencyFormatter();
@@ -89,8 +105,8 @@ export default function Dashboard() {
     category: "all",
     type: "all", // all, income, expense
     paidBy: "all", // filter by person name
-    startDate: "",
-    endDate: "",
+    startDate: getDefaultDateRange().startDate,
+    endDate: getDefaultDateRange().endDate,
     onlyUser: false, // checkbox for "Only User"
     onlyGroupMembers: false, // checkbox for "Only Group Members"
   });
@@ -176,7 +192,19 @@ const { data: monthlyStats, isLoading: statsLoading } = useMonthlyStats(token ??
   });
 
   const handleFilterChange = (key: string, value: string | boolean | string[] | null) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value } as typeof prev;
+
+      if (key === "startDate" && typeof value === "string" && next.endDate && value > next.endDate) {
+        next.endDate = value;
+      }
+
+      if (key === "endDate" && typeof value === "string" && next.startDate && value < next.startDate) {
+        next.startDate = value;
+      }
+
+      return next;
+    });
   };
 
   // update group name mutation
@@ -234,6 +262,7 @@ const deleteMutation = useMutation({
 
 
   const clearAllFilters = () => {
+    const defaults = getDefaultDateRange();
     setFilters({
       search: "",
       groupId: "all",
@@ -241,8 +270,8 @@ const deleteMutation = useMutation({
       category: "all",
       type: "all",
       paidBy: "all",
-      startDate: "",
-      endDate: "",
+      startDate: defaults.startDate,
+      endDate: defaults.endDate,
       onlyUser: false,
       onlyGroupMembers: false,
     });
@@ -368,9 +397,9 @@ const deleteMutation = useMutation({
               <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
 
               {/* Transaction Table */}
-              <div className="rounded-xl border border-border bg-card">
+              <div className="report-shell rounded-xl p-3 sm:p-4">
                 {/* Table Header */}
-                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 border-b border-border text-sm font-medium text-muted-foreground">
+                <div className="report-table-header hidden sm:grid grid-cols-12 gap-4 px-4 py-1 text-sm">
                   <div className="col-span-5">Transaction</div>
                   <div className="col-span-2 text-right">Amount</div>
                   <div className="col-span-2 text-right">Expenses</div>
@@ -396,21 +425,21 @@ const deleteMutation = useMutation({
                     <p>No transactions found. Add your first expense or income!</p>
                   </div>
                 ) : (
-                  <div>
+                  <div className="space-y-3">
                     {transactions.map((transaction) => (
                       <div
                         key={transaction.id}
-                        className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                        className="report-row grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center rounded-xl px-4 py-3"
                         data-testid={`transaction-${transaction.id}`}
                       >
                         {/* Transaction info */}
                         <div className="sm:col-span-5 flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">
+                          <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 text-cyan-200">
                             {getTransactionIcon(transaction.category || "", transaction.type)}
                           </div>
                           <div className="min-w-0">
-                            <h3 className="font-medium truncate">{transaction.description}</h3>
-                            <span className="text-xs text-muted-foreground">
+                            <h3 className="font-medium truncate text-slate-100">{transaction.description}</h3>
+                            <span className="text-xs text-slate-400">
                               {transaction.category || transaction.type}
                             </span>
                           </div>
@@ -418,7 +447,7 @@ const deleteMutation = useMutation({
 
                         {/* Amount */}
                         <div className="sm:col-span-2 text-right">
-                          <span className="font-semibold">
+                          <span className="font-semibold text-slate-100">
                             {formatCurrency(transaction.amount)}
                           </span>
                         </div>
@@ -438,7 +467,7 @@ const deleteMutation = useMutation({
                             variant="ghost"
                             size="sm"
                             onClick={() => setViewingTransaction(transaction)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 p-0 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -446,7 +475,7 @@ const deleteMutation = useMutation({
                             variant="ghost"
                             size="sm"
                             onClick={() => setEditingTransaction(transaction)}
-                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 p-0 text-sky-300 hover:bg-sky-500/10 hover:text-sky-200"
                           >
                             <Edit2 className="h-4 w-4" />
                           </Button>

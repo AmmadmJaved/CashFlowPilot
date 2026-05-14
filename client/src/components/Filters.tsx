@@ -31,17 +31,31 @@ type FiltersProps = {
 
 export default function Filters({ filters, handleFilterChange,members }: FiltersProps) {
    const [open, setOpen] = useState(false);
+    const toLocalDateInputValue = (date: Date) => {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const getFirstDayOfMonth = () => {
       const now = new Date();
-      return new Date(now.getFullYear(), now.getMonth(), 1)
-        .toISOString()
-        .split("T")[0];
+      return toLocalDateInputValue(new Date(now.getFullYear(), now.getMonth(), 1));
     };
 
     const getTodayDate = () => {
       const now = new Date();
-      return now.toISOString().split("T")[0]; // yyyy-mm-dd
+      return toLocalDateInputValue(now); // yyyy-mm-dd in local timezone
     };
+
+    useEffect(() => {
+      if (!filters.startDate) {
+        handleFilterChange("startDate", getFirstDayOfMonth());
+      }
+      if (!filters.endDate) {
+        handleFilterChange("endDate", getTodayDate());
+      }
+    }, [filters.startDate, filters.endDate, handleFilterChange]);
 
     
       const users = [
@@ -52,50 +66,50 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
   return (
     <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 mb-4">
       {/* Start Date */}
-      <div className="rounded-lg border border-border bg-card px-3 py-2">
-        <Label htmlFor="startDate" className="text-xs font-medium text-muted-foreground">Start Date</Label>
+      <div className="report-filter-box rounded-xl px-3 py-2">
+        <Label htmlFor="startDate" className="text-xs font-medium text-cyan-100/85">Start Date</Label>
         <Input
           id="startDate"
           type="date"
-          value={filters.startDate || getFirstDayOfMonth()}
+          value={filters.startDate || ""}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
-          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm"
+          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100"
           placeholder="Start Date"
         />
       </div>
 
       {/* End Date */}
-      <div className="rounded-lg border border-border bg-card px-3 py-2">
-        <Label htmlFor="endDate" className="text-xs font-medium text-muted-foreground">End Date</Label>
+      <div className="report-filter-box rounded-xl px-3 py-2">
+        <Label htmlFor="endDate" className="text-xs font-medium text-cyan-100/85">End Date</Label>
         <Input
           id="endDate"
           type="date"
-          value={filters.endDate || getTodayDate()}
+          value={filters.endDate || ""}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
-          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm"
+          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100"
           placeholder="End Date"
         />
       </div>
       {/* Search */}
-      <div className="rounded-lg border border-border bg-card px-3 py-2 flex items-center">
+      <div className="report-filter-box rounded-xl px-3 py-2 flex items-center">
         <Input
           id="search"
           type="text"
           value={filters.search || ""}
           onChange={(e) => handleFilterChange("search", e.target.value)}
           data-testid="input-search"
-          className="h-9 w-full border-0 bg-transparent p-0 text-sm"
+          className="h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100 placeholder:text-slate-400"
           placeholder="Search"
         />
       </div>
 
       {/* Filter Button */}
-      <div className="rounded-lg border border-border bg-card px-3 py-2 flex items-center">
+      <div className="report-filter-box rounded-xl px-3 py-2 flex items-center">
         <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-9 w-full border-0 bg-transparent text-sm font-medium">
+                <Button variant="ghost" className="h-9 w-full border-0 bg-transparent text-sm font-medium text-slate-100 hover:bg-cyan-500/10 hover:text-cyan-200">
                     <Filter className="h-4 w-4 mr-1" />
                     Filter
                 </Button>
