@@ -19,7 +19,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { applyThemeMode, type ThemeMode } from "@/lib/themeMode";
-import type { UserProfile, InsertUserProfile } from "@shared/schema";
+import type { InsertUserProfile } from "@shared/schema";
 import { useAuth } from "react-oidc-context";
 
 interface SettingsModalProps {
@@ -157,32 +157,36 @@ const { data: currentProfile, isLoading } = useQuery({
       <DialogTrigger asChild>
         {children}
       </DialogTrigger>
-      <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
+      <DialogContent className="flex w-[95vw] max-w-3xl max-h-[88vh] flex-col overflow-hidden rounded-2xl border border-cyan-500/25 bg-card text-card-foreground p-0 shadow-2xl">
+        <DialogHeader className="border-b border-cyan-500/15 bg-gradient-to-br from-cyan-50/85 via-white to-sky-50/70 px-5 py-4">
+          <DialogTitle className="flex items-center gap-2 text-slate-900">
+            <span className="rounded-full border border-cyan-500/25 bg-cyan-500/10 p-1.5">
+              <Settings className="w-4 h-4 text-cyan-700" />
+            </span>
             Settings & Preferences
           </DialogTitle>
-          <DialogDescription>
+          <DialogDescription className="text-sm leading-snug text-slate-600">
             Customize your experience with currency, language, and notification preferences
           </DialogDescription>
         </DialogHeader>
 
+        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 pr-4 [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-cyan-500/45 [&::-webkit-scrollbar-track]:bg-transparent">
         <Tabs defaultValue="profile" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="profile" className="flex items-center gap-2">
+          <div className="sm:hidden text-[11px] font-medium text-slate-500 -mb-2">Swipe tabs to see more</div>
+          <TabsList className="flex h-auto w-full items-center justify-start gap-1 overflow-x-auto rounded-xl border border-cyan-500/15 bg-slate-50/80 p-1">
+            <TabsTrigger value="profile" className="flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm min-w-[108px]">
               <User className="w-4 h-4" />
               Profile
             </TabsTrigger>
-            <TabsTrigger value="regional" className="flex items-center gap-2">
+            <TabsTrigger value="regional" className="flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm min-w-[112px]">
               <Globe className="w-4 h-4" />
               Regional
             </TabsTrigger>
-            <TabsTrigger value="notifications" className="flex items-center gap-2">
+            <TabsTrigger value="notifications" className="flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm min-w-[132px]">
               <Bell className="w-4 h-4" />
               Notifications
             </TabsTrigger>
-            <TabsTrigger value="appearance" className="flex items-center gap-2">
+            <TabsTrigger value="appearance" className="flex shrink-0 items-center justify-center gap-2 rounded-lg px-3 py-2 text-xs sm:text-sm min-w-[124px]">
               <Palette className="w-4 h-4" />
               Appearance
             </TabsTrigger>
@@ -190,9 +194,9 @@ const { data: currentProfile, isLoading } = useQuery({
 
           {/* Profile Settings */}
           <TabsContent value="profile">
-            <Card>
+            <Card className="border-cyan-500/15 shadow-sm">
               <CardHeader>
-                <CardTitle>Profile Information</CardTitle>
+                <CardTitle className="text-xl">Profile Information</CardTitle>
                 <CardDescription>
                   Your public information used in groups and transactions
                 </CardDescription>
@@ -233,9 +237,9 @@ const { data: currentProfile, isLoading } = useQuery({
           {/* Regional Settings */}
           <TabsContent value="regional">
             <div className="space-y-4">
-              <Card>
+              <Card className="border-cyan-500/15 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Currency & Format</CardTitle>
+                  <CardTitle className="text-xl">Currency & Format</CardTitle>
                   <CardDescription>
                     Set your preferred currency and number formatting
                   </CardDescription>
@@ -280,9 +284,9 @@ const { data: currentProfile, isLoading } = useQuery({
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-cyan-500/15 shadow-sm">
                 <CardHeader>
-                  <CardTitle>Language & Region</CardTitle>
+                  <CardTitle className="text-xl">Language & Region</CardTitle>
                   <CardDescription>
                     Choose your language and timezone preferences
                   </CardDescription>
@@ -331,9 +335,9 @@ const { data: currentProfile, isLoading } = useQuery({
 
           {/* Notification Settings */}
           <TabsContent value="notifications">
-            <Card>
+            <Card className="border-cyan-500/15 shadow-sm">
               <CardHeader>
-                <CardTitle>Notification Preferences</CardTitle>
+                <CardTitle className="text-xl">Notification Preferences</CardTitle>
                 <CardDescription>
                   Control how and when you receive notifications
                 </CardDescription>
@@ -371,9 +375,9 @@ const { data: currentProfile, isLoading } = useQuery({
 
           {/* Appearance Settings */}
           <TabsContent value="appearance">
-            <Card>
+            <Card className="border-cyan-500/15 shadow-sm">
               <CardHeader>
-                <CardTitle>Theme & Appearance</CardTitle>
+                <CardTitle className="text-xl">Theme & Appearance</CardTitle>
                 <CardDescription>
                   Customize the look and feel of the application
                 </CardDescription>
@@ -405,15 +409,17 @@ const { data: currentProfile, isLoading } = useQuery({
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
 
-        <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button variant="outline" onClick={() => setIsOpen(false)}>
+        <div className="shrink-0 flex items-center justify-end gap-3 border-t border-cyan-500/15 bg-card px-5 py-4">
+          <Button variant="outline" onClick={() => setIsOpen(false)} className="rounded-full px-5">
             Cancel
           </Button>
           <Button 
             onClick={handleSave}
             disabled={saveProfileMutation.isPending}
             data-testid="button-save-settings"
+            className="rounded-full bg-cyan-500 px-5 text-slate-950 hover:bg-cyan-400"
           >
             {saveProfileMutation.isPending ? (
               "Saving..."

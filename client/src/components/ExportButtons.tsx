@@ -1,11 +1,19 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, FileSpreadsheet, Download, Eye, TrendingUp, ChevronUp, ChevronDown } from "lucide-react";
+import { FileText, FileSpreadsheet, Download, Eye } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import jsPDF from 'jspdf';
 import { format } from 'date-fns';
 import { useAuth } from "react-oidc-context";
 import { useParams } from "wouter";
+import { Capacitor } from "@capacitor/core";
+import { Directory, Filesystem } from "@capacitor/filesystem";
 
 interface ExportButtonsProps {
   filters: {
@@ -41,12 +49,67 @@ type ReportBalances = {
 export default function ExportButtons({ filters }: ExportButtonsProps) {
   const [isExporting, setIsExporting] = useState<string | null>(null);
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-  const [showOptions, setShowOptions] = useState(false);
   const { toast } = useToast();
   const auth = useAuth();
   const token = auth.user?.id_token;
 
   const { id: accountId } = useParams<{ id: string }>();
+  const isNativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === "android";
+
+  const blobToBase64 = (blob: Blob): Promise<string> =>
+    new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        const result = reader.result;
+        if (typeof result !== "string") {
+          reject(new Error("Failed to convert file data"));
+          return;
+        }
+        resolve(result.split(",")[1] ?? "");
+      };
+      reader.onerror = () => reject(reader.error ?? new Error("Failed to read file"));
+      reader.readAsDataURL(blob);
+    });
+
+  const downloadBlobOnWeb = (blob: Blob, fileName: string) => {
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
+  const saveBlobToAndroidDownloads = async (blob: Blob, fileName: string) => {
+    const data = await blobToBase64(blob);
+
+    try {
+      await Filesystem.requestPermissions();
+    } catch {
+      // Permission API can be a no-op on newer Android versions.
+    }
+
+    try {
+      const saved = await Filesystem.writeFile({
+        path: `Download/${fileName}`,
+        data,
+        directory: Directory.ExternalStorage,
+        recursive: true,
+      });
+      return { uri: saved.uri, location: "Downloads" };
+    } catch {
+      const saved = await Filesystem.writeFile({
+        path: fileName,
+        data,
+        directory: Directory.Documents,
+        recursive: true,
+      });
+      return { uri: saved.uri, location: "Documents" };
+    }
+  };
 
   const fetchFilteredTransactions = async (): Promise<Transaction[]> => {
     const params = new URLSearchParams();
@@ -102,7 +165,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
     };
   };
 
-  const generateLedgerPDF = async (transactions: Transaction[], openingBalance = 0): Promise<string> => {
+  const generateLedgerPDF = async (transactions: Transaction[], openingBalance = 0): Promise<Blob> => {
     const doc = new jsPDF();
     
     // Sort transactions by date for ledger format
@@ -322,11 +385,10 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       );
     }
     
-    const blobUrl = doc.output('bloburl');
-    return typeof blobUrl === 'string' ? blobUrl : URL.createObjectURL(new Blob([doc.output('blob')], { type: 'application/pdf' }));
+    return doc.output('blob');
   };
 
-  const generateExcel = async (transactions: Transaction[], openingBalance = 0) => {
+  const generateExcel = async (transactions: Transaction[], openingBalance = 0): Promise<Blob> => {
     const response = await fetch('/api/export/excel', {
       method: 'POST',
       headers: {
@@ -348,20 +410,11 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
       throw new Error(`Excel export failed: ${response.statusText}`);
     }
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.style.display = 'none';
-    a.href = url;
-    a.download = `ledger-report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    return response.blob();
   };
 
-  const handleExport = async (format: 'pdf' | 'excel') => {
-    setIsExporting(format);
+  const handleExport = async (exportType: 'pdf' | 'excel') => {
+    setIsExporting(exportType);
     
     try {
       const transactions = await fetchFilteredTransactions();
@@ -376,21 +429,43 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
         return;
       }
 
-      if (format === 'pdf') {
-        const pdfUrl = await generateLedgerPDF(transactions, openingBalance);
-        setPdfUrl(pdfUrl);
-        
-        toast({
-          title: "Ledger PDF Ready",
-          description: "Your financial ledger is ready to download or preview",
-        });
+      if (exportType === 'pdf') {
+        const pdfBlob = await generateLedgerPDF(transactions, openingBalance);
+        const fileName = `ledger-report-${format(new Date(), 'yyyy-MM-dd')}.pdf`;
+
+        if (isNativeAndroid) {
+          const saved = await saveBlobToAndroidDownloads(pdfBlob, fileName);
+          setPdfUrl(null);
+          toast({
+            title: "PDF Saved",
+            description: `${fileName} saved in ${saved.location}`,
+          });
+        } else {
+          const url = window.URL.createObjectURL(pdfBlob);
+          setPdfUrl(url);
+          downloadBlobOnWeb(pdfBlob, fileName);
+          toast({
+            title: "Ledger PDF Ready",
+            description: "Your financial ledger has been downloaded",
+          });
+        }
       } else {
-        await generateExcel(transactions, openingBalance);
-        
-        toast({
-          title: "Excel Downloaded",
-          description: "Your Excel ledger has been downloaded successfully",
-        });
+        const excelBlob = await generateExcel(transactions, openingBalance);
+        const fileName = `ledger-report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+
+        if (isNativeAndroid) {
+          const saved = await saveBlobToAndroidDownloads(excelBlob, fileName);
+          toast({
+            title: "Excel Saved",
+            description: `${fileName} saved in ${saved.location}`,
+          });
+        } else {
+          downloadBlobOnWeb(excelBlob, fileName);
+          toast({
+            title: "Excel Downloaded",
+            description: "Your Excel ledger has been downloaded successfully",
+          });
+        }
       }
     } catch (error) {
       console.error('Export error:', error);
@@ -420,19 +495,66 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
   };
 
    return (
-   <div className="mb-5">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        {/* Left side - Title */}
-        <div>
-          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Financial Reports</h2>
+   <div className="mb-3 sm:mb-4">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">Financial Reports</h2>
         </div>
 
-        {/* Right side - Export buttons */}
-        <div className="flex items-center gap-2">
+        {/* Mobile - compact export dropdown */}
+        <div className="sm:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 rounded-full border-cyan-400/55 bg-cyan-500 text-slate-950 hover:bg-cyan-400 hover:text-slate-950 px-4 font-semibold shadow-sm"
+                data-testid="button-export-menu"
+              >
+                Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" sideOffset={8} className="w-48 rounded-xl border border-cyan-500/30 bg-card p-1.5 text-card-foreground shadow-lg">
+              <DropdownMenuItem
+                onClick={() => handleExport('pdf')}
+                disabled={isExporting === 'pdf'}
+                className="h-10 rounded-lg px-3 text-sm font-medium focus:bg-cyan-500/15"
+                data-testid="button-export-pdf-mobile"
+              >
+                <FileText className="mr-2 h-4 w-4 text-cyan-600" />
+                {isExporting === 'pdf' ? 'Generating PDF...' : 'Export PDF'}
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleExport('excel')}
+                disabled={isExporting === 'excel'}
+                className="h-10 rounded-lg px-3 text-sm font-medium focus:bg-cyan-500/15"
+                data-testid="button-export-excel-mobile"
+              >
+                <FileSpreadsheet className="mr-2 h-4 w-4 text-cyan-600" />
+                {isExporting === 'excel' ? 'Generating Excel...' : 'Export Excel'}
+              </DropdownMenuItem>
+              {pdfUrl && (
+                <>
+                  <DropdownMenuItem onClick={downloadPDF} className="h-10 rounded-lg px-3 text-sm font-medium focus:bg-cyan-500/15" data-testid="button-download-pdf-mobile">
+                    <Download className="mr-2 h-4 w-4 text-cyan-600" />
+                    Download PDF
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={previewPDF} className="h-10 rounded-lg px-3 text-sm font-medium focus:bg-cyan-500/15" data-testid="button-preview-pdf-mobile">
+                    <Eye className="mr-2 h-4 w-4 text-cyan-600" />
+                    Preview PDF
+                  </DropdownMenuItem>
+                </>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Desktop - full export buttons */}
+        <div className="hidden sm:flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            className="rounded-lg px-4 font-medium"
+            className="h-10 rounded-full border-cyan-400/40 bg-background/60 px-4 font-medium hover:border-cyan-400 hover:bg-cyan-500/10"
             onClick={() => handleExport('pdf')}
             disabled={isExporting === 'pdf'}
             data-testid="button-export-pdf"
@@ -446,7 +568,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-lg px-3"
+                className="h-10 rounded-full border-cyan-400/40 bg-background/60 px-3 hover:border-cyan-400 hover:bg-cyan-500/10"
                 onClick={downloadPDF}
                 data-testid="button-download-pdf"
               >
@@ -456,7 +578,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
               <Button
                 variant="outline"
                 size="sm"
-                className="rounded-lg px-3"
+                className="h-10 rounded-full border-cyan-400/40 bg-background/60 px-3 hover:border-cyan-400 hover:bg-cyan-500/10"
                 onClick={previewPDF}
                 data-testid="button-preview-pdf"
               >
@@ -469,7 +591,7 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
           <Button
             variant="outline"
             size="sm"
-            className="rounded-lg px-4 font-medium"
+            className="h-10 rounded-full border-cyan-400/40 bg-background/60 px-4 font-medium hover:border-cyan-400 hover:bg-cyan-500/10"
             onClick={() => handleExport('excel')}
             disabled={isExporting === 'excel'}
             data-testid="button-export-excel"

@@ -87,6 +87,29 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
     startDate: getDefaultDateRange().startDate,
     endDate: getDefaultDateRange().endDate,
   });
+  const formatReportAmount = (amount: number | string) => {
+    const numericAmount = Number(amount) || 0;
+    const absoluteAmount = Math.abs(numericAmount);
+    const currencyCode = (profile as any)?.currency || "PKR";
+    const locale = (profile as any)?.numberFormat || "en-IN";
+    const currencySymbols: Record<string, string> = {
+      PKR: "RS",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      SAR: "﷼",
+      AED: "د.إ",
+      INR: "₹",
+    };
+
+    const symbol = currencySymbols[currencyCode] || currencyCode;
+    const numberPart = absoluteAmount.toLocaleString(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return `${symbol} ${numericAmount < 0 ? "-" : ""}${numberPart}`;
+  };
   const [, navigate] = useLocation();
 
   useEffect(() => {
@@ -204,8 +227,13 @@ export default function AccountDetail({ accountId }: AccountDetailProps) {
       default: return '💳';
     }
   };
-const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
-  setMembers(updatedMembers);
+const handleSaveBalances = (updatedMembers: { id: string; name: string }[]) => {
+  setMembers((prevMembers) =>
+    updatedMembers.map((member) => ({
+      ...member,
+      openingBalance: prevMembers.find((m) => m.id === member.id)?.openingBalance ?? 0,
+    }))
+  );
   console.log("Updated Balances:", updatedMembers);
   // TODO: call API to persist changes
 };
@@ -250,27 +278,34 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
         setIsIncomeModalOpen={setIsIncomeModalOpen}
         setIsExpenseModalOpen={setIsExpenseModalOpen}
       />
-     <div className="max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4">
-      
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center">
-          <Button variant="outline" onClick={goBack}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-          </Button>
-        </div>    
-        <h1 className="text-xl font-bold text-foreground">{group?.name}</h1>
-        <div className="flex items-center">
-          <Button
-            variant="outline"
-            className="mr-2"
-            onClick={() => {
-              setSelectedGroup(group?group:null);
-              setMemberBalanceModalOpen(true);
-            }}
-          >
-            Members
-          </Button>
+     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-4 py-4">
+
+      <div className="mb-4 flex items-center gap-2 sm:gap-3">
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={goBack}
+          className="h-10 w-10 rounded-full border-cyan-300/60 bg-background/70 hover:bg-cyan-500/10"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] report-text-secondary/90">Group Account</p>
+          <h1 className="truncate text-xl sm:text-2xl font-bold report-text-primary">{group?.name || "Group"}</h1>
         </div>
+
+        <Button
+          variant="outline"
+          className="h-10 rounded-full border-cyan-300/60 bg-background/70 px-4 font-semibold hover:bg-cyan-500/10"
+          onClick={() => {
+            setSelectedGroup(group ? group : null);
+            setMemberBalanceModalOpen(true);
+          }}
+        >
+          Members
+        </Button>
       </div>
 
       {/* Filters + Export */}
@@ -282,21 +317,21 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                 <StatsSkeleton />
               ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
-                    {formatCurrency(monthlyStats?.totalIncome || 0)}
+                    {formatReportAmount(monthlyStats?.totalIncome || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Total Income</p>
                 </div>
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
-                    {formatCurrency(monthlyStats?.netBalance || 0)}
+                    {formatReportAmount(monthlyStats?.netBalance || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Net Balance</p>
                 </div>
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
-                    {formatCurrency(monthlyStats?.totalExpenses || 0)}
+                    {formatReportAmount(monthlyStats?.totalExpenses || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Total Expenses</p>
                 </div>
@@ -342,85 +377,144 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="report-row grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center rounded-xl px-4 py-3"
+                      className="report-row rounded-xl px-3 sm:px-4 py-3 overflow-hidden"
                       data-testid={`transaction-${transaction.id}`}
                     >
-                      {/* Transaction info */}
-                      <div className="sm:col-span-5 flex items-center space-x-3">
-                        <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 text-cyan-200">
-                          {getTransactionIcon(transaction.category || "", transaction.type)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-medium truncate report-text-primary">{transaction.description}</h3>
-                          <div className="text-xs report-text-secondary">{transaction.category || transaction.type}</div>
-                          <div className="text-xs report-text-muted">
-                            {new Date(transaction.date).toLocaleDateString()}
-                            {transaction.type === "income" ? " • Received by " : " • Paid by "}
-                            {transaction.paidBy}
+                      {/* Desktop layout */}
+                      <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center">
+                        <div className="sm:col-span-5 flex items-center space-x-3 min-w-0">
+                          <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 text-cyan-200">
+                            {getTransactionIcon(transaction.category || "", transaction.type)}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium truncate report-text-primary">{transaction.description}</h3>
+                            <div className="text-xs report-text-secondary">{transaction.category || transaction.type}</div>
+                            <div className="text-xs report-text-muted truncate">
+                              {new Date(transaction.date).toLocaleDateString()}
+                              {transaction.type === "income" ? " • Received by " : " • Paid by "}
+                              {transaction.paidBy}
+                            </div>
                           </div>
                         </div>
+                        <div className="sm:col-span-2 text-right">
+                          <span className="font-semibold report-text-primary">{formatCurrency(transaction.amount)}</span>
+                        </div>
+                        <div className="sm:col-span-2 text-right">
+                          <span className={`font-semibold ${transaction.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                            {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                          </span>
+                        </div>
+                        <div className="sm:col-span-3 flex justify-end space-x-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setViewingTransaction(transaction)}
+                            className="report-action-cyan h-8 w-8 rounded-md p-0"
+                            aria-label={`View transaction ${transaction.description}`}
+                            title="View transaction"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+
+                          {transaction.paidBy === auth.user?.profile?.name && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingTransaction(transaction)}
+                                className="report-action-sky h-8 w-8 rounded-md p-0"
+                                aria-label={`Edit transaction ${transaction.description}`}
+                                title="Edit transaction"
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                    deleteMutation.mutate(transaction.id);
+                                  }
+                                }}
+                                className="report-action-red h-8 w-8 rounded-md p-0"
+                                aria-label={`Delete transaction ${transaction.description}`}
+                                title="Delete transaction"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </div>
 
-                      {/* Amount */}
-                      <div className="sm:col-span-2 text-right">
-                        <span className="font-semibold report-text-primary">
-                          {formatCurrency(transaction.amount)}
-                        </span>
-                      </div>
-
-                      {/* Expense display */}
-                      <div className="sm:col-span-2 text-right">
-                        <span className={`font-semibold ${
-                          transaction.type === "income" ? "text-green-500" : "text-red-500"
-                        }`}>
-                          {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
-                        </span>
-                      </div>
-
-                      {/* Actions */}
-                      <div className="sm:col-span-3 flex justify-end space-x-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setViewingTransaction(transaction)}
-                          className="report-action-cyan h-8 w-8 rounded-md p-0"
-                          aria-label="View transaction"
-                          title="View transaction"
-                        >
-                          <Eye className="h-4 w-4" />
-                          <span className="sr-only">View transaction</span>
-                        </Button>
-
-                        {transaction.paidBy === auth.user?.profile?.name && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingTransaction(transaction)}
-                              className="report-action-sky h-8 w-8 rounded-md p-0"
-                              aria-label="Edit transaction"
-                              title="Edit transaction"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                              <span className="sr-only">Edit transaction</span>
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                  deleteMutation.mutate(transaction.id);
-                                }
-                              }}
-                              className="report-action-red h-8 w-8 rounded-md p-0"
-                              aria-label="Delete transaction"
-                              title="Delete transaction"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                              <span className="sr-only">Delete transaction</span>
-                            </Button>
-                          </>
-                        )}
+                      {/* Mobile layout */}
+                      <div className="sm:hidden">
+                        <div className="flex items-start gap-3">
+                          <div className="report-icon-chip w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 text-cyan-200">
+                            {getTransactionIcon(transaction.category || "", transaction.type)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <h3 className="font-medium truncate report-text-primary text-sm">{transaction.description}</h3>
+                              <span className="font-semibold report-text-primary text-sm whitespace-nowrap">
+                                {formatCurrency(transaction.amount)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-0.5">
+                              <span className="text-xs report-text-secondary">{transaction.category || transaction.type}</span>
+                              <span className={`text-sm font-semibold ${transaction.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                                {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                              </span>
+                            </div>
+                            <div className="flex items-center justify-between mt-1">
+                              <span className="text-xs report-text-muted truncate">
+                                {new Date(transaction.date).toLocaleDateString()}
+                                {transaction.type === "income" ? " • Received by " : " • Paid by "}
+                                {transaction.paidBy}
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0 ml-2">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => setViewingTransaction(transaction)}
+                                  className="report-action-cyan h-7 w-7 rounded-md p-0"
+                                  aria-label={`View transaction ${transaction.description}`}
+                                  title="View"
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                                {transaction.paidBy === auth.user?.profile?.name && (
+                                  <>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => setEditingTransaction(transaction)}
+                                      className="report-action-sky h-7 w-7 rounded-md p-0"
+                                      aria-label={`Edit transaction ${transaction.description}`}
+                                      title="Edit"
+                                    >
+                                      <Edit2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => {
+                                        if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                          deleteMutation.mutate(transaction.id);
+                                        }
+                                      }}
+                                      className="report-action-red h-7 w-7 rounded-md p-0"
+                                      aria-label={`Delete transaction ${transaction.description}`}
+                                      title="Delete"
+                                    >
+                                      <Trash2 className="h-3.5 w-3.5" />
+                                    </Button>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -435,7 +529,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                 />
               )}
             {/* Footer */}
-            <Footer groups={group ? [group] : []}/>
+            <Footer groups={group ? [group] : []} mode="floating"/>
             {/* Add EditTransactionModal */}
                   {editingTransaction && (
                     <EditTransactionModal

@@ -1,5 +1,5 @@
 import React from "react";
-import { ChevronDown, Settings, User } from "lucide-react";
+import { ChevronDown, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -126,8 +126,8 @@ const Header: React.FC<HeaderProps> = ({
                   <ChevronDown className="w-4 h-4 text-muted-foreground" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <div className="px-3 py-2 border-b">
+              <DropdownMenuContent align="end" className="w-64 rounded-2xl border border-cyan-500/30 bg-card p-1.5 text-card-foreground shadow-xl">
+                <div className="rounded-xl border border-cyan-500/20 bg-muted px-3 py-2.5">
                   <p className="text-sm font-medium">
                     {resolvedName}
                   </p>
@@ -138,7 +138,7 @@ const Header: React.FC<HeaderProps> = ({
                 <DropdownMenuItem asChild>
                   <SettingsModal>
                     <div
-                      className="flex items-center w-full cursor-pointer"
+                      className="flex items-center w-full cursor-pointer rounded-lg px-2 py-1.5"
                       data-testid="menu-settings"
                     >
                       <Settings className="w-4 h-4 mr-2" />
@@ -151,7 +151,7 @@ const Header: React.FC<HeaderProps> = ({
                   <DropdownMenuItem asChild>
                     <a
                       href="/admin"
-                      className="flex items-center w-full cursor-pointer"
+                      className="flex items-center w-full cursor-pointer rounded-lg px-2 py-1.5"
                       data-testid="menu-admin-panel"
                     >
                       <Settings className="w-4 h-4 mr-2" />
@@ -160,20 +160,19 @@ const Header: React.FC<HeaderProps> = ({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Button
-                    variant="destructive"
-                    onClick={() =>
-                      auth.signoutRedirect({
-                        post_logout_redirect_uri: window.location.origin,
-                      })
-                    }
-                    className="w-full"
-                  >
-                    Sign Out
-                  </Button>
+                <DropdownMenuItem
+                  className="rounded-xl px-2 py-2 text-red-600 focus:bg-red-50 focus:text-red-700"
+                  onSelect={(event) => {
+                    event.preventDefault();
+                    auth.signoutRedirect({
+                      post_logout_redirect_uri: window.location.origin,
+                    });
+                  }}
+                >
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Sign Out
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-muted-foreground" disabled>
+                <DropdownMenuItem className="mt-1 rounded-lg px-2 py-1.5 text-muted-foreground" disabled>
                   <User className="w-4 h-4 mr-2" />
                   Profile ID: {profile?.id?.slice(0, 8) || "Loading..."}
                 </DropdownMenuItem>

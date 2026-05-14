@@ -112,6 +112,29 @@ export default function Dashboard() {
   });
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
   const [filteredTransactionCount, setFilteredTransactionCount] = useState(0);
+  const formatReportAmount = (amount: number | string) => {
+    const numericAmount = Number(amount) || 0;
+    const absoluteAmount = Math.abs(numericAmount);
+    const currencyCode = (profile as any)?.currency || "PKR";
+    const locale = (profile as any)?.numberFormat || "en-IN";
+    const currencySymbols: Record<string, string> = {
+      PKR: "RS",
+      USD: "$",
+      EUR: "€",
+      GBP: "£",
+      SAR: "﷼",
+      AED: "د.إ",
+      INR: "₹",
+    };
+
+    const symbol = currencySymbols[currencyCode] || currencyCode;
+    const numberPart = absoluteAmount.toLocaleString(locale, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+
+    return `${symbol} ${numericAmount < 0 ? "-" : ""}${numberPart}`;
+  };
 async function fetchTransactions(filters: any, token: string) {
   const params = new URLSearchParams();
   if (filters.search) params.append("search", filters.search);
@@ -372,21 +395,21 @@ const deleteMutation = useMutation({
                 <StatsSkeleton />
               ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
-                    {formatCurrency(monthlyStats?.totalIncome || 0)}
+                    {formatReportAmount(monthlyStats?.totalIncome || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Total Income</p>
                 </div>
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
-                    {formatCurrency(monthlyStats?.netBalance || 0)}
+                    {formatReportAmount(monthlyStats?.netBalance || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Net Balance</p>
                 </div>
-                <div className="report-stat-card">
+                <div className="report-stat-card text-center">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
-                    {formatCurrency(monthlyStats?.totalExpenses || 0)}
+                    {formatReportAmount(monthlyStats?.totalExpenses || 0)}
                   </div>
                   <p className="text-sm report-text-secondary mt-1">Total Expenses</p>
                 </div>
