@@ -21,6 +21,8 @@ interface HeaderProps {
   auth: any; // you can replace with your auth type
   setIsIncomeModalOpen: (v: boolean) => void;
   setIsExpenseModalOpen: (v: boolean) => void;
+  activeTab?: string;
+  setActiveTab?: (tab: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -29,6 +31,8 @@ const Header: React.FC<HeaderProps> = ({
   auth,
   setIsIncomeModalOpen,
   setIsExpenseModalOpen,
+  activeTab,
+  setActiveTab,
 }) => {
   const emailPrefix = profile?.email?.split("@")[0] || "";
   const resolvedName =
@@ -68,6 +72,32 @@ const Header: React.FC<HeaderProps> = ({
               </div>
             </div>
           </div>
+
+          {/* Center - Tab Navigation */}
+          {activeTab && setActiveTab && (
+            <nav className="hidden sm:flex items-center space-x-1">
+              <button
+                onClick={() => setActiveTab("groups")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "groups"
+                    ? "text-foreground border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Group Accounts
+              </button>
+              <button
+                onClick={() => setActiveTab("personal")}
+                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                  activeTab === "personal"
+                    ? "text-foreground border-b-2 border-primary"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                Personal Account
+              </button>
+            </nav>
+          )}
 
           {/* Right side - Profile menu */}
           <div className="flex items-center space-x-3">

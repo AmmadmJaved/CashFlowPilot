@@ -252,47 +252,25 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
       {statsLoading ? (
                 <StatsSkeleton />
               ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
-                    <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                  </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
-                    <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
-                      {formatCurrency(monthlyStats?.totalIncome || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6 ">
-                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                    <DollarSign className="h-4 w-4 text-red-500" />
-                  </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
-                    <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
-                      {formatCurrency(monthlyStats?.totalExpenses || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
-                    <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                  </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
-                    <div
-                      className={`text-xl sm:text-2xl font-bold ${
-                        parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                      data-testid="text-net-balance"
-                    >
-                      {formatCurrency(monthlyStats?.netBalance || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-3 gap-4 sm:gap-6 mb-6">
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
+                    {formatCurrency(monthlyStats?.totalIncome || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Income</p>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
+                    {formatCurrency(monthlyStats?.netBalance || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Net Balance</p>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
+                    {formatCurrency(monthlyStats?.totalExpenses || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Expenses</p>
+                </div>
               </div>
               )}
 
@@ -300,11 +278,21 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
       {/* <RealTimeNotifications isConnected={true} /> */}
 
       {/* Transactions */}
-      <div className="internal-panel p-2">
-        <h2 className="text-lg font-semibold mb-4">Transactions</h2>
-         <CardContent className="p-2">
+      <div className="rounded-xl border border-border bg-card">
+        <div className="px-4 py-3 border-b border-border">
+          <h2 className="text-lg font-semibold">Transactions</h2>
+        </div>
+
+        {/* Table Header */}
+        <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 border-b border-border text-sm font-medium text-muted-foreground">
+          <div className="col-span-5">Transaction</div>
+          <div className="col-span-2 text-right">Amount</div>
+          <div className="col-span-2 text-right">Expenses</div>
+          <div className="col-span-3 text-right">Actions</div>
+        </div>
+
               {transactionsLoading ? (
-                <div className="space-y-4">
+                <div className="p-4 space-y-4">
                   {[...Array(5)].map((_, i) => (
                     <div key={i} className="flex items-center space-x-4">
                       <Skeleton className="h-10 w-10 rounded-full" />
@@ -321,99 +309,92 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                   <p>No transactions found. Add your first expense or income!</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div>
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-start justify-between p-2 border rounded-lg gap-3"
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
                       data-testid={`transaction-${transaction.id}`}
                     >
-                      {/* Left section */}
-                      <div className="flex items-start space-x-3 flex-1 min-w-0">
-                        <div className="text-xl shrink-0">
+                      {/* Transaction info */}
+                      <div className="sm:col-span-5 flex items-center space-x-3">
+                        <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">
                           {getTransactionIcon(transaction.category || "", transaction.type)}
                         </div>
                         <div className="min-w-0">
                           <h3 className="font-medium truncate">{transaction.description}</h3>
-                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center ">
-                            {transaction.category && (
-                              <Badge variant="secondary">{transaction.category}</Badge>
-                            )} 
-                          </div>
-                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center">
-                        </div>
-                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-muted-foreground">
-                           
-                              {new Date(transaction.date).toLocaleDateString()}
-                              {transaction.type === "income" ? " • Received by " : " • Paid by "}
-                              {transaction.paidBy}
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(transaction.date).toLocaleDateString()}
+                            {transaction.type === "income" ? " • Received by " : " • Paid by "}
+                            {transaction.paidBy}
                           </span>
                         </div>
                       </div>
 
-                      {/* Right section (amount) */}
-                      <div className="flex flex-col items-end shrink-0 text-right space-y-1">
-                        <div
-                          className={`text-base sm:text-lg font-semibold text-right ${
-                            transaction.type === "income" ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {transaction.type === "income" ? "+" : "-"}
+                      {/* Amount */}
+                      <div className="sm:col-span-2 text-right">
+                        <span className="font-semibold">
                           {formatCurrency(transaction.amount)}
-                        </div>
-                        <div className="flex space-x-2 mt-1">
-                          {/* View Button - Available to all users */}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setViewingTransaction(transaction)}
-                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
+                        </span>
+                      </div>
 
-                          {/* Edit and Delete - Restricted to transaction owner */}
-                          {transaction.paidBy === auth.user?.profile?.name && (
-                            <>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setEditingTransaction(transaction)}
-                                className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </Button>
+                      {/* Expense display */}
+                      <div className="sm:col-span-2 text-right">
+                        <span className={`font-semibold ${
+                          transaction.type === "income" ? "text-green-500" : "text-red-500"
+                        }`}>
+                          {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                        </span>
+                      </div>
 
-                              <Button
-                                variant="destructive"
-                                size="sm"
-                                onClick={() => {
-                                  if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                    deleteMutation.mutate(transaction.id);
-                                  }
-                                }}
-                                className="flex items-center space-x-1"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
+                      {/* Actions */}
+                      <div className="sm:col-span-3 flex justify-end space-x-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setViewingTransaction(transaction)}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
 
-                        {/* Example Modal for Viewing Transaction */}
-                        {viewingTransaction && (
-                          <ViewTransactionModal
-                            transaction={viewingTransaction}
-                            onClose={() => setViewingTransaction(null)}
-                          />
+                        {transaction.paidBy === auth.user?.profile?.name && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditingTransaction(transaction)}
+                              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                  deleteMutation.mutate(transaction.id);
+                                }
+                              }}
+                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </>
                         )}
-                        
                       </div>
                     </div>
                   ))}
                 </div>
               )}
-            </CardContent>
+
+              {/* View Transaction Modal */}
+              {viewingTransaction && (
+                <ViewTransactionModal
+                  transaction={viewingTransaction}
+                  onClose={() => setViewingTransaction(null)}
+                />
+              )}
             {/* Footer */}
             <Footer groups={group ? [group] : []}/>
             {/* Add EditTransactionModal */}

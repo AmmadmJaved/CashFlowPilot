@@ -420,53 +420,33 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
   };
 
    return (
-   <div className="mb-5 rounded-3xl border border-cyan-400/25 bg-gradient-to-r from-blue-700 via-cyan-600 to-indigo-700 p-4 shadow-2xl shadow-cyan-900/30 sm:p-6">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-        {/* Left side - Title and description */}
-        <div className="text-white">
-          <div className="mb-2 flex cursor-pointer items-center gap-3" onClick={() => setShowOptions(!showOptions)}>
-            <div className="rounded-2xl bg-white/20 p-2.5 backdrop-blur-sm">
-              <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <h2 className="text-3xl font-bold tracking-tight">Financial Reports</h2>
-             {showOptions ? (
-                <>
-                  <ChevronUp className="h-4 w-4" size={20} />
-  
-                </>
-              ) : (
-                <>
-                  <ChevronDown className="h-4 w-4" size={20}/>
-                </>
-              )}
-          </div>    
-            <p className="text-cyan-50/90 text-sm sm:text-base">
-               Export your financial data in professional ledger format
-            </p>
+   <div className="mb-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        {/* Left side - Title */}
+        <div>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">Financial Reports</h2>
         </div>
 
-      
-
-      {/* Collapsible export buttons */}
-      {showOptions && (
-        <div className="flex w-full flex-col gap-3 sm:w-auto sm:flex-row">
+        {/* Right side - Export buttons */}
+        <div className="flex items-center gap-2">
           <Button
-            variant="secondary"
-            className="h-11 rounded-xl border-0 bg-white/95 px-5 font-semibold text-blue-800 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-white hover:shadow-xl"
+            variant="outline"
+            size="sm"
+            className="rounded-lg px-4 font-medium"
             onClick={() => handleExport('pdf')}
             disabled={isExporting === 'pdf'}
             data-testid="button-export-pdf"
           >
-            <FileText className="mr-2 h-5 w-5" />
-            {isExporting === 'pdf' ? 'Generating PDF...' : 'Ledger PDF'}
+            <FileText className="mr-2 h-4 w-4" />
+            {isExporting === 'pdf' ? 'Generating...' : 'PDF'}
           </Button>
 
           {pdfUrl && (
-            <div className="flex gap-2">
+            <>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                className="rounded-lg bg-emerald-500 px-4 py-2 font-medium text-white shadow-md transition-all duration-200 hover:bg-emerald-600 hover:shadow-lg"
+                className="rounded-lg px-3"
                 onClick={downloadPDF}
                 data-testid="button-download-pdf"
               >
@@ -474,30 +454,30 @@ export default function ExportButtons({ filters }: ExportButtonsProps) {
                 Download
               </Button>
               <Button
-                variant="secondary"
+                variant="outline"
                 size="sm"
-                className="rounded-lg bg-amber-500 px-4 py-2 font-medium text-white shadow-md transition-all duration-200 hover:bg-amber-600 hover:shadow-lg"
+                className="rounded-lg px-3"
                 onClick={previewPDF}
                 data-testid="button-preview-pdf"
               >
                 <Eye className="mr-1 h-4 w-4" />
                 Preview
               </Button>
-            </div>
+            </>
           )}
 
-           <Button
-            variant="secondary"
-            className="h-11 rounded-xl border-0 bg-white/95 px-5 font-semibold text-emerald-700 shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-white hover:shadow-xl"
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-lg px-4 font-medium"
             onClick={() => handleExport('excel')}
             disabled={isExporting === 'excel'}
             data-testid="button-export-excel"
           >
-            <FileSpreadsheet className="mr-2 h-5 w-5" />
-            {isExporting === 'excel' ? 'Generating Excel...' : 'Ledger Excel'}
+            <FileSpreadsheet className="mr-2 h-4 w-4" />
+            {isExporting === 'excel' ? 'Generating...' : 'Excel'}
           </Button>
         </div>
-      )}
       </div>
     </div>
   );

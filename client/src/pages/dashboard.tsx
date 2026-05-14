@@ -321,325 +321,326 @@ const deleteMutation = useMutation({
               auth={auth}
               setIsIncomeModalOpen={setIsIncomeModalOpen}
               setIsExpenseModalOpen={setIsExpenseModalOpen}
+              activeTab={activeTab}
+              setActiveTab={setActiveTab}
             />
       {/* Main Content */}
       <div className="flex-1 mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 lg:px-5">
-        {/* Export Navigation - Eye-catching position */}
+        {/* Export / Title Row */}
         <ExportButtons filters={filters} />
-       
-
-        {/* Real-time Notifications */}
-        {/* <RealTimeNotifications isConnected={isConnected} /> */}
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="premium-surface grid w-full grid-cols-2 p-1">
-            <TabsTrigger value="groups" data-testid="tab-groups" className="rounded-xl data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Group Accounts</TabsTrigger>
-            <TabsTrigger value="personal" data-testid="tab-personal" className="rounded-xl data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Personal Account</TabsTrigger>
+          {/* Mobile-only tabs (desktop tabs in header) */}
+          <TabsList className="sm:hidden grid w-full grid-cols-2 p-1 rounded-xl bg-muted">
+            <TabsTrigger value="groups" data-testid="tab-groups" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Group Accounts</TabsTrigger>
+            <TabsTrigger value="personal" data-testid="tab-personal" className="rounded-lg data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Personal Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
-          <Card className="premium-surface p-3 sm:p-4">
-             {/* Date Range Filters */}
-              <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
-              {/* Stats Cards */}
+              {/* Stats Row - Clean inline stats like reference */}
               {statsLoading ? (
                 <StatsSkeleton />
               ) : (
-              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="premium-row accent-outline pb-1">
-                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5">
-                    <CardTitle className="text-sm font-medium">Total Income</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-green-500" />
-                  </CardHeader>
-                  <CardContent className="px-4 pb-3 sm:px-5">
-                    <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
-                      {formatCurrency(monthlyStats?.totalIncome || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="premium-row accent-outline pb-1">
-                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5 ">
-                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                    <DollarSign className="h-4 w-4 text-red-500" />
-                  </CardHeader>
-                  <CardContent className="px-4 pb-3 sm:px-5">
-                    <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
-                      {formatCurrency(monthlyStats?.totalExpenses || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
-
-                <Card className="premium-row accent-outline pb-1">
-                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5">
-                    <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
-                    <Calendar className="h-4 w-4 text-blue-500" />
-                  </CardHeader>
-                  <CardContent className="px-4 pb-3 sm:px-5">
-                    <div
-                      className={`text-xl sm:text-2xl font-bold ${
-                        parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
-                      }`}
-                      data-testid="text-net-balance"
-                    >
-                      {formatCurrency(monthlyStats?.netBalance || 0)}
-                    </div>
-                  </CardContent>
-                </Card>
+              <div className="grid grid-cols-3 gap-4 sm:gap-6">
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
+                    {formatCurrency(monthlyStats?.totalIncome || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Income</p>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
+                    {formatCurrency(monthlyStats?.netBalance || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Net Balance</p>
+                </div>
+                <div>
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
+                    {formatCurrency(monthlyStats?.totalExpenses || 0)}
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Total Expenses</p>
+                </div>
               </div>
               )}
 
-            {/* Recent Transactions */}
-             <div className="premium-surface p-3 sm:p-4">
-              <CardHeader className="px-1 py-2">
-              <CardTitle className="text-base sm:text-lg md:text-xl">
-                Recent Transactions
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="px-1 pb-1">
-              {transactionsLoading ? (
-                <div className="space-y-4">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="flex items-center space-x-4">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <div className="space-y-2">
-                        <Skeleton className="h-4 w-[180px] sm:w-[200px]" />
-                        <Skeleton className="h-4 w-[80px] sm:w-[100px]" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : transactions.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <DollarSign className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <p>No transactions found. Add your first expense or income!</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transactions.map((transaction) => (
-                    <div
-                      key={transaction.id}
-                      className="premium-row flex items-start justify-between gap-3 p-3"
-                      data-testid={`transaction-${transaction.id}`}
-                    >
-                      {/* Left section */}
-                      <div className="flex items-start space-x-3 flex-1 min-w-0">
-                        <div className="text-xl shrink-0">
-                          {getTransactionIcon(transaction.category || "", transaction.type)}
-                        </div>
-                        <div className="min-w-0">
-                          <h3 className="font-medium truncate">{transaction.description}</h3>
-                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center ">
-                            {transaction.category && (
-                              <Badge variant="secondary">{transaction.category}</Badge>
-                            )} 
-                          </div>
-                          <div className="mt-1 text-xs sm:text-sm text-muted-foreground flex flex-wrap items-center">
-                        </div>
-                          <span className="whitespace-nowrap mt-1 text-xs sm:text-sm text-muted-foreground">
-                              {new Date(transaction.date).toLocaleDateString()} • Paid by{" "}
-                              {transaction.paidBy}
-                          </span> 
-                        </div>
-                      </div>
+              {/* Filters Row */}
+              <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
 
-                      {/* Right section (amount) */}
-                      <div className="flex flex-col items-end shrink-0 text-right space-y-1">
-                        <div
-                          className={`text-base sm:text-lg font-semibold text-right ${
-                            transaction.type === "income" ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {transaction.type === "income" ? "+" : "-"}
-                          {formatCurrency(transaction.amount)}
-                        </div> 
-                        <div className="mt-1 flex space-x-2">
+              {/* Transaction Table */}
+              <div className="rounded-xl border border-border bg-card">
+                {/* Table Header */}
+                <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-3 border-b border-border text-sm font-medium text-muted-foreground">
+                  <div className="col-span-5">Transaction</div>
+                  <div className="col-span-2 text-right">Amount</div>
+                  <div className="col-span-2 text-right">Expenses</div>
+                  <div className="col-span-3 text-right">Actions</div>
+                </div>
+
+                {/* Transaction Rows */}
+                {transactionsLoading ? (
+                  <div className="p-4 space-y-4">
+                    {[...Array(5)].map((_, i) => (
+                      <div key={i} className="flex items-center space-x-4">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-[180px] sm:w-[200px]" />
+                          <Skeleton className="h-4 w-[80px] sm:w-[100px]" />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : transactions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <DollarSign className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <p>No transactions found. Add your first expense or income!</p>
+                  </div>
+                ) : (
+                  <div>
+                    {transactions.map((transaction) => (
+                      <div
+                        key={transaction.id}
+                        className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                        data-testid={`transaction-${transaction.id}`}
+                      >
+                        {/* Transaction info */}
+                        <div className="sm:col-span-5 flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-lg shrink-0">
+                            {getTransactionIcon(transaction.category || "", transaction.type)}
+                          </div>
+                          <div className="min-w-0">
+                            <h3 className="font-medium truncate">{transaction.description}</h3>
+                            <span className="text-xs text-muted-foreground">
+                              {transaction.category || transaction.type}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Amount */}
+                        <div className="sm:col-span-2 text-right">
+                          <span className="font-semibold">
+                            {formatCurrency(transaction.amount)}
+                          </span>
+                        </div>
+
+                        {/* Expense display */}
+                        <div className="sm:col-span-2 text-right">
+                          <span className={`font-semibold ${
+                            transaction.type === "income" ? "text-green-500" : "text-red-500"
+                          }`}>
+                            {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div className="sm:col-span-3 flex justify-end space-x-1">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
-                            onClick={() => setViewingTransaction(transaction)} // 👈 add your handler here
-                            className="h-8 w-8 rounded-full border-border/70 p-0 text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400"
+                            onClick={() => setViewingTransaction(transaction)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setEditingTransaction(transaction)}
-                              className="h-8 w-8 rounded-full border-border/70 p-0 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-
-                            <Button
-                              variant="destructive"
-                              size="sm"
-                              onClick={() => {
-                                if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                  deleteMutation.mutate(transaction.id);
-                                }
-                              }}
-                              className="h-8 w-8 rounded-full p-0"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                             {/* Example Modal for Viewing Transaction */}
-                            {viewingTransaction && (
-                              <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-                                <div className="rounded-lg border border-border bg-card p-6 w-96 text-card-foreground">
-                                  <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
-                                  <p><strong>ID:</strong> {viewingTransaction.id}</p>
-                                  <p><strong>Amount:</strong> {viewingTransaction.amount}</p>
-                                  <p><strong>Type:</strong> {viewingTransaction.type}</p>
-                                  <p><strong>Date:</strong> {new Date(viewingTransaction.date).toLocaleString()}</p>
-                                  {/* add more fields as needed */}
-
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    className="mt-4"
-                                    onClick={() => setViewingTransaction(null)}
-                                  >
-                                    Close
-                                  </Button>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-             </div>
-            
-          </Card>
-        </TabsContent>
-
-        {/* Group Accounts */}
-          <TabsContent value="groups" className="space-y-4">
-            <Card className="premium-surface">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <Users className="w-5 h-5 mr-2" />
-                    Group Accounts
-                  </div>
-                  <Button
-                    onClick={() => setIsGroupModalOpen(true)}
-                    size="sm"
-                    className="rounded-full bg-cyan-500 px-4 text-slate-950 hover:bg-cyan-400"
-                    data-testid="button-create-group"
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Create Group
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-2">
-                {groupsLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <Skeleton key={i} className="h-20 w-full" />
-                    ))}
-                  </div>
-                ) : groups.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
-                    <p>No groups yet. Create an Accounts to share expenses with friends!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {groups.map((group) => (
-                      <div key={group.id} className="premium-row p-4" data-testid={`group-${group.id}`}>
-                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                          <div>
-                            {editingGroupId === group.id ? (
-                              <div className="flex items-center space-x-2">
-                                <Input
-                                  value={editingGroupName}
-                                  onChange={(e) => setEditingGroupName(e.target.value)}
-                                  className="w-72"
-                                  autoFocus
-                                />
-                                <Button
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    if (!editingGroupName.trim()) {
-                                      toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' });
-                                      return;
-                                    }
-                                    updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() });
-                                  }}
-                                  disabled={updateGroupMutation.isPending}
-                                >
-                                  {updateGroupMutation.isPending ? 'Saving...' : 'Save'}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingGroupId(null);
-                                  }}
-                                  disabled={updateGroupMutation.isPending}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            ) : (
-                              <Link href={`/account/${group.id}`}>
-                                <div className="flex items-center">
-                                  <h3 className="font-medium">{group.name}</h3>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={(e) => {
-                                      e.preventDefault();
-                                      e.stopPropagation();
-                                      setEditingGroupId(group.id);
-                                      setEditingGroupName(group.name || '');
-                                    }}
-                                    className="ml-2"
-                                  >
-                                    <Edit2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-
-                                <p className="text-sm text-muted-foreground">
-                                  {group.memberCount} members
-                                  {group.description && ` • ${group.description}`}
-                                </p>
-                              </Link>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 sm:gap-3">
-                            <div className="text-right">
-                              <Button size="sm" variant="outline" onClick={() => deleteGroup(group.id)}>Delete</Button>
-                            </div>
-                            <Button 
-                              size="sm" 
-                              variant="outline" 
-                              onClick={() => {
-                                setSelectedGroup(group);
-                                setInviteModalOpen(true);
-                              }}
-                              data-testid={`button-invite-${group.id}`}
-                            >
-                              <Share2 className="w-3 h-3 mr-1" />
-                              Invite
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditingTransaction(transaction)}
+                            className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              if (window.confirm("Are you sure you want to delete this transaction?")) {
+                                deleteMutation.mutate(transaction.id);
+                              }
+                            }}
+                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
                   </div>
                 )}
-              </CardContent>
-            </Card>
+              </div>
+
+              {/* View Transaction Modal */}
+              {viewingTransaction && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+                  <div className="rounded-xl border border-border bg-card p-6 w-96 text-card-foreground shadow-xl">
+                    <h2 className="text-lg font-semibold mb-4">Transaction Details</h2>
+                    <p><strong>ID:</strong> {viewingTransaction.id}</p>
+                    <p><strong>Amount:</strong> {viewingTransaction.amount}</p>
+                    <p><strong>Type:</strong> {viewingTransaction.type}</p>
+                    <p><strong>Date:</strong> {new Date(viewingTransaction.date).toLocaleString()}</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-4"
+                      onClick={() => setViewingTransaction(null)}
+                    >
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
+        </TabsContent>
+
+        {/* Group Accounts */}
+          <TabsContent value="groups" className="space-y-4">
+            <div className="rounded-xl border border-border bg-card">
+              {/* Group Table Header */}
+              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+                <div className="flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-muted-foreground" />
+                  <h3 className="font-semibold">Group Accounts</h3>
+                </div>
+                <Button
+                  onClick={() => setIsGroupModalOpen(true)}
+                  size="sm"
+                  className="rounded-lg bg-cyan-500 px-4 text-slate-950 hover:bg-cyan-400"
+                  data-testid="button-create-group"
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  Create Group
+                </Button>
+              </div>
+
+              {/* Column Headers */}
+              <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 border-b border-border text-sm font-medium text-muted-foreground">
+                <div className="col-span-5">Group</div>
+                <div className="col-span-2">Members</div>
+                <div className="col-span-2">Description</div>
+                <div className="col-span-3 text-right">Actions</div>
+              </div>
+
+              {/* Group Rows */}
+              {groupsLoading ? (
+                <div className="p-4 space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <Skeleton key={i} className="h-16 w-full" />
+                  ))}
+                </div>
+              ) : groups.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+                  <p>No groups yet. Create an Account to share expenses with friends!</p>
+                </div>
+              ) : (
+                <div>
+                  {groups.map((group) => (
+                    <div
+                      key={group.id}
+                      className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                      data-testid={`group-${group.id}`}
+                    >
+                      {/* Group Name */}
+                      <div className="sm:col-span-5">
+                        {editingGroupId === group.id ? (
+                          <div className="flex items-center space-x-2">
+                            <Input
+                              value={editingGroupName}
+                              onChange={(e) => setEditingGroupName(e.target.value)}
+                              className="w-48"
+                              autoFocus
+                            />
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (!editingGroupName.trim()) {
+                                  toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' });
+                                  return;
+                                }
+                                updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() });
+                              }}
+                              disabled={updateGroupMutation.isPending}
+                            >
+                              {updateGroupMutation.isPending ? 'Saving...' : 'Save'}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingGroupId(null);
+                              }}
+                              disabled={updateGroupMutation.isPending}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
+                        ) : (
+                          <Link href={`/account/${group.id}`}>
+                            <div className="flex items-center space-x-3">
+                              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
+                                <Users className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                              <div>
+                                <h3 className="font-medium hover:text-primary transition-colors">{group.name}</h3>
+                                <span className="text-xs text-muted-foreground sm:hidden">{group.memberCount} members</span>
+                              </div>
+                            </div>
+                          </Link>
+                        )}
+                      </div>
+
+                      {/* Members count */}
+                      <div className="hidden sm:block sm:col-span-2 text-sm text-muted-foreground">
+                        {group.memberCount} members
+                      </div>
+
+                      {/* Description */}
+                      <div className="hidden sm:block sm:col-span-2 text-sm text-muted-foreground truncate">
+                        {group.description || "-"}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="sm:col-span-3 flex justify-end items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setEditingGroupId(group.id);
+                            setEditingGroupName(group.name || '');
+                          }}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setSelectedGroup(group);
+                            setInviteModalOpen(true);
+                          }}
+                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
+                          data-testid={`button-invite-${group.id}`}
+                        >
+                          <Share2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => deleteGroup(group.id)}
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </TabsContent>
        
         </Tabs>
