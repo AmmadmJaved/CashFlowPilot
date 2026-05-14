@@ -50,9 +50,9 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
   ];
 
   return (
-    <div className="grid w-full grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-card/90 p-3 shadow-sm sm:grid-cols-4 sm:p-4">
+    <div className="premium-surface grid w-full grid-cols-2 gap-3 p-3 sm:grid-cols-4 sm:gap-4 sm:p-4">
       {/* Start Date */}
-      <div className="rounded-xl border border-border bg-background/70 px-2 py-2 text-card-foreground shadow-sm card-hover">
+      <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-card-foreground shadow-sm card-hover">
         <Label htmlFor="startDate" className="ml-1 text-sm font-medium text-muted-foreground">Start Date</Label>
         <Input
           id="startDate"
@@ -66,7 +66,7 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
       </div>
 
       {/* End Date */}
-      <div className="rounded-xl border border-border bg-background/70 px-2 py-2 text-card-foreground shadow-sm card-hover">
+      <div className="rounded-xl border border-border/70 bg-background/70 px-3 py-2 text-card-foreground shadow-sm card-hover">
         <Label htmlFor="endDate" className="ml-1 text-sm font-medium text-muted-foreground">End Date</Label>
         <Input
           id="endDate"
@@ -79,7 +79,7 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
         />
       </div>
       {/* Search */}
-      <div className="rounded-xl border border-border bg-background/70 p-2 text-card-foreground shadow-sm card-hover">
+      <div className="rounded-xl border border-border/70 bg-background/70 p-2 text-card-foreground shadow-sm card-hover">
         <Input
           id="search"
           type="text"
@@ -100,7 +100,7 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
                     Filter
                 </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-64 p-4 space-y-4">
+                <PopoverContent className="w-72 p-4 space-y-4">
                   {/* Filter User */}
 
                 {
@@ -111,7 +111,7 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
                       value={filters.paidBy || "all"}
                       onValueChange={(value) => handleFilterChange("paidBy", value)}
                     >
-                      <SelectTrigger id="paidBy" className="w-[165px] mt-1">
+                      <SelectTrigger id="paidBy" className="mt-1 w-full">
                         <SelectValue placeholder="Select user" />
                       </SelectTrigger>
                       <SelectContent>

@@ -333,50 +333,50 @@ const deleteMutation = useMutation({
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2 rounded-2xl border border-border/70 bg-card/80 p-1 shadow-sm"> 
-            <TabsTrigger value="groups" data-testid="tab-groups">Group Accounts</TabsTrigger>
-            <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
+          <TabsList className="premium-surface grid w-full grid-cols-2 p-1">
+            <TabsTrigger value="groups" data-testid="tab-groups" className="rounded-xl data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Group Accounts</TabsTrigger>
+            <TabsTrigger value="personal" data-testid="tab-personal" className="rounded-xl data-[state=active]:bg-cyan-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm">Personal Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
-          <Card className="rounded-2xl border-border/70 bg-card/90 p-3 shadow-sm sm:p-4">
+          <Card className="premium-surface p-3 sm:p-4">
              {/* Date Range Filters */}
               <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
               {/* Stats Cards */}
               {statsLoading ? (
                 <StatsSkeleton />
               ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3">
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <Card className="premium-row accent-outline pb-1">
+                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5">
                     <CardTitle className="text-sm font-medium">Total Income</CardTitle>
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   </CardHeader>
-                  <CardContent className="px-5 pb-3">
+                  <CardContent className="px-4 pb-3 sm:px-5">
                     <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
                       {formatCurrency(monthlyStats?.totalIncome || 0)}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3 ">
+                <Card className="premium-row accent-outline pb-1">
+                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5 ">
                     <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
                     <DollarSign className="h-4 w-4 text-red-500" />
                   </CardHeader>
-                  <CardContent className="px-5 pb-3">
+                  <CardContent className="px-4 pb-3 sm:px-5">
                     <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
                       {formatCurrency(monthlyStats?.totalExpenses || 0)}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3">
+                <Card className="premium-row accent-outline pb-1">
+                  <CardHeader className="flex flex-row items-center justify-between px-4 py-3 sm:px-5">
                     <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
                     <Calendar className="h-4 w-4 text-blue-500" />
                   </CardHeader>
-                  <CardContent className="px-5 pb-3">
+                  <CardContent className="px-4 pb-3 sm:px-5">
                     <div
                       className={`text-xl sm:text-2xl font-bold ${
                         parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
@@ -391,7 +391,7 @@ const deleteMutation = useMutation({
               )}
 
             {/* Recent Transactions */}
-             <div className="internal-panel p-3 sm:p-4">
+             <div className="premium-surface p-3 sm:p-4">
               <CardHeader className="px-1 py-2">
               <CardTitle className="text-base sm:text-lg md:text-xl">
                 Recent Transactions
@@ -416,11 +416,11 @@ const deleteMutation = useMutation({
                   <p>No transactions found. Add your first expense or income!</p>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/70 p-3"
+                      className="premium-row flex items-start justify-between gap-3 p-3"
                       data-testid={`transaction-${transaction.id}`}
                     >
                       {/* Left section */}
@@ -454,12 +454,12 @@ const deleteMutation = useMutation({
                           {transaction.type === "income" ? "+" : "-"}
                           {formatCurrency(transaction.amount)}
                         </div> 
-                        <div className="flex space-x-2 mt-1">
+                        <div className="mt-1 flex space-x-2">
                           <Button
                             variant="outline"
                             size="sm"
                             onClick={() => setViewingTransaction(transaction)} // 👈 add your handler here
-                            className="flex items-center space-x-1 text-blue-600 hover:text-blue-800"
+                            className="h-8 w-8 rounded-full border-border/70 p-0 text-cyan-500 hover:bg-cyan-500/10 hover:text-cyan-400"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -467,7 +467,7 @@ const deleteMutation = useMutation({
                               variant="outline"
                               size="sm"
                               onClick={() => setEditingTransaction(transaction)}
-                              className="flex items-center space-x-1 text-indigo-600 hover:text-indigo-800"
+                              className="h-8 w-8 rounded-full border-border/70 p-0 text-indigo-400 hover:bg-indigo-500/10 hover:text-indigo-300"
                             >
                               <Edit2 className="h-4 w-4" />
                             </Button>
@@ -480,7 +480,7 @@ const deleteMutation = useMutation({
                                   deleteMutation.mutate(transaction.id);
                                 }
                               }}
-                              className="flex items-center space-x-1"
+                              className="h-8 w-8 rounded-full p-0"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -520,7 +520,7 @@ const deleteMutation = useMutation({
 
         {/* Group Accounts */}
           <TabsContent value="groups" className="space-y-4">
-            <Card className="rounded-2xl border-border/70 bg-card/90 shadow-sm">
+            <Card className="premium-surface">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -551,10 +551,10 @@ const deleteMutation = useMutation({
                     <p>No groups yet. Create an Accounts to share expenses with friends!</p>
                   </div>
                 ) : (
-                  <div className="space-y-4 ">
+                  <div className="space-y-3">
                     {groups.map((group) => (
-                      <div key={group.id} className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm" data-testid={`group-${group.id}`}>
-                        <div className="flex items-center justify-between">
+                      <div key={group.id} className="premium-row p-4" data-testid={`group-${group.id}`}>
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             {editingGroupId === group.id ? (
                               <div className="flex items-center space-x-2">
@@ -616,7 +616,7 @@ const deleteMutation = useMutation({
                               </Link>
                             )}
                           </div>
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-center gap-2 sm:gap-3">
                             <div className="text-right">
                               <Button size="sm" variant="outline" onClick={() => deleteGroup(group.id)}>Delete</Button>
                             </div>
