@@ -528,48 +528,50 @@ const handleSaveBalances = (updatedMembers: { id: string; name: string }[]) => {
                   onClose={() => setViewingTransaction(null)}
                 />
               )}
-            {/* Footer */}
-            <Footer groups={group ? [group] : []} mode="floating"/>
-            {/* Add EditTransactionModal */}
-                  {editingTransaction && (
-                    <EditTransactionModal
-                      isOpen={!!editingTransaction}
-                      onClose={() => setEditingTransaction(null)}
-                      transaction={editingTransaction}
-                    />
-                  )}
-
-                  {/* Modals */}
-                        <AddExpenseModal 
-                          isOpen={isExpenseModalOpen} 
-                          onClose={() => setIsExpenseModalOpen(false)} 
-                          groups={group ? [group] : []}
-                        />
-                        <AddIncomeModal 
-                          isOpen={isIncomeModalOpen} 
-                          onClose={() => setIsIncomeModalOpen(false)} 
-                          groups={group ? [group] : []}
-                        />
-                        <AddGroupModal 
-                          isOpen={isGroupModalOpen} 
-                          onClose={() => setIsGroupModalOpen(false)} 
-                        />
-                        {inviteModalOpen && selectedGroup && (
-                          <SimpleInviteModal
-                            isOpen={inviteModalOpen}
-                            onClose={() => setInviteModalOpen(false)}
-                            group={selectedGroup}
-                          />
-                        )}
-                        <MembersBalanceModal
-                          groupId={accountId}
-                        isOpen={ismembersBalanceModalOpen}
-                        onClose={() => setMemberBalanceModalOpen(false)}
-                        groupName={group?.name || "" }
-                        members={members}
-                        onSave={handleSaveBalances}
-                      />
       </div>
+
+      {/* Footer */}
+      <Footer groups={group ? [group] : []} mode="floating"/>
+
+      {/* Add EditTransactionModal */}
+      {editingTransaction && (
+        <EditTransactionModal
+          isOpen={!!editingTransaction}
+          onClose={() => setEditingTransaction(null)}
+          transaction={editingTransaction}
+        />
+      )}
+
+      {/* Modals */}
+      <AddExpenseModal 
+        isOpen={isExpenseModalOpen} 
+        onClose={() => setIsExpenseModalOpen(false)} 
+        groups={group ? [group] : []}
+      />
+      <AddIncomeModal 
+        isOpen={isIncomeModalOpen} 
+        onClose={() => setIsIncomeModalOpen(false)} 
+        groups={group ? [group] : []}
+      />
+      <AddGroupModal 
+        isOpen={isGroupModalOpen} 
+        onClose={() => setIsGroupModalOpen(false)} 
+      />
+      {inviteModalOpen && selectedGroup && (
+        <SimpleInviteModal
+          isOpen={inviteModalOpen}
+          onClose={() => setInviteModalOpen(false)}
+          group={selectedGroup}
+        />
+      )}
+      <MembersBalanceModal
+        groupId={accountId}
+        isOpen={ismembersBalanceModalOpen}
+        onClose={() => setMemberBalanceModalOpen(false)}
+        groupName={group?.name || "" }
+        members={members}
+        onSave={handleSaveBalances}
+      />
      </div>      
     </div>
     
