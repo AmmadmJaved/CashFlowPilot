@@ -148,11 +148,11 @@ export default function AddExpenseModal({ isOpen, onClose, groups }: AddExpenseM
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto border-cyan-500/30 bg-card shadow-2xl shadow-cyan-500/5">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="p-2 bg-red-100 rounded-lg">
-              <CreditCard className="h-5 w-5 text-red-600" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 bg-red-500/15 border border-red-500/30 rounded-lg">
+              <CreditCard className="h-5 w-5 text-red-500" />
             </div>
             Add Expense
           </DialogTitle>

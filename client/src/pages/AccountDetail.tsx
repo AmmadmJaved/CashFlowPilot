@@ -281,24 +281,24 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
       {statsLoading ? (
                 <StatsSkeleton />
               ) : (
-              <div className="grid grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mb-6">
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
                     {formatCurrency(monthlyStats?.totalIncome || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Total Income</p>
+                  <p className="text-sm report-text-secondary mt-1">Total Income</p>
                 </div>
-                <div>
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
                     {formatCurrency(monthlyStats?.netBalance || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Net Balance</p>
+                  <p className="text-sm report-text-secondary mt-1">Net Balance</p>
                 </div>
-                <div>
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
                     {formatCurrency(monthlyStats?.totalExpenses || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Total Expenses</p>
+                  <p className="text-sm report-text-secondary mt-1">Total Expenses</p>
                 </div>
               </div>
               )}
@@ -309,7 +309,7 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
       {/* Transactions */}
       <div className="report-shell rounded-xl p-3 sm:p-4">
         <div className="px-1 py-1">
-          <h2 className="text-lg font-semibold text-slate-100">Transactions</h2>
+          <h2 className="text-lg font-semibold report-text-primary">Transactions</h2>
         </div>
 
         {/* Table Header */}
@@ -351,18 +351,19 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                           {getTransactionIcon(transaction.category || "", transaction.type)}
                         </div>
                         <div className="min-w-0">
-                          <h3 className="font-medium truncate text-slate-100">{transaction.description}</h3>
-                          <span className="text-xs text-slate-400">
+                          <h3 className="font-medium truncate report-text-primary">{transaction.description}</h3>
+                          <div className="text-xs report-text-secondary">{transaction.category || transaction.type}</div>
+                          <div className="text-xs report-text-muted">
                             {new Date(transaction.date).toLocaleDateString()}
                             {transaction.type === "income" ? " • Received by " : " • Paid by "}
                             {transaction.paidBy}
-                          </span>
+                          </div>
                         </div>
                       </div>
 
                       {/* Amount */}
                       <div className="sm:col-span-2 text-right">
-                        <span className="font-semibold text-slate-100">
+                        <span className="font-semibold report-text-primary">
                           {formatCurrency(transaction.amount)}
                         </span>
                       </div>
@@ -382,9 +383,12 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                           variant="ghost"
                           size="sm"
                           onClick={() => setViewingTransaction(transaction)}
-                          className="h-8 w-8 p-0 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200"
+                          className="report-action-cyan h-8 w-8 rounded-md p-0"
+                          aria-label="View transaction"
+                          title="View transaction"
                         >
                           <Eye className="h-4 w-4" />
+                          <span className="sr-only">View transaction</span>
                         </Button>
 
                         {transaction.paidBy === auth.user?.profile?.name && (
@@ -393,9 +397,12 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                               variant="ghost"
                               size="sm"
                               onClick={() => setEditingTransaction(transaction)}
-                              className="h-8 w-8 p-0 text-sky-300 hover:bg-sky-500/10 hover:text-sky-200"
+                              className="report-action-sky h-8 w-8 rounded-md p-0"
+                              aria-label="Edit transaction"
+                              title="Edit transaction"
                             >
                               <Edit2 className="h-4 w-4" />
+                              <span className="sr-only">Edit transaction</span>
                             </Button>
                             <Button
                               variant="ghost"
@@ -405,9 +412,12 @@ const handleSaveBalances = (updatedMembers: MemberWithBalance[]) => {
                                   deleteMutation.mutate(transaction.id);
                                 }
                               }}
-                              className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              className="report-action-red h-8 w-8 rounded-md p-0"
+                              aria-label="Delete transaction"
+                              title="Delete transaction"
                             >
                               <Trash2 className="h-4 w-4" />
+                              <span className="sr-only">Delete transaction</span>
                             </Button>
                           </>
                         )}

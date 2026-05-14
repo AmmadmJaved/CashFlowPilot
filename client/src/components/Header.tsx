@@ -1,5 +1,5 @@
 import React from "react";
-import { Share2, Plus, Minus, ChevronDown, Settings, User } from "lucide-react";
+import { ChevronDown, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,54 +44,51 @@ const Header: React.FC<HeaderProps> = ({
   const avatarInitial = resolvedName.charAt(0).toUpperCase() || "U";
 
   return (
-    <header className="animate-slide-in border-b border-border/70 bg-background/80 shadow-sm backdrop-blur">
+    <header className="sticky top-0 z-50 border-b border-cyan-500/20 bg-background/95 backdrop-blur-xl shadow-lg shadow-cyan-500/5">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
-          {/* Left side - Logo and status */}
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 flex items-center justify-center shadow-lg shadow-cyan-900/25 animate-pulse-custom hover:scale-110 transition-transform duration-300">
-                <Share2 className="text-white w-5 h-5" />
+          {/* Left side - Logo */}
+          <div className="flex items-center gap-3">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-xl blur opacity-40 group-hover:opacity-70 transition-opacity duration-300"></div>
+              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-indigo-600 flex items-center justify-center shadow-lg">
+                <svg viewBox="0 0 24 24" fill="none" className="w-5 h-5 text-white" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+                </svg>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-foreground tracking-tight animate-fade-in">
-                  CashPilot
-                </h1>
-                <div className="flex items-center space-x-1">
-                  <div
-                    className={`w-2 h-2 rounded-full ${
-                      isConnected
-                        ? "bg-green-500 shadow-lg shadow-green-500/50"
-                        : "bg-red-500"
-                    }`}
-                  ></div>
-                  <span className="text-xs text-muted-foreground font-medium">
-                    {isConnected ? "Live" : "Offline"}
-                  </span>
-                </div>
+            </div>
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent tracking-tight">
+                CashPilot
+              </h1>
+              <div className="flex items-center gap-1.5">
+                <div className={`w-1.5 h-1.5 rounded-full ${isConnected ? "bg-emerald-400 shadow-sm shadow-emerald-400/50" : "bg-red-400"}`}></div>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-wider">
+                  {isConnected ? "Live" : "Offline"}
+                </span>
               </div>
             </div>
           </div>
 
           {/* Center - Tab Navigation */}
           {activeTab && setActiveTab && (
-            <nav className="hidden sm:flex items-center space-x-1">
+            <nav className="hidden sm:flex items-center bg-muted/50 border border-border/60 rounded-lg p-1 gap-1">
               <button
                 onClick={() => setActiveTab("groups")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
                   activeTab === "groups"
-                    ? "text-foreground border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-cyan-500 text-white shadow-sm shadow-cyan-500/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 Group Accounts
               </button>
               <button
                 onClick={() => setActiveTab("personal")}
-                className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
+                className={`px-4 py-1.5 text-sm font-medium rounded-md transition-all duration-200 ${
                   activeTab === "personal"
-                    ? "text-foreground border-b-2 border-primary"
-                    : "text-muted-foreground hover:text-foreground"
+                    ? "bg-cyan-500 text-white shadow-sm shadow-cyan-500/30"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 }`}
               >
                 Personal Account
@@ -109,6 +106,8 @@ const Header: React.FC<HeaderProps> = ({
                   variant="ghost"
                   className="relative flex items-center space-x-2 px-3 py-2 rounded-xl hover:bg-accent transition-colors"
                   data-testid="button-profile-menu"
+                  aria-label="Open profile menu"
+                  title="Open profile menu"
                 >
                   <Avatar className="w-8 h-8">
                     <AvatarFallback className="bg-gradient-to-r from-blue-500 to-purple-500 text-white text-sm font-semibold">

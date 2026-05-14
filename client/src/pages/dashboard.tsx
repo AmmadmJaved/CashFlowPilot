@@ -371,24 +371,24 @@ const deleteMutation = useMutation({
               {statsLoading ? (
                 <StatsSkeleton />
               ) : (
-              <div className="grid grid-cols-3 gap-4 sm:gap-6">
-                <div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-green-500" data-testid="text-total-income">
                     {formatCurrency(monthlyStats?.totalIncome || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Total Income</p>
+                  <p className="text-sm report-text-secondary mt-1">Total Income</p>
                 </div>
-                <div>
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-cyan-500">
                     {formatCurrency(monthlyStats?.netBalance || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Net Balance</p>
+                  <p className="text-sm report-text-secondary mt-1">Net Balance</p>
                 </div>
-                <div>
+                <div className="report-stat-card">
                   <div className="text-2xl sm:text-3xl lg:text-4xl font-bold text-red-500" data-testid="text-total-expenses">
                     {formatCurrency(monthlyStats?.totalExpenses || 0)}
                   </div>
-                  <p className="text-sm text-muted-foreground mt-1">Total Expenses</p>
+                  <p className="text-sm report-text-secondary mt-1">Total Expenses</p>
                 </div>
               </div>
               )}
@@ -429,68 +429,72 @@ const deleteMutation = useMutation({
                     {transactions.map((transaction) => (
                       <div
                         key={transaction.id}
-                        className="report-row grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center rounded-xl px-4 py-3"
+                        className="report-row rounded-xl px-3 sm:px-4 py-3 overflow-hidden"
                         data-testid={`transaction-${transaction.id}`}
                       >
-                        {/* Transaction info */}
-                        <div className="sm:col-span-5 flex items-center space-x-3">
-                          <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 text-cyan-200">
-                            {getTransactionIcon(transaction.category || "", transaction.type)}
+                        {/* Mobile: compact flex layout / Desktop: grid */}
+                        <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center">
+                          {/* Transaction info - desktop */}
+                          <div className="sm:col-span-5 flex items-center space-x-3 min-w-0">
+                            <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center text-lg shrink-0 text-cyan-200">
+                              {getTransactionIcon(transaction.category || "", transaction.type)}
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="font-medium truncate report-text-primary">{transaction.description}</h3>
+                              <div className="text-xs report-text-secondary">{transaction.category || transaction.type}</div>
+                              <div className="text-xs report-text-muted truncate">
+                                {new Date(transaction.date).toLocaleDateString()} • Paid by {transaction.paidBy}
+                              </div>
+                            </div>
                           </div>
-                          <div className="min-w-0">
-                            <h3 className="font-medium truncate text-slate-100">{transaction.description}</h3>
-                            <span className="text-xs text-slate-400">
-                              {transaction.category || transaction.type}
+                          <div className="sm:col-span-2 text-right">
+                            <span className="font-semibold report-text-primary">
+                              {formatCurrency(transaction.amount)}
                             </span>
                           </div>
+                          <div className="sm:col-span-2 text-right">
+                            <span className={`font-semibold ${transaction.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                              {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                            </span>
+                          </div>
+                          <div className="sm:col-span-3 flex justify-end space-x-1">
+                            <Button variant="ghost" size="sm" onClick={() => setViewingTransaction(transaction)} className="report-action-cyan h-8 w-8 rounded-md p-0" aria-label={`View transaction ${transaction.description}`} title="View transaction"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => setEditingTransaction(transaction)} className="report-action-sky h-8 w-8 rounded-md p-0" aria-label={`Edit transaction ${transaction.description}`} title="Edit transaction"><Edit2 className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm" onClick={() => { if (window.confirm("Are you sure you want to delete this transaction?")) { deleteMutation.mutate(transaction.id); } }} className="report-action-red h-8 w-8 rounded-md p-0" aria-label={`Delete transaction ${transaction.description}`} title="Delete transaction"><Trash2 className="h-4 w-4" /></Button>
+                          </div>
                         </div>
 
-                        {/* Amount */}
-                        <div className="sm:col-span-2 text-right">
-                          <span className="font-semibold text-slate-100">
-                            {formatCurrency(transaction.amount)}
-                          </span>
-                        </div>
-
-                        {/* Expense display */}
-                        <div className="sm:col-span-2 text-right">
-                          <span className={`font-semibold ${
-                            transaction.type === "income" ? "text-green-500" : "text-red-500"
-                          }`}>
-                            {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
-                          </span>
-                        </div>
-
-                        {/* Actions */}
-                        <div className="sm:col-span-3 flex justify-end space-x-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setViewingTransaction(transaction)}
-                            className="h-8 w-8 p-0 text-cyan-300 hover:bg-cyan-500/10 hover:text-cyan-200"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditingTransaction(transaction)}
-                            className="h-8 w-8 p-0 text-sky-300 hover:bg-sky-500/10 hover:text-sky-200"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              if (window.confirm("Are you sure you want to delete this transaction?")) {
-                                deleteMutation.mutate(transaction.id);
-                              }
-                            }}
-                            className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                        {/* Mobile layout */}
+                        <div className="sm:hidden">
+                          <div className="flex items-start gap-3">
+                            <div className="report-icon-chip w-9 h-9 rounded-full flex items-center justify-center text-base shrink-0 text-cyan-200">
+                              {getTransactionIcon(transaction.category || "", transaction.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between gap-2">
+                                <h3 className="font-medium truncate report-text-primary text-sm">{transaction.description}</h3>
+                                <span className="font-semibold report-text-primary text-sm whitespace-nowrap">
+                                  {formatCurrency(transaction.amount)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mt-0.5">
+                                <span className="text-xs report-text-secondary">{transaction.category || transaction.type}</span>
+                                <span className={`text-sm font-semibold ${transaction.type === "income" ? "text-green-500" : "text-red-500"}`}>
+                                  {transaction.type === "income" ? "+" : "-"}{formatCurrency(transaction.amount)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-xs report-text-muted truncate">
+                                  {new Date(transaction.date).toLocaleDateString()} • Paid by {transaction.paidBy}
+                                </span>
+                                <div className="flex items-center gap-1 shrink-0 ml-2">
+                                  <Button variant="ghost" size="sm" onClick={() => setViewingTransaction(transaction)} className="report-action-cyan h-7 w-7 rounded-md p-0" aria-label={`View transaction ${transaction.description}`} title="View"><Eye className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="sm" onClick={() => setEditingTransaction(transaction)} className="report-action-sky h-7 w-7 rounded-md p-0" aria-label={`Edit transaction ${transaction.description}`} title="Edit"><Edit2 className="h-3.5 w-3.5" /></Button>
+                                  <Button variant="ghost" size="sm" onClick={() => { if (window.confirm("Are you sure you want to delete this transaction?")) { deleteMutation.mutate(transaction.id); } }} className="report-action-red h-7 w-7 rounded-md p-0" aria-label={`Delete transaction ${transaction.description}`} title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -522,12 +526,12 @@ const deleteMutation = useMutation({
 
         {/* Group Accounts */}
           <TabsContent value="groups" className="space-y-4">
-            <div className="rounded-xl border border-border bg-card">
+            <div className="report-shell rounded-xl p-3 sm:p-4">
               {/* Group Table Header */}
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+              <div className="flex items-center justify-between px-1 py-1">
                 <div className="flex items-center">
-                  <Users className="w-5 h-5 mr-2 text-muted-foreground" />
-                  <h3 className="font-semibold">Group Accounts</h3>
+                  <Users className="w-5 h-5 mr-2 text-slate-700 dark:text-cyan-300" />
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-100">Group Accounts</h3>
                 </div>
                 <Button
                   onClick={() => setIsGroupModalOpen(true)}
@@ -541,7 +545,7 @@ const deleteMutation = useMutation({
               </div>
 
               {/* Column Headers */}
-              <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 border-b border-border text-sm font-medium text-muted-foreground">
+              <div className="hidden sm:grid grid-cols-12 gap-4 px-4 py-2 text-sm font-semibold text-slate-800 dark:text-slate-200 border-b border-slate-200 dark:border-slate-700 mb-2">
                 <div className="col-span-5">Group</div>
                 <div className="col-span-2">Members</div>
                 <div className="col-span-2">Description</div>
@@ -561,109 +565,113 @@ const deleteMutation = useMutation({
                   <p>No groups yet. Create an Account to share expenses with friends!</p>
                 </div>
               ) : (
-                <div>
+                <div className="space-y-2">
                   {groups.map((group) => (
                     <div
                       key={group.id}
-                      className="grid grid-cols-1 sm:grid-cols-12 gap-2 sm:gap-4 items-center px-4 py-3 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
+                      className="report-row rounded-xl px-3 sm:px-4 py-3"
                       data-testid={`group-${group.id}`}
                     >
-                      {/* Group Name */}
-                      <div className="sm:col-span-5">
+                      {/* Desktop grid layout */}
+                      <div className="hidden sm:grid sm:grid-cols-12 sm:gap-4 sm:items-center">
+                        <div className="sm:col-span-5">
+                          {editingGroupId === group.id ? (
+                            <div className="flex items-center space-x-2">
+                              <Input
+                                value={editingGroupName}
+                                onChange={(e) => setEditingGroupName(e.target.value)}
+                                className="w-48"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (!editingGroupName.trim()) {
+                                    toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' });
+                                    return;
+                                  }
+                                  updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() });
+                                }}
+                                disabled={updateGroupMutation.isPending}
+                              >
+                                {updateGroupMutation.isPending ? 'Saving...' : 'Save'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingGroupId(null);
+                                }}
+                                disabled={updateGroupMutation.isPending}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Link
+                              href={`/account/${group.id}`}
+                              className="block rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2"
+                            >
+                              <div className="flex items-center space-x-3">
+                                <div className="report-icon-chip w-10 h-10 rounded-full flex items-center justify-center">
+                                  <Users className="h-5 w-5 text-slate-700 dark:text-cyan-200" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-slate-900 dark:text-slate-100 hover:text-blue-700 dark:hover:text-cyan-300 transition-colors">{group.name}</h3>
+                                </div>
+                              </div>
+                            </Link>
+                          )}
+                        </div>
+                        <div className="sm:col-span-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {group.memberCount} members
+                        </div>
+                        <div className="sm:col-span-2 text-sm text-slate-600 dark:text-slate-400 truncate">
+                          {group.description || "-"}
+                        </div>
+                        <div className="sm:col-span-3 flex justify-end items-center gap-2">
+                          <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingGroupId(group.id); setEditingGroupName(group.name || ''); }} className="h-8 w-8 p-0 text-slate-700 dark:text-sky-300 hover:bg-blue-100 hover:text-blue-800 dark:hover:bg-sky-500/10 dark:hover:text-sky-200 focus-visible:ring-2 focus-visible:ring-sky-500 focus-visible:ring-offset-2" aria-label={`Edit group ${group.name}`} title="Edit group"><Edit2 className="h-4 w-4" /></Button>
+                          <Button size="sm" variant="ghost" onClick={() => { setSelectedGroup(group); setInviteModalOpen(true); }} className="h-8 w-8 p-0 text-slate-700 dark:text-cyan-300 hover:bg-cyan-100 hover:text-cyan-800 dark:hover:bg-cyan-500/10 dark:hover:text-cyan-200 focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:ring-offset-2" data-testid={`button-invite-${group.id}`} aria-label={`Invite members to ${group.name}`} title="Invite members"><Share2 className="h-4 w-4" /></Button>
+                          <Button variant="ghost" size="sm" onClick={() => deleteGroup(group.id)} className="h-8 w-8 p-0 text-red-700 dark:text-red-400 hover:text-red-800 dark:hover:text-red-300 hover:bg-red-100 dark:hover:bg-red-500/10 focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2" aria-label={`Delete group ${group.name}`} title="Delete group"><Trash2 className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+
+                      {/* Mobile compact layout */}
+                      <div className="sm:hidden">
                         {editingGroupId === group.id ? (
                           <div className="flex items-center space-x-2">
                             <Input
                               value={editingGroupName}
                               onChange={(e) => setEditingGroupName(e.target.value)}
-                              className="w-48"
+                              className="flex-1"
                               autoFocus
                             />
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!editingGroupName.trim()) {
-                                  toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' });
-                                  return;
-                                }
-                                updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() });
-                              }}
-                              disabled={updateGroupMutation.isPending}
-                            >
-                              {updateGroupMutation.isPending ? 'Saving...' : 'Save'}
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setEditingGroupId(null);
-                              }}
-                              disabled={updateGroupMutation.isPending}
-                            >
-                              Cancel
-                            </Button>
+                            <Button size="sm" onClick={(e) => { e.stopPropagation(); if (!editingGroupName.trim()) { toast({ title: 'Name required', description: 'Group name cannot be empty', variant: 'destructive' }); return; } updateGroupMutation.mutate({ id: group.id, name: editingGroupName.trim() }); }} disabled={updateGroupMutation.isPending}>{updateGroupMutation.isPending ? 'Saving...' : 'Save'}</Button>
+                            <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); setEditingGroupId(null); }} disabled={updateGroupMutation.isPending}>Cancel</Button>
                           </div>
                         ) : (
-                          <Link href={`/account/${group.id}`}>
-                            <div className="flex items-center space-x-3">
-                              <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center">
-                                <Users className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex items-center gap-3">
+                            <Link
+                              href={`/account/${group.id}`}
+                              className="flex-1 min-w-0 flex items-center gap-3"
+                            >
+                              <div className="report-icon-chip w-9 h-9 rounded-full flex items-center justify-center shrink-0">
+                                <Users className="h-4 w-4 text-slate-700 dark:text-cyan-200" />
                               </div>
-                              <div>
-                                <h3 className="font-medium hover:text-primary transition-colors">{group.name}</h3>
-                                <span className="text-xs text-muted-foreground sm:hidden">{group.memberCount} members</span>
+                              <div className="min-w-0">
+                                <h3 className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate">{group.name}</h3>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">{group.memberCount} members</span>
                               </div>
+                            </Link>
+                            <div className="flex items-center gap-1 shrink-0">
+                              <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingGroupId(group.id); setEditingGroupName(group.name || ''); }} className="h-7 w-7 p-0 text-slate-700 dark:text-sky-300 hover:bg-blue-100 dark:hover:bg-sky-500/10" aria-label={`Edit group ${group.name}`} title="Edit"><Edit2 className="h-3.5 w-3.5" /></Button>
+                              <Button size="sm" variant="ghost" onClick={() => { setSelectedGroup(group); setInviteModalOpen(true); }} className="h-7 w-7 p-0 text-slate-700 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-500/10" data-testid={`button-invite-${group.id}`} aria-label={`Invite members to ${group.name}`} title="Invite"><Share2 className="h-3.5 w-3.5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => deleteGroup(group.id)} className="h-7 w-7 p-0 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10" aria-label={`Delete group ${group.name}`} title="Delete"><Trash2 className="h-3.5 w-3.5" /></Button>
                             </div>
-                          </Link>
+                          </div>
                         )}
-                      </div>
-
-                      {/* Members count */}
-                      <div className="hidden sm:block sm:col-span-2 text-sm text-muted-foreground">
-                        {group.memberCount} members
-                      </div>
-
-                      {/* Description */}
-                      <div className="hidden sm:block sm:col-span-2 text-sm text-muted-foreground truncate">
-                        {group.description || "-"}
-                      </div>
-
-                      {/* Actions */}
-                      <div className="sm:col-span-3 flex justify-end items-center gap-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            setEditingGroupId(group.id);
-                            setEditingGroupName(group.name || '');
-                          }}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setSelectedGroup(group);
-                            setInviteModalOpen(true);
-                          }}
-                          className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground"
-                          data-testid={`button-invite-${group.id}`}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => deleteGroup(group.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   ))}

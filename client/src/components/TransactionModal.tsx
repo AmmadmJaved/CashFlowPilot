@@ -170,15 +170,15 @@ export default function TransactionModal({ isOpen, onClose, groups }: Transactio
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto border-cyan-500/30 bg-card shadow-2xl shadow-cyan-500/5">
         <DialogHeader>
-          <DialogTitle>Add {groups[0]?.name} Transaction</DialogTitle>
+          <DialogTitle className="text-lg font-bold text-foreground">Add Transaction</DialogTitle>
         </DialogHeader>
 
         <Tabs value={tab} onValueChange={(v) => setTab(v as "expense" | "income")} className="w-full">
-          <TabsList className="grid grid-cols-2 mb-4">
-            <TabsTrigger value="expense">Expense</TabsTrigger>
-            <TabsTrigger value="income">Income</TabsTrigger>
+          <TabsList className="grid grid-cols-2 mb-4 bg-muted/60 border border-border rounded-lg p-1">
+            <TabsTrigger value="expense" className="rounded-md data-[state=active]:bg-red-500 data-[state=active]:text-white data-[state=active]:shadow-sm font-medium">Expense</TabsTrigger>
+            <TabsTrigger value="income" className="rounded-md data-[state=active]:bg-green-500 data-[state=active]:text-white data-[state=active]:shadow-sm font-medium">Income</TabsTrigger>
           </TabsList>
 
           <TabsContent value="expense" color="red">
@@ -251,9 +251,9 @@ function TransactionForm({
           name="amount"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Amount (₨)</FormLabel>
+              <FormLabel className="text-sm font-medium text-foreground">Amount (Rs)</FormLabel>
               <FormControl>
-                <Input {...field} type="number" step="0.01" placeholder="Enter amount..." />
+                <Input {...field} type="number" step="0.01" placeholder="Enter amount..." className="border-border bg-input text-foreground placeholder:text-muted-foreground focus:border-cyan-500 focus:ring-cyan-500/20" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -266,10 +266,10 @@ function TransactionForm({
           name="category"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Category</FormLabel>
+              <FormLabel className="text-sm font-medium text-foreground">Category</FormLabel>
               <Select onValueChange={field.onChange} value={field.value ?? undefined}>
                 <FormControl>
-                  <SelectTrigger>
+                  <SelectTrigger className="border-border bg-input text-foreground">
                     <SelectValue placeholder="Choose category" />
                   </SelectTrigger>
                 </FormControl>
@@ -292,9 +292,9 @@ function TransactionForm({
           name="description"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Description</FormLabel>
+              <FormLabel className="text-sm font-medium text-foreground">Description</FormLabel>
               <FormControl>
-                <Input {...field} placeholder="e.g., Lunch or Salary" />
+                <Input {...field} placeholder="e.g., Lunch or Salary" className="border-border bg-input text-foreground placeholder:text-muted-foreground focus:border-cyan-500 focus:ring-cyan-500/20" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -307,9 +307,9 @@ function TransactionForm({
           name="date"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Date</FormLabel>
+              <FormLabel className="text-sm font-medium text-foreground">Date</FormLabel>
               <FormControl>
-                <Input {...field} type="date" />
+                <Input {...field} type="date" className="border-border bg-input text-foreground focus:border-cyan-500 focus:ring-cyan-500/20" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -319,16 +319,17 @@ function TransactionForm({
         <FormField
           control={form.control}
           name="paidBy"
-          defaultValue={auth?.user?.profile?.name || "Unknown"} // ✅ auto-fill on mount
+          defaultValue={auth?.user?.profile?.name || "Unknown"}
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{isIncome ? "Received By" : "Paid By"}</FormLabel>
+              <FormLabel className="text-sm font-medium text-foreground">{isIncome ? "Received By" : "Paid By"}</FormLabel>
               <FormControl>
                 <Input 
                   {...field} 
                   placeholder="Enter name..."
-                  value={field.value || auth.user?.profile?.name || "Unknown"} // ✅ keep user name if empty
-                  onChange={field.onChange} 
+                  value={field.value || auth.user?.profile?.name || "Unknown"}
+                  onChange={field.onChange}
+                  className="border-border bg-input text-foreground placeholder:text-muted-foreground focus:border-cyan-500 focus:ring-cyan-500/20"
                 />
               </FormControl>
               <FormMessage />
@@ -338,26 +339,30 @@ function TransactionForm({
 
         {/* group info */}
         {isShared && selectedGroup && (
-          <div className="p-3 bg-blue-50 rounded-lg text-sm">
+          <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-sm text-foreground">
             Split equally among {selectedGroup.memberCount} members of "{selectedGroup.name}".
           </div>
         )}
         {groups.length === 1 && (
-          <div className="p-3 bg-blue-50 rounded-lg text-sm">
+          <div className="p-3 bg-cyan-500/10 border border-cyan-500/20 rounded-lg text-sm text-foreground">
             This transaction will be shared with "{groups[0].name}" ({groups[0].memberCount} members).
           </div>
         )}
 
         {/* action buttons */}
         <div className="flex gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onClose} className="flex-1">
+          <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-border text-foreground hover:bg-muted">
             Cancel
           </Button>
 
           <Button
             type="submit"
             disabled={isLoading}
-            className={`flex-1 flex items-center justify-center gap-2 bg-gradient-to-r from-${color}-600 to-${color}-700 hover:from-${color}-700 hover:to-${color}-800 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2`}
+            className={`flex-1 flex items-center justify-center gap-2 text-white shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl px-6 py-2 ${
+              isIncome 
+                ? "bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700" 
+                : "bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-700 hover:to-rose-700"
+            }`}
           >
             {isLoading ? (
               "Saving..."

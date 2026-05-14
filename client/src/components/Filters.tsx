@@ -66,52 +66,54 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
   return (
     <div className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 mb-4">
       {/* Start Date */}
-      <div className="report-filter-box rounded-xl px-3 py-2">
-        <Label htmlFor="startDate" className="text-xs font-medium text-cyan-100/85">Start Date</Label>
+      <div className="report-filter-box rounded-xl px-3 py-2 min-h-[74px] flex flex-col justify-between">
+        <Label htmlFor="startDate" className="text-xs font-medium report-text-secondary">Start Date</Label>
         <Input
           id="startDate"
           type="date"
           value={filters.startDate || ""}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
-          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100"
+          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm report-text-primary"
           placeholder="Start Date"
         />
       </div>
 
       {/* End Date */}
-      <div className="report-filter-box rounded-xl px-3 py-2">
-        <Label htmlFor="endDate" className="text-xs font-medium text-cyan-100/85">End Date</Label>
+      <div className="report-filter-box rounded-xl px-3 py-2 min-h-[74px] flex flex-col justify-between">
+        <Label htmlFor="endDate" className="text-xs font-medium report-text-secondary">End Date</Label>
         <Input
           id="endDate"
           type="date"
           value={filters.endDate || ""}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
-          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100"
+          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm report-text-primary"
           placeholder="End Date"
         />
       </div>
       {/* Search */}
-      <div className="report-filter-box rounded-xl px-3 py-2 flex items-center">
+      <div className="report-filter-box rounded-xl px-3 py-2 min-h-[74px] flex flex-col justify-between">
+        <Label htmlFor="search" className="text-xs font-medium report-text-secondary">Search</Label>
         <Input
           id="search"
           type="text"
           value={filters.search || ""}
           onChange={(e) => handleFilterChange("search", e.target.value)}
           data-testid="input-search"
-          className="h-9 w-full border-0 bg-transparent p-0 text-sm text-slate-100 placeholder:text-slate-400"
+          className="mt-1 h-9 w-full border-0 bg-transparent p-0 text-sm report-text-primary placeholder:text-slate-400 dark:placeholder:text-slate-500"
           placeholder="Search"
         />
       </div>
 
       {/* Filter Button */}
-      <div className="report-filter-box rounded-xl px-3 py-2 flex items-center">
+      <div className="report-filter-box rounded-xl px-3 py-2 min-h-[74px] flex flex-col justify-between">
+        <Label className="text-xs font-medium report-text-secondary">Filter</Label>
         <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-9 w-full border-0 bg-transparent text-sm font-medium text-slate-100 hover:bg-cyan-500/10 hover:text-cyan-200">
+                <Button variant="ghost" className="mt-1 h-9 w-full justify-start border-0 bg-transparent px-0 text-sm font-medium report-text-secondary hover:bg-cyan-500/10 hover:text-cyan-500">
                     <Filter className="h-4 w-4 mr-1" />
-                    Filter
+                    Filter by
                 </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-72 p-4 space-y-4">

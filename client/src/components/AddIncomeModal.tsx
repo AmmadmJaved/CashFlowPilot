@@ -137,11 +137,11 @@ export default function AddIncomeModal({ isOpen, onClose, groups }: AddIncomeMod
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto border-cyan-500/30 bg-card shadow-2xl shadow-cyan-500/5">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <DollarSign className="h-5 w-5 text-green-600" />
+          <DialogTitle className="flex items-center gap-2 text-foreground">
+            <div className="p-2 bg-green-500/15 border border-green-500/30 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-500" />
             </div>
             Add Income
           </DialogTitle>
