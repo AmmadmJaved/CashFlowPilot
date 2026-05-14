@@ -50,52 +50,52 @@ export default function Filters({ filters, handleFilterChange,members }: Filters
   ];
 
   return (
-    <div className="flex flex-wrap md:flex-nowrap items-end gap-2 mt-2 mb-2 overflow-x-auto">
+    <div className="grid w-full grid-cols-2 gap-3 rounded-2xl border border-border/70 bg-card/90 p-3 shadow-sm sm:grid-cols-4 sm:p-4">
       {/* Start Date */}
-      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
-        <Label htmlFor="startDate" className="ml-2 pl-2">Start Date</Label>
+      <div className="rounded-xl border border-border bg-background/70 px-2 py-2 text-card-foreground shadow-sm card-hover">
+        <Label htmlFor="startDate" className="ml-1 text-sm font-medium text-muted-foreground">Start Date</Label>
         <Input
           id="startDate"
           type="date"
           value={filters.startDate || getFirstDayOfMonth()}
           onChange={(e) => handleFilterChange("startDate", e.target.value)}
           data-testid="input-start-date"
-          className="w-[165px] h-[30px]"
+          className="mt-1 h-10 w-full rounded-lg border-0 bg-background"
           placeholder="Start Date"
         />
       </div>
 
       {/* End Date */}
-      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover">
-        <Label htmlFor="endDate" className="ml-2 pl-2">End Date</Label>
+      <div className="rounded-xl border border-border bg-background/70 px-2 py-2 text-card-foreground shadow-sm card-hover">
+        <Label htmlFor="endDate" className="ml-1 text-sm font-medium text-muted-foreground">End Date</Label>
         <Input
           id="endDate"
           type="date"
           value={filters.endDate || getTodayDate()}
           onChange={(e) => handleFilterChange("endDate", e.target.value)}
           data-testid="input-end-date"
-          className="w-[165px] h-[30px]"
+          className="mt-1 h-10 w-full rounded-lg border-0 bg-background"
           placeholder="End Date"
         />
       </div>
       {/* Search */}
-      <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover pb-2">
+      <div className="rounded-xl border border-border bg-background/70 p-2 text-card-foreground shadow-sm card-hover">
         <Input
           id="search"
           type="text"
           value={filters.search || ""}
           onChange={(e) => handleFilterChange("search", e.target.value)}
           data-testid="input-search"
-          className="w-[165px] h-[45px]"
+          className="h-10 w-full rounded-lg border-0 bg-background"
           placeholder="Search"
         />
       </div>
 
       {/* Filter Button */}
-        <div className="flex-shrink-0 rounded-lg border bg-card text-card-foreground shadow-sm card-hover pb-2">
+        <div className="rounded-xl border border-border bg-background/70 p-2 text-card-foreground shadow-sm card-hover">
         <Popover open={open} onOpenChange={setOpen}>
                 <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2">
+                <Button variant="outline" className="h-10 w-full rounded-lg border-border/70 bg-background text-sm font-medium">
                     <Filter className="h-4 w-4" />
                     Filter
                 </Button>

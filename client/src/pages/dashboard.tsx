@@ -323,7 +323,7 @@ const deleteMutation = useMutation({
               setIsExpenseModalOpen={setIsExpenseModalOpen}
             />
       {/* Main Content */}
-      <div className="mflex-1 max-w-7xl mx-auto px-2 sm:px-6 lg:px-4 py-4 w-full">
+      <div className="flex-1 mx-auto w-full max-w-7xl px-3 py-4 sm:px-6 lg:px-5">
         {/* Export Navigation - Eye-catching position */}
         <ExportButtons filters={filters} />
        
@@ -333,13 +333,13 @@ const deleteMutation = useMutation({
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-2"> 
+          <TabsList className="grid w-full grid-cols-2 rounded-2xl border border-border/70 bg-card/80 p-1 shadow-sm"> 
             <TabsTrigger value="groups" data-testid="tab-groups">Group Accounts</TabsTrigger>
             <TabsTrigger value="personal" data-testid="tab-personal">Personal Account</TabsTrigger>
           </TabsList>
 
           <TabsContent value="personal" className="space-y-4">
-          <Card className="p-2">
+          <Card className="rounded-2xl border-border/70 bg-card/90 p-3 shadow-sm sm:p-4">
              {/* Date Range Filters */}
               <Filters filters={filters} handleFilterChange={handleFilterChange} members={[]}/>
               {/* Stats Cards */}
@@ -347,36 +347,36 @@ const deleteMutation = useMutation({
                 <StatsSkeleton />
               ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
+                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3">
                     <CardTitle className="text-sm font-medium">Total Income</CardTitle>
                     <TrendingUp className="h-4 w-4 text-green-500" />
                   </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
+                  <CardContent className="px-5 pb-3">
                     <div className="text-xl sm:text-2xl font-bold text-green-600" data-testid="text-total-income">
                       {formatCurrency(monthlyStats?.totalIncome || 0)}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6 ">
+                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3 ">
                     <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
                     <DollarSign className="h-4 w-4 text-red-500" />
                   </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
+                  <CardContent className="px-5 pb-3">
                     <div className="text-xl sm:text-2xl font-bold text-red-600" data-testid="text-total-expenses">
                       {formatCurrency(monthlyStats?.totalExpenses || 0)}
                     </div>
                   </CardContent>
                 </Card>
 
-                <Card className="card-hover pb-2">
-                  <CardHeader className="flex flex-row items-center justify-between p-2 pl-6 pr-6">
+                <Card className="card-hover rounded-2xl border-border/70 bg-background/70 pb-2">
+                  <CardHeader className="flex flex-row items-center justify-between px-5 py-3">
                     <CardTitle className="text-sm font-medium">Net Balance</CardTitle>
                     <Calendar className="h-4 w-4 text-blue-500" />
                   </CardHeader>
-                  <CardContent className="p-0 pl-6 pr-6">
+                  <CardContent className="px-5 pb-3">
                     <div
                       className={`text-xl sm:text-2xl font-bold ${
                         parseFloat(monthlyStats?.netBalance || "0") >= 0 ? "text-green-600" : "text-red-600"
@@ -391,13 +391,13 @@ const deleteMutation = useMutation({
               )}
 
             {/* Recent Transactions */}
-             <div className="internal-panel p-2">
-              <CardHeader className="p-2">
+             <div className="internal-panel p-3 sm:p-4">
+              <CardHeader className="px-1 py-2">
               <CardTitle className="text-base sm:text-lg md:text-xl">
                 Recent Transactions
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-2">
+            <CardContent className="px-1 pb-1">
               {transactionsLoading ? (
                 <div className="space-y-4">
                   {[...Array(5)].map((_, i) => (
@@ -420,7 +420,7 @@ const deleteMutation = useMutation({
                   {transactions.map((transaction) => (
                     <div
                       key={transaction.id}
-                      className="flex items-start justify-between p-2 border rounded-lg gap-3"
+                      className="flex items-start justify-between gap-3 rounded-xl border border-border/70 bg-background/70 p-3"
                       data-testid={`transaction-${transaction.id}`}
                     >
                       {/* Left section */}
@@ -520,7 +520,7 @@ const deleteMutation = useMutation({
 
         {/* Group Accounts */}
           <TabsContent value="groups" className="space-y-4">
-            <Card>
+            <Card className="rounded-2xl border-border/70 bg-card/90 shadow-sm">
               <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                   <div className="flex items-center">
@@ -530,7 +530,7 @@ const deleteMutation = useMutation({
                   <Button
                     onClick={() => setIsGroupModalOpen(true)}
                     size="sm"
-                    className="bg-blue-500 hover:bg-blue-600"
+                    className="rounded-full bg-cyan-500 px-4 text-slate-950 hover:bg-cyan-400"
                     data-testid="button-create-group"
                   >
                     <Plus className="w-4 h-4 mr-1" />
@@ -546,14 +546,14 @@ const deleteMutation = useMutation({
                     ))}
                   </div>
                 ) : groups.length === 0 ? (
-                  <div className="text-center py-8 text-gray-500">
-                    <Users className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
                     <p>No groups yet. Create an Accounts to share expenses with friends!</p>
                   </div>
                 ) : (
                   <div className="space-y-4 ">
                     {groups.map((group) => (
-                      <div key={group.id} className="p-4 border rounded-lg bg-gray-50 gradient-to-br from-gray-50 to-gray-100" data-testid={`group-${group.id}`}>
+                      <div key={group.id} className="rounded-xl border border-border/70 bg-background/70 p-4 shadow-sm" data-testid={`group-${group.id}`}>
                         <div className="flex items-center justify-between">
                           <div>
                             {editingGroupId === group.id ? (
@@ -609,7 +609,7 @@ const deleteMutation = useMutation({
                                   </Button>
                                 </div>
 
-                                <p className="text-sm text-gray-500">
+                                <p className="text-sm text-muted-foreground">
                                   {group.memberCount} members
                                   {group.description && ` • ${group.description}`}
                                 </p>
